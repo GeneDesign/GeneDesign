@@ -8,10 +8,10 @@ print $query->header;
 
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/tm.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/tm.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<script src=\"$docpath/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Sequence Analysis</title></head>\n");
 print <<EOM;
@@ -26,7 +26,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Sequence Analysis</a></div>");
 	print $query->startform(-method=>'post', -action=>'./gdSeqAna.cgi', -name=>"form1");
 
@@ -37,7 +37,7 @@ if ($query->param('nucseq') eq '' && $query->param('passnucseq') eq '')
 	print ("This module is for the analysis of nucleotide sequences. Your nucleotide sequence(s) will be analyzed for base content, Tm, the presence ");
 	print ("of restriction sites, and open reading frames.<br>");
 	print space(2), ("&bull;If you wish to compare a list of sequences, make sure they are all on separate lines and check 'oligo list'.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/seqana.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/seqana.html\" target=\"blank\">manual</a> for more information.\n");
 	print ("</div>");
 
 	print ("<div id=\"gridgroup0\">\nEnter your nucleotide sequence(s):<br>\n");

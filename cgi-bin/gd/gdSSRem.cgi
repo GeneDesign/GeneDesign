@@ -8,9 +8,9 @@ $query = new CGI;
 print $query->header;
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<script src=\"$docpath/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Silent Site Removal</title></head>\n");
 print <<EOM;
@@ -25,7 +25,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Silent Site Removal</a></div>");
 	print $query->startform(-method=>'post', -action=>'./gdSSRem.cgi', -name=>"form1");
 
@@ -37,7 +37,7 @@ if ($query->param('org') eq '')
 	print ("Sites will be removed without changing the amino acid sequence by changing whole codons.<br><em>Please Note:</em><br> ");
 	print space(2), ("&bull;If you select an organism, targeted codons will be replaced with the codon that enjoys the most optimal expression in that organism.<br>");
 	print space(2), ("&bull;If you select no optimization, targeted codons will be replaced with a random codon.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/ssr.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/ssr.html\" target=\"blank\">manual</a> for more information.\n");
 	print ("</div>");
 	$nucseq = $query->param('passnucseq') if ($query->param('passnucseq') ne '');
 	$nucseq = $query->param('nucseq') if ($query->param('passnucseq') eq '');
@@ -61,7 +61,7 @@ elsif ($query->param('org') ne '' && $query->param('removeme') eq '')
 	print ("Below are your nucleotide sequence and all of the restriction sites that I recognized. Your current organism is ");
 	print organism($org), "<br>";
 	print ("Check as many as you like for removal.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/ssr.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/ssr.html\" target=\"blank\">manual</a> for more information.\n");
 
 	print ("</div>");
 	$organism = $query->param('org');

@@ -10,12 +10,12 @@ print $query->header;
 ##- Open it up - css, javascript, and header.  open form
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");
-	print ("<link href=\"../../gd/acss/mg.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/pd.css\" rel=\"stylesheet\" type=\"text/css\">\n");
-	print ("<link href=\"../../gd/acss/fn.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");
+	print ("<link href=\"$docpath/acss/mg.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/pd.css\" rel=\"stylesheet\" type=\"text/css\">\n");
+	print ("<link href=\"$docpath/acss/fn.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<script src=\"$docpath/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Silent Site Insertion</title></head>\n");
 print <<EOM;
@@ -30,7 +30,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Silent Site Insertion</a></div>");
 	print $query->startform(-method=>'post', -action=>'./gdSSIns.cgi', -enctype=>'application/x-www-form-urlencoded', -name=>"form1");
 
@@ -50,7 +50,7 @@ if ($query->param('swit') eq '' && $query->param('nextrem') eq '')
 	print ("will be removed.<br>\n");
 	print space(2), ("&bull;The Enzyme Selection criteria  only apply if you are planning to let the program pick the sites to be inserted. If you will be picking manually you can ignore this section.<br>");
 	print space(2), ("&bull;The looser the enzyme criteria you provide, the better the results.  If you are getting poor return in automated selection, try allowing a broader spectrum of enzymes.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/ssi.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/ssi.html\" target=\"blank\">manual</a> for more information.\n");
 	print ("</div>");
 ##-carry organism
 	$org = $query->param('org');
@@ -195,7 +195,7 @@ if ($query->param('swit') eq "pd" || $query->param('swit') eq 'ih' || $query->pa
 		print ("an amino acid interval and hit \"Pick Sites For Me\".  The program will select enzymes on that interval using the criteria you defined on the last screen. ");
 		print ("You will be given an opportunity to review and edit the program's choices before modifications are made.<br><br>");
 		print ("When you are satisfied with your choices or the program's selections, hit \"Continue\". Your sequence will be modified and you will be given a summary of changes.<br>\n");
-		print ("See the <a href=\"../../gd/Guide/ssi.html\" target=\"blank\">manual</a> for more information.\n<br>");
+		print ("See the <a href=\"$docpath/Guide/ssi.html\" target=\"blank\">manual</a> for more information.\n<br>");
 		print space(2), "&bull;Please wait for the page to load completely before hitting \"Continue\" or \"Pick Sites For Me\"!";
 		print ("</div>");
 	}

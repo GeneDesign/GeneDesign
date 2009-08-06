@@ -10,10 +10,10 @@ $query = new CGI;
 print $query->header;
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/ol.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/ol.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<script src=\"$docpath/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Oligo Design</title></head>\n");
 print <<EOM;
@@ -28,7 +28,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Oligo Design</a></div>");
 	print $query->startform(-method=>'post', -action=>'./gdOlides.cgi', -name=>"form1");
 
@@ -42,7 +42,7 @@ if ($query->param('ovmel') eq '')
 	print space(2), ("&bull;Chunk overlap refers to how many bp will be shared in adjacent chunks.  For instance, with a 20bp chunk overlap, if a 6bp cutter \n");
 	print ("is chosen as a joint it will be padded by 7bp on either side.  Those twenty bp will be in each chunk. <br>");
 	print space(2), ("&bull;The melting temperature you define is the most important criteria.  Oligo lengths in practice will decrease or increase to match. <br>\n");
-	print ("See the <a href=\"../../gd/Guide/olides.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/olides.html\" target=\"blank\">manual</a> for more information.\n");
 	print ("</div>");
 	$nucseq = $query->param('passnucseq') if ($query->param('passnucseq') ne '');
 	$nucseq = $query->param('nucseq') if ($query->param('passnucseq') eq '');
@@ -295,16 +295,16 @@ else
 	print ("<div id=\"notes\">");
 	print ("Your sequence has been broken into ", $y+1, " chunk(s) of approximately 500bp (each).<br>");
 	print ("<br><em>What am I looking at?</em><br> ");
-	print ("<div><div style=\"position:absolute; width:50%;\"><img src=\"../../gd/img/olkey1.gif\" align=\"left\";>"), break(1);
+	print ("<div><div style=\"position:absolute; width:50%;\"><img src=\"$docpath/img/olkey1.gif\" align=\"left\";>"), break(1);
 	print ("<-- chunk number<br><-- length of chunk<br><-- average Tm of oligo overlaps in chunk<br><-- number of oligos in chunk<br>");
 	print ("<-- average oligo length, length of shortest and longest oligos<br><br><-- restriction site at 3' end (Rebase link)<br><br></div>");
-	print ("<div style=\"position:relative; text-align: right; left:40%; width:50%;\"><img src=\"../../gd/img/olkey2.gif\" align=\"right\";>"), break(1);
+	print ("<div style=\"position:relative; text-align: right; left:40%; width:50%;\"><img src=\"$docpath/img/olkey2.gif\" align=\"right\";>"), break(1);
 	print ("sense strand 5' to 3' --><br>sense (5' to 3') and antisense (3' to 5') oligos --><br>antisense strand 3' to 5' --></div></div>");
 	
 	
 	print break(5), space(2), ("&bull;In the table, all oligos are 5' to 3'.  They are output 5' to 3' as well.<br>");
 	print space(2), ("&bull;The three Tms in the table represent the results of three different formulas.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/olides.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/olides.html\" target=\"blank\">manual</a> for more information.\n");
 	print ("</div>");	
 	
 ##-Now for pretty output

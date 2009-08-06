@@ -8,9 +8,9 @@ $query = new CGI;
 print $query->header;
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<script src=\"$docpath/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Short Sequence Removal</title></head>\n");
 print <<EOM;
@@ -25,7 +25,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Short Sequence Removal</a></div>");
 	print $query->startform(-method=>'post', -action=>'./gdOliRem.cgi', -name=>"form1");
 
@@ -37,7 +37,7 @@ if ($query->param('org') eq '')
 	print ("without changing the amino acid sequence.<br><em>Please Note:</em><br> ");
 	print space(2), ("&bull;If you select an organism, targeted codons will be replaced with the codon that enjoys the most optimal expression in that organism.<br>");
 	print space(2), ("&bull;If you select no optimization, targeted codons will be replaced with a random codon.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/shortr.html\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/shortr.html\">manual</a> for more information.\n");
 	print ("</div>");
 	$nucseq = $query->param('passnucseq') if ($query->param('passnucseq') ne '');
 	$nucseq = $query->param('nucseq') if ($query->param('passnucseq') eq '');
@@ -124,7 +124,7 @@ else
 		print break(1);
 	}
 	print "\There were no problems kicking the sequences out.<br>\n" if (@t-0 == 0);
-	print ("See the <a href=\"../../gd/Guide/ssr.html\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/ssr.html\">manual</a> for more information.\n");
 print "</div>"; 
 	print break(1);
 	print ("<div id=\"gridgroup0\">Your altered nucleotide sequence:\n");

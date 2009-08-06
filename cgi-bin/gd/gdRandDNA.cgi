@@ -9,8 +9,8 @@ print $query->header;
 
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Random DNA Generator</title></head>\n");
 print <<EOM;
@@ -25,7 +25,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Random DNA Generator</a></div>");
 	print $query->startform(-method=>'post', -action=>'./gdRandDNA.cgi');
 
@@ -35,7 +35,7 @@ if ($query->param('atcontent') == 0)
 	print ("This module is for the generation of random sequences of DNA. You can specify A+T content, length, and the number of ");
 	print ("sequences you wish to have returned.<br>");
 	print space(2), ("&bull;If you give me ridiculous numbers it will take forever and may crash your browser.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/randna.html\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/randna.html\">manual</a> for more information.\n");
 	print ("</div>");
 	print break(3);
 	

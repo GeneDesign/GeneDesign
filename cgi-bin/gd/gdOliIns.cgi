@@ -8,12 +8,12 @@ $query = new CGI;
 print $query->header;
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");
-	print ("<link href=\"../../gd/acss/mg.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/pd.css\" rel=\"stylesheet\" type=\"text/css\">\n");
-	print ("<link href=\"../../gd/acss/fn.css\" rel=\"stylesheet\" type=\"text/css\">\n");		
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");
+	print ("<link href=\"$docpath/acss/mg.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/pd.css\" rel=\"stylesheet\" type=\"text/css\">\n");
+	print ("<link href=\"$docpath/acss/fn.css\" rel=\"stylesheet\" type=\"text/css\">\n");		
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<script src=\"$docpath/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Short Sequence Insertion</title></head>\n");
 print <<EOM;
@@ -28,7 +28,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Short Sequence Insertion</a></div>");
 	print $query->startform(-method=>'POST', -action=>'./gdOliIns.cgi', -name=>"form1");
 if ($query->param('swit') eq '' && $query->param('remseq') eq '')
@@ -37,7 +37,7 @@ if ($query->param('swit') eq '' && $query->param('remseq') eq '')
 	print ("<strong>To use this module you need two nucleotide sequences, large and small.  An organism name is optional.</strong><br>\n");
 	print ("Your nucleotide sequence will be searched for the short sequence you provide and as many iterations as possible will be inserted by changing whole codons ");
 	print ("without changing the amino acid sequence.<br><br> ");
-#	print ("See the <a href=\"../../gd/Guide/shortr.html\">manual</a> for more information.\n");
+#	print ("See the <a href=\"$docpath/Guide/shortr.html\">manual</a> for more information.\n");
 	print ("</div>");
 	$nucseq = $query->param('passnucseq') if ($query->param('passnucseq') ne '');
 	$nucseq = $query->param('nucseq') if ($query->param('passnucseq') eq '');

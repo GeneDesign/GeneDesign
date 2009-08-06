@@ -9,11 +9,11 @@ print $query->header;
 
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/fn.css\" rel=\"stylesheet\" type=\"text/css\">\n");
-	print ("<link href=\"../../gd/acss/mg.css\" rel=\"stylesheet\" type=\"text/css\">\n");
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/fn.css\" rel=\"stylesheet\" type=\"text/css\">\n");
+	print ("<link href=\"$docpath/acss/mg.css\" rel=\"stylesheet\" type=\"text/css\">\n");
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<script src=\"$docpath/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Enzyme Chooser</title></head>\n");
 print <<EOM;
@@ -28,7 +28,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Enzyme Chooser</a></div>");
 	print $query->startform(-method=>'post', -name=>'form1', -action=>'./gdEnzChooser.cgi');
 
@@ -39,7 +39,7 @@ if ($query->param('first') == 0)
 	print ("and annotated list of enzymes that match the criteria you specify.<br>");
 	print space(2), ("&bull;GeneDesign uses a non-redundant list of restriction enzymes (one isoschizomer per site).<br>\n");
 	print space(2), ("&bull;Price is measured in 2004 US dollars from the NEB catalog.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/enzcho.html\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/enzcho.html\">manual</a> for more information.\n");
 	print ("</div>");
 	print ("\n<div id=\"gridgroup0\"> What sort of thing do you like to see in an enzyme?<div id=\"critbox\">\n ");
 	enzmenu();	
@@ -100,7 +100,7 @@ else
 	
 	print ("<div id=\"notes\">");
 	print ("There are $num enzymes that fit your criteria.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/enzcho.html\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/enzcho.html\">manual</a> for more information.\n");
 	print ("</div>");
 
 	print ("<div id=\"gridgroup0\">\n");

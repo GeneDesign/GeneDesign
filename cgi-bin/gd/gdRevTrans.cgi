@@ -10,10 +10,10 @@ print $query->header;
 
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/mg.css\" rel=\"stylesheet\" type=\"text/css\">\n");		
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/mg.css\" rel=\"stylesheet\" type=\"text/css\">\n");		
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<script src=\"$docpath/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Reverse Translation</title></head>\n");
 print <<EOM;
@@ -28,7 +28,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Reverse Translation</a></div>");
 	print $query->startform(-method=>'post', -action=>'./gdRevTrans.cgi', -enctype=>'application/x-www-form-urlencoded', -name=>"form1");
 if ($query->param('1aaseq') eq '')
@@ -38,7 +38,7 @@ if ($query->param('1aaseq') eq '')
 	print ("Your amino acid sequence will be reverse translated to nucleotides using the codon definitions that you specify.<br><em>Please Note:</em><br> ");
 	print space(2), ("&bull;The default codon in each pulldown menu is the most optimal codon for expression in the selected organism.<br>");
 	print space(2), ("&bull;If you input a codon table the pulldowns will be ignored.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/revtrans.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/revtrans.html\" target=\"blank\">manual</a> for more information.\n");
 
 	print ("</div>");
 	print ("\n<div id=\"gridgroup0\">\n");
@@ -125,7 +125,7 @@ else
 		
 		print ("<div id=\"notes\" style=\"text-align:center;\">");
 		print ("Your amino acid sequence has been successfully reverse translated to nucleotides.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/revtrans.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/revtrans.html\" target=\"blank\">manual</a> for more information.\n");
 		print ("</div>");
 		print ("<input type=\"hidden\" name=\"1aaseq\" value=\"$seq2\">");
 		print ("<input type=\"hidden\" name=\"org\" value=\"$org\">");

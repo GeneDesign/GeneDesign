@@ -4,9 +4,11 @@ use POSIX qw(log10);
 require Exporter;
 
 @ISA = qw(Exporter);
-@EXPORT = qw(hairpins count melt nntherm compareseqs ezalign translate transregex revtrans getcods getaaa codopt stopfinder orffinder 
+@EXPORT = qw($docpath hairpins count melt nntherm compareseqs ezalign translate transregex revtrans getcods getaaa codopt stopfinder orffinder 
 				complement changeup optimize organism cleanup randDNA siteload sitelength siterunner siteseeker regres mutexclu);
-			
+		
+our $docpath = "../../documents/gd";
+
 ###### Functions for Sequence Analysis
 ##-count		: given a string of nucleotides, returns an array with base count A T C G N, purine, pyrimidine, and nonN non ATCG bases.
 ##

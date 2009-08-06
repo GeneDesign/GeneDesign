@@ -7,10 +7,10 @@ $query = new CGI;
 print $query->header;
 	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
 	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/fn.css\" rel=\"stylesheet\" type=\"text/css\">\n");
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
+	print ("<link href=\"$docpath/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
+	print ("<link href=\"$docpath/acss/fn.css\" rel=\"stylesheet\" type=\"text/css\">\n");
+	print ("<link href=\"$docpath/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
+	print ("<script src=\"$docpath/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
 	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
 	print ("<title>GeneDesign: Codon Juggling</title></head>\n");
 print <<EOM;
@@ -25,7 +25,7 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 EOM
 	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
+	print ("<div id=\"toppa\"><a href=\"$docpath/index.html\"><img src=\"$docpath/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
 	print ("<a class=\"headli\">Codon Juggling</a></div>");
 	print $query->startform(-method=>'post', -action=>'./gdCodJug.cgi', -name=>"form1");
 
@@ -39,7 +39,7 @@ if ($query->param('nseq') eq '' && $query->param('passnucseq') eq '')
 	print ("translated amino acid sequence. You will be presented with the four new sequences and an alignment at the next screen.<br><em>Please Note:</em><br> ");
 	print space(2), ("&bull;The only frame that is considered inviolable is frame 1, which will be determined by the first three nucleotides of your sequence.<br>");
 	print space(2), ("&bull;Ambiguous nucleotides and non-nucleotide characters will be removed.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/codjug.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/codjug.html\" target=\"blank\">manual</a> for more information.\n");
 	print ("</div>");
 	%organism = (0=> "No Optimization", 1 => 'H. sapiens', 2 => 'S. cerevisiae', 3 => 'E. coli', 5 => 'C. elegans' );# 4 => 'M. musculus');
 	print ("<div id=\"gridgroup0\">\nYour nucleotide sequence:<br>\n");
@@ -85,7 +85,7 @@ else
 	print ("The <strong>Next Most Optimized</strong> sequence uses the most optimal codon that is not the original codon. This algorithm will not be applied if organism is undefined.<br> \n");
 	print ("The <strong>Random</strong> sequence uses a random codon that is not the original codon. No optimization is applied.<br><br>\n");
 	print ("You can take any one of these sequences to another module by clicking the appropriate button.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/codjug.html\" target=\"blank\">manual</a> for more information.\n");
+	print ("See the <a href=\"$docpath/Guide/codjug.html\" target=\"blank\">manual</a> for more information.\n");
 	print ("</div>\n\n");
 
 
