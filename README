@@ -1,0 +1,6 @@
+To Install:
+	Place the gd/ folder in cgi-bin directory in the CGI-EXECUTABLES directory of your webserver.
+	Place the gd/ folder in documents directory the DOCUMENTS directory of your webserver
+	Change the $docpath variable on line 10 of PRISM.pm to be the relative path from the CGI-EXECUTABLES gd folder to the DOCUMENTS folder
+	Change the links in index.html
+
