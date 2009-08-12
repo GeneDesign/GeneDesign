@@ -1,184 +1,189 @@
 #!/usr/bin/perl
-
-use PRISM;
+use strict;
 use CGI;
-use PMLol;
-$query = new CGI;
+use PML;
+use List::Util qw(first);
+use GeneDesign;
+
+my $CODON_TABLE = define_codon_table(1);
+my $RE_DATA = define_sites("<newenz.txt");
+
+my $query = new CGI;
 print $query->header;
 
-	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
-	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/tm.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
-	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
-	print ("<title>GeneDesign: Sequence Analysis</title></head>\n");
+my @styles = qw(re tm);
+my @nexts  = qw(SSIns SSRem OligoDesign toCodJug);
+gdheader("Sequence Analysis", "gdSeqAna.cgi", \@styles);
+my $nextsteps = next_stepper(\@nexts, 5);
+
+if ($query->param('nucseq') eq '' && $query->param('PASSNUCSEQUENCE') eq '')
+{
 print <<EOM;
-<script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
-<script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-9136796-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
+				<div id="notes">
+					<strong>To use this module you need at least one nucleotide sequence.</strong><br>
+					This module is for the analysis of nucleotide sequences. Your nucleotide sequence(s) will be analyzed for base content, 
+					Tm, the presence of restriction sites, and open reading frames.<br>
+					<em>Please Note:</em><br>
+					&nbsp;&nbsp;&bull;If you wish to compare a list of sequences, make sure they are all on separate lines and check 'oligo list'.<br>
+					See the <a href="$docpath/Guide/seqana.html" target="blank">manual</a> for more information.
+				</div>
+				<div id="gridgroup0">
+					Enter your nucleotide sequence(s):<br>
+					<textarea name="nucseq" rows="6" cols="100"></textarea><br>
+					<input type="radio" name="kind" value="oligo list">List of Oligos
+					<input type="radio" name="kind" value="single sequence" checked="true">Single Sequence
+					<div id="gridgroup1" align ="center" style="position:absolute;top:150;">
+						<input type="submit" name=".submit" value=" Analyze " />
+					</div>
+				</div>
 EOM
-	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
-	print ("<a class=\"headli\">Sequence Analysis</a></div>");
-	print $query->startform(-method=>'post', -action=>'./gdSeqAna.cgi', -name=>"form1");
+	closer();
+}
 
-if ($query->param('nucseq') eq '' && $query->param('passnucseq') eq '')
-{
-	print ("<div id=\"notes\">");
-	print ("<strong>To use this module you need at least one nucleotide sequence.</strong><br>\n");
-	print ("This module is for the analysis of nucleotide sequences. Your nucleotide sequence(s) will be analyzed for base content, Tm, the presence ");
-	print ("of restriction sites, and open reading frames.<br>");
-	print space(2), ("&bull;If you wish to compare a list of sequences, make sure they are all on separate lines and check 'oligo list'.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/seqana.html\" target=\"blank\">manual</a> for more information.\n");
-	print ("</div>");
-
-	print ("<div id=\"gridgroup0\">\nEnter your nucleotide sequence(s):<br>\n");
-	print $query->textarea(-name=>'nucseq', -rows=>6, -columns=>100), break(1);
-	print $query->radio_group(-name=>'kind', -values=>['oligo list', 'single sequence'], -default=>'single sequence');
-	print ("<div id=\"gridgroup1\" align =\"center\" style=\"position:absolute; top:150; \">\n");
-	print $query->submit(-value=>" Analyze ");
-	print ("</div>\n</div>\n");
-	print $query->endform, $query->end_html;
-} 
 else
 {
-$kind = $query->param('kind');
-if ($kind ne 'oligo list')
-{
-	print ("<div id=\"notes\">");
-	print ("For a description of the formulas used, see the manual.<br>");
-	print space(2), ("&bull;You don't have to go back to put in a new sequence.  Simply type or paste the new sequence into the box and hit 'Analyze Again'.\n");
-	print ("</div>");
-
-	$benchstart = (times)[0];
-	$nucseq = $query->param('passnucseq') if ($query->param('passnucseq') ne '');
-	$nucseq = $query->param('nucseq') if ($query->param('passnucseq') eq '');
-	$nucseq = cleanup($nucseq);
-	@bcou = count($nucseq); 
-	$GC = int(((($bcou[3]+$bcou[2])/$bcou[8])*100)+.5);
-	$AT = int(((($bcou[0]+$bcou[1])/$bcou[8])*100)+.5);
-	@melty  = (melt($nucseq, 1), melt($nucseq, 2), melt($nucseq, 3), melt($nucseq, 4), melt($nucseq, 5), melt($nucseq, 6));
-	@thermy = nntherm($nucseq);
-	print "<br>Your sequence:<br>";
-	print $query->textarea(-name=>'passnucseq', -rows=>6, -columns=>100, -default=>$nucseq, -wrap=>'hard'), break(2);
-#print count and comp
-	print "_Base Count  : $bcou[8] bp ($bcou[0] A, $bcou[1] T, $bcou[2] C, $bcou[3] G)<br>";
-	print "_Composition : $GC% GC, $AT% AT", space(10), $query->submit(-value=>" Analyze Again "), break(2);
-
-#print melts if less than 100bp
-	if (length($nucseq) < 50)
+	my $kind = $query->param('kind');
+	if ($kind ne 'oligo list')
 	{
-		print "_&Delta;H: $thermy[0]<br>";
-		print "_&Delta;S: $thermy[1]<br>";
-		print "_&Delta;G: $thermy[2]<br><br>";
-	}
-	if (length($nucseq) < 100)
-	{
-		print "_Simple: $melty[0]<br>" if (length($nucseq) <=22);
-		print "_Bolton: $melty[1]<br>" if (length($nucseq) >=7);
-		print "_Primer: $melty[2]<br>" if (length($nucseq) >=10);
-		print "_NNTher: $melty[3]<br>" if (length($nucseq) >=10);
-		print "_GDAvg : $melty[5]<br><br>";
-	}
-	if (length($nucseq) > 10)
-	{
-#figure out uniques and absents
-	foreach $t (sort (siterunner(2, $nucseq)))
-	{	
-		@temp = siteseeker($t, $nucseq);
-		$borders{$temp[0]} = $t;
-	}
-	@abss = sort (siterunner(1, $nucseq));
-	print ("<div id=\"reswrap\">");
-	print ("<div id=\"abssite\"><strong>Absent Sites</strong><br>@abss</div>");
-	print ("<div id=\"seqwrap\"><strong>Unique Sites</strong>");
-	print ("<div id=\"genecol\">");
-	foreach $r (sort {$a <=> $b} keys %borders)
-	{
-		$pos = int(($r/$bcou[8])*500);
-		print ("<div id=\"uniline\" style=\"top: $pos;\"></div>");
-	}
-	for ($e = 0; $e <= 39; $e++)
-	{
-		print "<div id = \"namebox\" style=\"top:", $e*12.5, ";\">";
-		foreach $r (sort {$a <=> $b} keys %borders)
+		my $nucseq = $query->param('PASSNUCSEQUENCE') ?	cleanup($query->param('PASSNUCSEQUENCE'), 0)	:	cleanup($query->param('nucseq'), 0);
+		my $bcou = count($nucseq);
+		my @melt_data  = (melt($nucseq, 1), melt($nucseq, 2), melt($nucseq, 3), melt($nucseq, 4));
+		my @therm_data = ntherm($nucseq);
+		my (@results, @abss, @lines, @names, @orfs, @stops) = ((), (), (), (), (), (), ());
+		my $spacer = break(40);
+		my $scale = 500;
+		if (length($nucseq) < 50)
 		{
-			$pos = int(($r/$bcou[8])*500);
-			print "$borders{$r} ($r) " if (($pos <= ($e+1)*12.5) && $pos > $e*12.5);
+			push @results, "_&Delta;H: $therm_data[0]<br>_&Delta;S: $therm_data[1]<br>_&Delta;G: $therm_data[2]<br><br>";
 		}
-		print "</div>\n";
-	}
-	print ("</div></div>");
-#figure out ORFs and stops
-	print ("<div id =\"orfwrap\"><strong>ORFs</strong><br>");
-	print ("<div id=\"orfcol\">\n");
-	for ($g = 0; $g < 3; $g++)
-	{
-		foreach $r (orffinder($nucseq, $g+1))
+		if (length($nucseq) < 100)
 		{
-			$top = $1 if ($r =~ /([0-9]+)V[0-9]+/);			$hei = $1 if ($r =~ /[0-9]+V([0-9]+)/);
-			$post = int(((($top*3)-2)/$bcou[8])*500);		$posh = int(((($hei*3))/$bcou[8])*500);
-			$tiff = $post - 0;	$post = 0 if ($top == 1);	$posh += $tiff if ($top == 1);
-			$posh = 500-$post+$diff if ($hei == 500);	
-			print "<div id=\"orfbox\" style=\"top:$post; left:", 10*$g, "; height:$posh;\"></div>\n";
+			push @results, "_Simple: $melt_data[0]<br>" if (length($nucseq) <=22);
+			push @results, "_Bolton: $melt_data[1]<br>" if (length($nucseq) >=7);
+			push @results, "_Primer: $melt_data[2]<br>" if (length($nucseq) >=10);
+			push @results, "_NNTher: $melt_data[3]<br>" if (length($nucseq) >=10);
 		}
-		
-		foreach $r (stopfinder($nucseq, $g+1))
+		if (length($nucseq) > 10)
 		{
-			$pos = int(((($r*3)-2)/$bcou[8])*500);
-			print "<div id=\"stopbox\" style=\"top:$pos; left:", 10*$g, ";\"></div>\n";
+		#figure out uniques and absents
+			my $SITES_STATUS = define_site_status($nucseq, $$RE_DATA{REGEX});
+			my %borders;
+			foreach my $enz (grep {$$SITES_STATUS{$_} == 1}	keys %$SITES_STATUS)
+			{	
+				my $temphash = siteseeker($nucseq, $enz, $$RE_DATA{REGEX}->{$enz});
+				my $pos = first {1} keys %$temphash;
+				$borders{$pos} = $enz;
+			}
+			@abss = sort (grep {$$SITES_STATUS{$_}  == 0} keys %$SITES_STATUS);
+
+			my $preline = "\t\t\t\t\t\t\t<div id=\"uniline\" style=\"top:";
+			@lines = map { $preline . int(($_/$$bcou{'length'})*$scale) . ";\"></div>\n" } keys %borders;
+			for my $e (0..39)
+			{
+				push @names, "\t\t\t\t\t\t\t<div id = \"namebox\" style=\"top:", $e*12.5, ";\">";
+				foreach my $r (sort {$a <=> $b} keys %borders)
+				{
+					my $pos = int(($r/$$bcou{'length'})*$scale);
+					push @names, "$borders{$r} ($r)" if (($pos <= ($e+1)*12.5) && $pos > $e*12.5);
+				}
+				push @names, "</div>\n";
+			}
+		#figure out ORFs and stops
+			foreach my $orf (grep{$_->[0] > 0} @{orf_finder($nucseq, $CODON_TABLE)})
+			{
+				my $frame = 10 * ($orf->[0] - 1);
+				my $top = (3 * $orf->[1]) - 1;
+				my $hei = 3 * ($orf->[2] + 1);
+				my $post = int( ($top / $$bcou{"length"}) * $scale );
+				my $posh = int( ($hei / $$bcou{"length"}) * $scale );
+				push @orfs, "\t\t\t\t\t\t\t<div id=\"orfbox\" style=\"top:$post;left:$frame;height:$posh;\"></div>\n";
+			}
+			for my $frame (0..2)
+			{
+				foreach my $stop (pattern_finder($nucseq, "*", 2, $frame+1, $CODON_TABLE))
+				{
+					my $pos = int((((($stop+1)*3)-2)/$$bcou{"length"})*$scale);
+					push @stops, "\t\t\t\t\t\t\t<div id=\"stopbox\" style=\"top:$pos;left:", 10*$frame, ";\"></div>\n";
+				}
+			}
 		}
+print <<EOM;
+				<div id="notes">
+					For a description of the formulas used, see the manual.<br>
+					<em>Please Note:</em><br>
+					&nbsp;&nbsp;&bull;You do not have to go back to put in a new sequence.  Simply type or paste the new sequence into the box and hit 'Analyze Again'.<br>
+				</div>
+				<br>Your sequence:<br>
+				<textarea name="PASSNUCSEQUENCE" rows="6" cols="100" -wrap="hard">$nucseq</textarea><br><br>
+				&nbsp;_Base Count  : $$bcou{'length'} bp ($$bcou{'A'} A, $$bcou{'T'} T, $$bcou{'C'} C, $$bcou{'G'} G)<br>
+				&nbsp;_Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT<br><br>
+				@results
+				<input type="submit" name=".submit" value=" Analyze Again" />
+				<div id="reswrap">
+					<div id="abssite">
+						<strong>Absent Sites</strong><br>
+						@abss
+					</div>
+					<div id="seqwrap">
+						<strong>Unique Sites</strong>
+						<div id="genecol">
+							@lines
+							@names
+						</div>
+					</div>
+					<div id ="orfwrap">
+						<strong>ORFs</strong><br>
+						<div id="orfcol">
+							@orfs
+							@stops
+						</div>
+					</div>
+				</div>
+				$spacer
+				<div id="gridgroup1" align ="center" style="position:relative;">
+					$nextsteps
+				</div>
+EOM
+	closer();
 	}
-	print "</div></div></div>\n", break(40), space(40);
-	}
-	print ("<div id=\"gridgroup1\" align =\"center\" style=\"position:relative;\">\n");
-	print ("<div id=\"notes\" style=\"text-align:center;\">");
-	print ("You can take this nucleotide sequence to another module.");
-	print ("</div>");	
-	print break(1), "<strong>Take this sequence to</strong>";
-	print break(1), $query->submit(-value=>'Codon Juggling', -onclick=>'toCodJug();'), "<-- to codon juggling";
-	print break(1), $query->submit(-value=>'Silent Site Insertion', -onclick=>'SSIns();'), "<-- to insert restriction sites";
-	print break(1), $query->submit(-value=>'Silent Site Removal', -onclick=>'SSRem();'), "<-- to remove restriction sites";
-	print break(1), $query->submit(-value=>'Oligo Design', -onclick=>'OligoDesign();'), "<-- to get a list of oligos for assembly";
-	print ("<input type=\"hidden\" name=\"passnucseq\" value=\"$nucseq\">");
-
-	print $query->endform, $query->end_html;
-}
-else
-{
-	print ("<div id=\"notes\">");
-	print ("For a description of the formulas used, see the manual.<br>");
-	print ("</div>");
-
-	$r = 0;
-	$benchstart = (times)[0];
-	$nucseq = $query->param('nucseq');
-	@nucarr = split('\n', $nucseq);
-	foreach $t (@nucarr)
+	
+	
+	else
 	{
-		$h = $r+1;
-		$h = '0' . $h while(length($h) < (length(@nucarr-0)));
-		$m = cleanup($t, 1);
-		@bcou = count($m); 
-		$GC = int(((($bcou[3]+$bcou[2])/$bcou[8])*100)+.5);
-		$AT = int(((($bcou[0]+$bcou[1])/$bcou[8])*100)+.5);
-		@melty  = (melt($m, 1), melt($m, 2), melt($m, 3), melt($m, 4), melt($m, 5));
-		@thermy = nntherm($m);
-		print "$m, \#$h ", space(1), "$bcou[8] bp", space(3);
-		print "$GC% GC", space(2), "$AT% AT", space(3);
-		print "b ", int($melty[1]+.5);
-		print space(2), "p ", int($melty[2]+.5);
-		print space(2), "n ", int($melty[3]+.5);
-		print break(1);
-		$r++;
+		my $r = 0;
+		my $max = 0;
+		my @report;
+		my @nucarr = split('\n', $query->param('nucseq'));
+		foreach (@nucarr)
+		{
+			$max = length($_) if (length($_) > $max);
+		}
+		foreach my $oligo (@nucarr)
+		{
+			my $num = $r+1;
+			$num = '0' . $num while( length($num) < length(scalar(@nucarr)) );
+			my $oligo = cleanup($oligo, 1);
+			my $bcou = count($oligo);
+			my @melt_data  = (melt($oligo, 1), melt($oligo, 2), melt($oligo, 3), melt($oligo, 4));
+			my @therm_data = ntherm($oligo);
+			my $answer = $num . space(2) . "\t"  . $oligo . space($max - length($oligo) + 2) . "\t"   . $$bcou{length} . space(2). "\t" ;
+			$answer .= $$bcou{GCp} . space(2). "\t"  . $$bcou{ATp} . space(2). "\t"  . int($melt_data[1]+.5);
+			$answer .= space(2) . "\t"  . int($melt_data[2]+.5) . space(2).  "\t" . int($melt_data[3]+.5) . "<br>";
+			$r++;
+			push @report, $answer;
+		}
+		my $header = "\#" . space(length(scalar(@nucarr))+1) . "\t" . "oligo" . space($max - 3). "\t" . "bp" . space(2) . "\t" ;
+		$header .= "GC" . space(2) . "\t"  . "AT" . space(2) . "\t"  . "_b" . space(2) . "\t" .  "_p" . space(2) .  "\t" . "_n" . "<br>";
+		unshift @report, $header;
+print <<EOM;
+				<div id="notes">
+					For a description of the formulas used, see the manual.<br>
+				</div>
+				<br>
+				<code>
+					@report
+				</code>
+EOM
+		closer();
 	}
-}
 }

@@ -1,79 +1,65 @@
 #!/usr/bin/perl
-
-use PRISM;
+use strict;
+use GeneDesign;
 use CGI;
-use PMLol;
-use RESite;
-$query = new CGI;
+use PML;
+
+my $query = new CGI;
 print $query->header;
 
-	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
-	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
-	print ("<title>GeneDesign: Random DNA Generator</title></head>\n");
-print <<EOM;
-<script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
-<script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-9136796-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
-EOM
-	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
-	print ("<a class=\"headli\">Random DNA Generator</a></div>");
-	print $query->startform(-method=>'post', -action=>'./gdRandDNA.cgi');
+my $CODON_TABLE	 = define_codon_table(1);
 
-if ($query->param('atcontent') == 0)
+my @styles = qw(re);
+gdheader("Random DNA Generator", "gdRandDNA.cgi", \@styles);
+
+if ($query->param('ATCONTENT') == 0)
 {
-	print ("<div id=\"notes\">");
-	print ("This module is for the generation of random sequences of DNA. You can specify A+T content, length, and the number of ");
-	print ("sequences you wish to have returned.<br>");
-	print space(2), ("&bull;If you give me ridiculous numbers it will take forever and may crash your browser.<br>\n");
-	print ("See the <a href=\"../../gd/Guide/randna.html\">manual</a> for more information.\n");
-	print ("</div>");
-	print break(3);
-	
-	print "A+T content:", $query->textfield(-name=>'atcontent', -default=>'50', -size=> 5, -maxlength=>3), "%<br>";
-	print "Sequence length:", $query->textfield(-name=>'seqleng', -default=>'100', -size=>5, -maxlength=>4), "bp<br>";
-	print "Number to Generate:", $query->textfield(-name=>'gennum', -default=>'5', -size=>5, -maxlength=>3), "<br>";
-	print break(2);
-	print $query->checkbox(-name=>'stops', -value=>"1", -label=>"Allow stop codons in first frame");
-	print break(3);
-	print $query->submit(-value=>"Generate Sequences"), break(5);
-	$query->endform;
-	$query->end_html;
+print <<EOM;
+				<div id="notes">
+					<strong>This module is for the generation of random sequences of DNA.</strong>
+					You can specify A+T content, length, and the number of sequences you wish to have returned.<br>
+					&nbsp;&nbsp;&bull;If you give me ridiculous numbers it will take forever and may crash your browser.<br>
+					See the <a href="$docpath/Guide/randna.html">manual</a> for more information.
+				</div><br><br><br>
+				<div id="gridgroup0">
+					A+T content:
+					<input type="text" name="ATCONTENT" value="50" size="5" maxlength="3" />%<br>				
+					Sequence length:
+					<input type="text" name="SEQLENG" value="100" size="5" maxlength="4" />bp<br>
+					Number to Generate:
+					<input type="text" name="GENNUM" value="5" size="5" maxlength="3" /><br><br><br>	
+					<input type="checkbox" name="STOPS" value="1" />Allow stop codons in first frame<br><br><br>	
+					<div id="gridgroup1" align ="center" style="position:absolute;top:150;">
+						<input type="submit" name=".submit" value=" Next Step: Results " /><br><br><br><br><br>
+					</div>
+				</div>
+EOM
+	closer();
 }
+
 else
 {
-##-Get Selection Variables
-	$atcont = $query->param('atcontent');
-	$tarlen = $query->param('seqleng');
-	$gennum = $query->param('gennum');
-	$stopal = $query->param('stops');
-	$stopal = 2 if !($query->param('stops'));
-	for ($x = 0; $x < $gennum; $x++)
-	{
-		$temparr[$x] = randDNA($tarlen, $atcont, $stopal);
-	}
+	my $atcont = $query->param('ATCONTENT');
+	my $tarlen = $query->param('SEQLENG');
+	my $gennum = $query->param('GENNUM');
+	my $stopal = $query->param('STOPS')	?	$query->param('STOPS')	:	2;
+	my $stopallow = $stopal == 1	?	"were"	:	"were not";
 	
-	print ("<div id=\"notes\">");
-	print ("I have generated $gennum sequences of $tarlen bp that are $atcont % A+T.<br>");
-	print ("Stop codons were not allowed in the first frame.<br>") if $stopal ne "yes";
-	print space(2), ("&bull;Simply refresh this page for another $gennum random sequences with the same properties.<br>\n");
-	print ("</div>");
-
-	print ("<div id=\"wrapper\">\n");
-	$j = 1;
-	foreach $m (@temparr)
+	my @temparr;
+	for my $x (1..$gennum)
 	{
-		print "$j: ", $m, "<br><br>\n";
-		$j++;
+		$temparr[$x] = "$x: " . randDNA($tarlen, $atcont, $stopal, $CODON_TABLE) . "<br><br>\n\t\t\t\t\t";
 	}
-	print ("</div>\n</body>\n</html>\n");
+
+print <<EOM;
+				<div id="notes">
+					I have generated $gennum sequences of $tarlen bp that are $atcont % A+T.<br>
+					Stop codons $stopallow allowed in the first frame.<br>
+					&nbsp;&nbsp;&bull;Simply refresh this page for another $gennum random sequences with the same properties.<br>
+				</div>
+				<div id="wrapper">
+					@temparr
+				</div>
+EOM
+	closer();
 }

@@ -1,54 +1,45 @@
 #!/usr/bin/perl
-
-use PRISM;
+use strict;
+use GeneDesign;
+use ResSufTree;
 use CGI;
-use RESite;
-use PMLol;
-$query = new CGI;
+use PML;
+
+my $query = new CGI;
 print $query->header;
-	print ("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
-	print ("<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">\n");
-	print ("<link href=\"../../gd/acss/re.css\" rel=\"stylesheet\" type=\"text/css\">\n");
-	print ("<link href=\"../../gd/acss/mg.css\" rel=\"stylesheet\" type=\"text/css\">\n");	
-	print ("<link href=\"../../gd/acss/pd.css\" rel=\"stylesheet\" type=\"text/css\">\n");
-	print ("<link href=\"../../gd/acss/fn.css\" rel=\"stylesheet\" type=\"text/css\">\n");		
-	print ("<link href=\"../../gd/acss/", cssbrowser(), ".css\" rel=\"stylesheet\" type=\"text/css\">\n") if (cssbrowser() ne '');
-	print ("<script src=\"../../gd/scripts.js\" type=\"text/javascript\" language=\"Javascript\"></script>\n");
-	print ("<META NAME=\"robots\" CONTENT=\"noindex, nofollow, noarchive\">\n");
-	print ("<title>GeneDesign: Short Sequence Insertion</title></head>\n");
-print <<EOM;
-<script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
-<script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-9136796-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
-EOM
-	print ("<body><div id=\"bigbox\">\n");
-	print ("<div id=\"toppa\"><a href=\"../../gd/index.html\"><img src=\"../../gd/img/gdlogobanner.gif\" align = \"absmiddle\"></a>\n");
-	print ("<a class=\"headli\">Short Sequence Insertion</a></div>");
-	print $query->startform(-method=>'POST', -action=>'./gdOliIns.cgi', -name=>"form1");
+
+my $CODON_TABLE	 = define_codon_table(1);
+
+my @styles = qw(re mg pd fn);
+my @nexts  = qw(SSIns SSRem SeqAna OligoDesign);
+my $nextsteps = next_stepper(\@nexts, 5);
+
+gdheader("Silent Short Sequence Insertion", "gdOliIns.cgi", \@styles);
+
 if ($query->param('swit') eq '' && $query->param('remseq') eq '')
 {
-	print ("<div id=\"notes\">");
-	print ("<strong>To use this module you need two nucleotide sequences, large and small.  An organism name is optional.</strong><br>\n");
-	print ("Your nucleotide sequence will be searched for the short sequence you provide and as many iterations as possible will be inserted by changing whole codons ");
-	print ("without changing the amino acid sequence.<br><br> ");
-#	print ("See the <a href=\"../../gd/Guide/shortr.html\">manual</a> for more information.\n");
-	print ("</div>");
-	$nucseq = $query->param('passnucseq') if ($query->param('passnucseq') ne '');
-	$nucseq = $query->param('nucseq') if ($query->param('passnucseq') eq '');
-	print ("<div id=\"gridgroup0\">\nYour nucleotide sequence:<br>\n");
-	print $query->textarea(-name=>'nuseq', -rows=>6, -columns=>100, -default=>$nucseq), break(1);
-	print "Sequence to be Inserted: ", $query->textfield(-name=>'remseq', -columns=>20), break(2);
-	print ("<div id=\"gridgroup1\" align =\"center\" style=\"position:absolute; top:170; \">\n");
-	print $query->submit(-value=>" Insert short sequences ");
-	print ("</div>\n</div>\n");
-	print $query->endform, $query->end_html;
+	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	$query->param('nucseq');
+	my $readonly = $nucseq	?	'readonly = "true"'	:	'';
+print <<EOM;
+				<div id="notes">
+					<strong>To use this module you need two nucleotide sequences, large and small.  An organism name is optional.</strong><br>
+					Your nucleotide sequence will be searched for the short sequence you provide and as many iterations as possible will be inserted by changing whole codons 
+					without changing the amino acid sequence.<br><br>
+					See the <a href="$docpath/Guide/shortr.html">manual</a> for more information.
+				</div>
+				<div id="gridgroup0">
+					Your nucleotide sequence:<br>
+					<textarea name="nuseq"  rows="6" cols="100" $readonly>$nucseq</textarea><br>
+					Sequence to be Inserted: 
+					<input type="text" name="remseq"  columns="20" /><br><br>
+					<div id="gridgroup1" align ="center" style="position:absolute; top:170; ">
+						<input type="submit" name=".submit" value=" Insert short sequences " />
+					</div>
+				</div>
+EOM
+	closer();
 }
+
 elsif ($query->param('swit') eq '' && ($query->param('nuseq') eq '' || length($query->param('remseq')) >= length($query->param('nuseq')) || length($query->param('remseq')) < 2 ))
 {
 	print ("<div id=\"notes\">");
@@ -58,40 +49,26 @@ elsif ($query->param('swit') eq '' && ($query->param('nuseq') eq '' || length($q
 	print break(2), ("<input type=\"button\" value=\"Back\" onClick=\"history.go(-1)\">");
 	print ("</div>");
 }
+
 elsif ($query->param('firstaround') ne 'no')
 {
-	my %inshash; my %therehash;
-	$remseq = cleanup($query->param('remseq'), 0);
+	@remseqs = split(/[ \,]/, $query->param('remseq'));
+	print "REMSEQS @remseqs<br><br>";
 	$nucseq = cleanup($query->param('nuseq'), 0);
-	$oldnuc = $nucseq;
-	$aaseq  = translate($nucseq);
-	@aaarr  = split('', $aaseq);
-	my @answer;
-	@allpos = transregex($remseq);	
-	foreach $rg (@allpos)
-	{	
-		$rh = regres($rg, 2);
-		while ($aaseq =~ /(?=$rh)/ig)
-		{
-			$sitsta = (pos $aaseq) +1;
-			$currstring = "$sitsta: $remseq $rg";
-			$inshash{$sitsta} = $currstring if ($sitsta != '');
-		}
-	}
-	push @thisfreakyarr, $remseq;
-	while ($nucseq =~ /(?=$remseq)/ig)
-	{
-		$sitsta = int(((pos $nucseq)) / 3)+1;
-		$currstring = "$sitsta: $remseq";
-		push @answer2, $currstring if ($sitsta != '');
-		$therehash{$sitsta} = $currstring if ($sitsta != '');
-	}
-	foreach $treg (sort {$a <=> $b} keys %inshash)	{	push @answer, $inshash{$treg} unless (exists($therehash{$treg}));	}
+	$aaseq  = translate($nucseq, 1, $CODON_TABLE);
+
+	push @finarr, "$_ . $remseq" foreach (amb_translation($remseq, $CODON_TABLE));
+	my %hashofpeps;
+	my $trnrentree = new_aa ResSufTree();	
+	$trnrentree->add_aa_paths($_, \%hashofpeps) foreach (@finarr);
+	@array = $trnrentree->find_aa_paths($aaseq);
+	push @hits, $_ . " . " foreach (@array);
+	
 	$len = length($nucseq);
 	@aa = split('', translate($nucseq));
 	@nuc = split('', $nucseq);
-	$organism = $query->param('org');
-#	print ("$nucseq, ", translate($nucseq), ", $remseq, $organism<br>\n@answer\n<br>@answer2<br>");
+	$organism = $query->param('MODORG');
+
 	print ("<div id=\"notes\">");
 	print "\nI was asked to insert the sequence $remseq. ", (@answer2-0), " instances are already present and will not be annotated here. ";
 	print @answer-0, " possible insertion sites have been found.";
@@ -101,7 +78,7 @@ elsif ($query->param('firstaround') ne 'no')
 	print "</div>"; 
 
 	print ("<div id=\"gridgroup0\">\n");
-	@hits = 	annpsite(\@aaarr, 1, \@answer, \@thisfreakyarr); 
+	annpsite($aaseq, \@array); 
 	$top += 500;
 	foreach $trep (@answer)
 	{
@@ -116,6 +93,7 @@ elsif ($query->param('firstaround') ne 'no')
 	print ("   <input type=\"hidden\" name=\"firstaround\" value=\"no\">\n");
 	print (" </div>");
 }
+
 if ($query->param('swit') eq 'all' || $query->param('swit') eq 'some')
 {
 	$org = $query->param('org');
