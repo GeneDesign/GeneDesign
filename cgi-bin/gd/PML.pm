@@ -67,22 +67,22 @@ sub platform
 sub gdheader
 {
 	my ($name, $cginame, $arrref) = @_;
-	my $sheets = (cssbrowser() ne '')	?	"<link href=\"../../gd2/acss/" . cssbrowser() . ".css\" rel=\"stylesheet\" type=\"text/css\">\n"	:	"";
-	foreach my $tiv (@$arrref)	{ $sheets .= "\n" . tab(2) . "<link href=\"../../gd2/acss/$tiv.css\" rel=\"stylesheet\" type=\"text/css\">";	}
+	my $sheets = (cssbrowser() ne '')	?	"<link href=\"$linkpath/acss/" . cssbrowser() . ".css\" rel=\"stylesheet\" type=\"text/css\">\n"	:	"";
+	foreach my $tiv (@$arrref)	{ $sheets .= "\n" . tab(2) . "<link href=\"$linkpath/acss/$tiv.css\" rel=\"stylesheet\" type=\"text/css\">";	}
 print <<EOM;
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 		$sheets
-		<script src="../../gd2/scripts.js" type="text/javascript" language="Javascript"></script>
+		<script src="$linkpath/scripts.js" type="text/javascript" language="Javascript"></script>
 		<META NAME="robots" CONTENT="noindex, nofollow, noarchive">
 		<title>GeneDesign: $name</title>
 	</head>
 	<body>
 		<div id="bigbox">
 			<div id="toppa">
-				<a href="../../gd2/index.html"><img src="../../gd2/img/gdlogobanner.gif" align = "absmiddle"></a>
+				<a href="$docpath/index.html"><img src="$linkpath/img/gdlogobanner.gif" align = "absmiddle"></a>
 				<a class="headli">$name</a>
 			</div>
 			<form method="post" action="./$cginame" enctype="application/x-www-form-urlencoded" name="form1">
@@ -205,8 +205,8 @@ sub annpsite
 					($selsite{$curpos} eq $tiv)	?	print tab(7), "<option selected>&bull; $selsite{$curpos}</option>\n"	:	print tab(7), "<option>* $tiv</option>\n";
 				}
 				print tab(6), "</select>\n";
-				print tab(6), "<img id=\"dot$x\" style=\"left:$dotpos; z-index:325\" src=\"../../gd2/img/d$color.gif\">\n";
-				print tab(6), "<img id=\"line$x\" style=\"left:$linpos; z-index:175\" src=\"../../gd2/img/l$color.gif\">\n";
+				print tab(6), "<img id=\"dot$x\" style=\"left:$dotpos; z-index:325\" src=\"$docpath/img/d$color.gif\">\n";
+				print tab(6), "<img id=\"line$x\" style=\"left:$linpos; z-index:175\" src=\"$docpath/img/l$color.gif\">\n";
 			}
 		}
  		print tab(6), break(14), space(1);

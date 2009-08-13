@@ -119,6 +119,7 @@ else
 				my $framestart = ($grabbedpos) % 3;
 				my $critseg = substr($newnuc, $grabbedpos - $framestart, ((int(length($grabbedseq)/3 + 2))*3));
 				my $newcritseg = pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE, define_RSCU_values($org));
+#				print "$grabbedpos $$temphash{$grabbedpos} $critseg, $newcritseg<br>";
 				substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $enz, $$RE_DATA{REGEX}->{$enz})}) == 0);
 			}
 		}

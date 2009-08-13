@@ -16,7 +16,7 @@ my $nextsteps = next_stepper(\@nexts, 5);
 
 gdheader("Silent Short Sequence Insertion", "gdOliIns.cgi", \@styles);
 
-if ($query->param('swit') eq '' && $query->param('remseq') eq '')
+if ($query->param('swit') eq '' && $query->param('insseq') eq '')
 {
 	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	$query->param('nucseq');
 	my $readonly = $nucseq	?	'readonly = "true"'	:	'';
@@ -30,8 +30,8 @@ print <<EOM;
 				<div id="gridgroup0">
 					Your nucleotide sequence:<br>
 					<textarea name="nuseq"  rows="6" cols="100" $readonly>$nucseq</textarea><br>
-					Sequence to be Inserted: 
-					<input type="text" name="remseq"  columns="20" /><br><br>
+					Sequence(s) to be Inserted: <input type="text" name="insseq"  columns="20" /><br><br>
+					Also consider reverse complemented sequences <input type="checkbox" name="revcomp" value="1"><br><br>
 					<div id="gridgroup1" align ="center" style="position:absolute; top:170; ">
 						<input type="submit" name=".submit" value=" Insert short sequences " />
 					</div>
@@ -40,193 +40,136 @@ EOM
 	closer();
 }
 
-elsif ($query->param('swit') eq '' && ($query->param('nuseq') eq '' || length($query->param('remseq')) >= length($query->param('nuseq')) || length($query->param('remseq')) < 2 ))
-{
-	print ("<div id=\"notes\">");
-	print ("You need a nucleotide sequence.<br>") if ($query->param('nuseq') eq '');
-	print ("You need a short sequence to be inserted (at least two bp) <br> ") if ($query->param('remseq') eq '');
-	print ("Your short sequence should be shorter than your nucleotide sequence.<br>\n") if ($query->param('remseq') >= length($query->param('nuseq')));
-	print break(2), ("<input type=\"button\" value=\"Back\" onClick=\"history.go(-1)\">");
-	print ("</div>");
-}
-
 elsif ($query->param('firstaround') ne 'no')
 {
-	@remseqs = split(/[ \,]/, $query->param('remseq'));
-	print "REMSEQS @remseqs<br><br>";
-	$nucseq = cleanup($query->param('nuseq'), 0);
-	$aaseq  = translate($nucseq, 1, $CODON_TABLE);
-
-	push @finarr, "$_ . $remseq" foreach (amb_translation($remseq, $CODON_TABLE));
-	my %hashofpeps;
-	my $trnrentree = new_aa ResSufTree();	
-	$trnrentree->add_aa_paths($_, \%hashofpeps) foreach (@finarr);
-	@array = $trnrentree->find_aa_paths($aaseq);
-	push @hits, $_ . " . " foreach (@array);
-	
-	$len = length($nucseq);
-	@aa = split('', translate($nucseq));
-	@nuc = split('', $nucseq);
-	$organism = $query->param('MODORG');
-
-	print ("<div id=\"notes\">");
-	print "\nI was asked to insert the sequence $remseq. ", (@answer2-0), " instances are already present and will not be annotated here. ";
-	print @answer-0, " possible insertion sites have been found.";
-	print ("  <input type=\"submit\" value=\" Just insert the instances I have selected \" onClick=\"OliISum(0);\">\n");
-	print ("  <input type=\"submit\" value=\" Insert all possible instances \" onClick=\"OliISum(1);\">\n");
-	print break(1);
-	print "</div>"; 
-
-	print ("<div id=\"gridgroup0\">\n");
-	annpsite($aaseq, \@array); 
-	$top += 500;
-	foreach $trep (@answer)
+	if ($query->param('nuseq') eq '')
 	{
-		$tempstr = $trep . "\n";
-		push @answer3, $tempstr;
+		take_exception("You need a nucleotide sequence.<br>");
+		exit;
 	}
-	print ("   <input type=\"hidden\" name=\"org\" value=\"", $query->param('org'), "\">\n");
-	print ("   <input type=\"hidden\" name=\"swit\" value=\"some\">\n");
-	print ("   <input type=\"hidden\" name=\"remseq\" value=\"$remseq\">\n");
-	print ("   <input type=\"hidden\" name=\"nucseq\" value=\"$nucseq\">\n");
-	print ("   <input type=\"hidden\" name=\"allsites\" value=\"@answer3\">\n");
-	print ("   <input type=\"hidden\" name=\"firstaround\" value=\"no\">\n");
-	print (" </div>");
+	if ($query->param('insseq') eq '')
+	{
+		take_exception("You need a short sequence to be inserted (at least two bp) <br> ");
+		exit;
+	}
+	if ($query->param('insseq') >= length($query->param('nuseq')))
+	{
+		take_exception("Your short sequence should be shorter than your nucleotide sequence.<br>\n");
+		exit;
+	}
+	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	cleanup($query->param('nuseq'));
+	my $aaseq = translate($nucseq, 1, $CODON_TABLE);
+	my $org = $query->param('MODORG');
+	my @war2 = pattern_finder($nucseq, "*", 2, 1, $CODON_TABLE);
+	my $war3 = 1 if (@war2 && ((scalar(@war2) > 1 ) || (($war2[0] + 1) != length($aaseq))));
+	if ((substr($nucseq, 0, 3) ne 'ATG' || $war3) && $nucseq)
+	{
+print <<EOM;
+				<div id = "warn">
+					<strong>Warning:</strong> Your sequence is not a simple coding sequence.<br>
+					Either your sequence does not begin with ATG or your sequence has at least one internal stop codon in the first frame.<br>
+					It is still possible to manipulate this sequence but you should check to be sure that crucial features are not compromised.
+				</div>
+EOM
+	}
+	my @insseqs = split(/[\s\,]/, $query->param('insseq'));
+	print "insseqs @insseqs<br><br>";
+	my @finarr;
+	my $OL_DATA = define_oligos(\@insseqs, $query->param('revcomp'));
+
+
+	my ($t_arr, $t_hsh) = ([], {});
+	foreach my $oligo (@insseqs)	
+	{
+		my $site = $$OL_DATA{CLEAN}->{$oligo};
+		my $etis = complement($site, 1);
+		push @{$t_arr}, map {"$_ . $oligo"} amb_translation($site, $CODON_TABLE);
+		if ($etis ne $site && $query->param('revcomp') == 1)
+		{
+			push @{$t_arr}, map {"$_ . $oligo"} amb_translation($etis, $CODON_TABLE);
+		}
+	}
+	my $tree = new_aa ResSufTree();
+	$tree->add_aa_paths($_, $t_hsh) foreach (@{$t_arr});
+	my @array = $tree->find_aa_paths($aaseq); #looks like ("1: MlyI MSH", "1: PleI MSH"...)
+	my @hits = map {$_ . " . "} @array;
+	
+	my $len = length($nucseq);
+	my $organism = $query->param('MODORG');
+	my $results;
+	foreach my $insseq (@insseqs)
+	{
+		my $temphash = siteseeker($nucseq, $$OL_DATA{CLEAN}->{$insseq}, $$OL_DATA{REGEX}->{$insseq});
+		$results .= "I was asked to insert the sequence $insseq. " . scalar(keys %$temphash) ." instances are already present and will not be annotated here.<br>\n\t\t\t\t\t";
+	}
+	
+print <<EOM;
+				<div id="notes">
+					$results
+					<input type="submit" value=" Insert the instances I have selected " onClick="OliISum(0);">
+				</div>
+				<div id = "gridgroup0"><br>
+EOM
+#					<input type="submit" value=" Insert all possible instances " onClick="OliISum(1);"><br>
+	annpsite($aaseq, \@array);
+	my %hiddenhash = (swit => "some", insseq => join(" ", @insseqs), nucseq => $nucseq, firstaround => "no", org => $org, revcomp => $query->param('revcomp'));
+	my $hiddenstring = hidden_fielder(\%hiddenhash);
+print <<EOM;
+				</div>
+				$hiddenstring
+EOM
+	closer();
 }
 
-if ($query->param('swit') eq 'all' || $query->param('swit') eq 'some')
+elsif ($query->param('swit') eq 'all' || $query->param('swit') eq 'some')
 {
-	$org = $query->param('org');
-	$nucseq = $query->param('nucseq');
-	$aaseq = translate($nucseq);
-	$remseq = $query->param('remseq');
-	undef @newarr;
-	$rh = regres($remseq);
-	@aa = split('', translate($nucseq));
-	@nt = split('', $nucseq);	$nstring = 'NNNNNNNN';
-	if ($query->param('swit') eq 'all')
+	my $org = $query->param('org');
+	my $nucseq = $query->param('nucseq');
+	my $aaseq = translate($nucseq, 1, $CODON_TABLE);
+	my @insseqs = split(/[\s]/, $query->param('insseq'));
+	my $newnuc = $nucseq;
+	my $OL_DATA = define_oligos(\@insseqs, $query->param('revcomp'));
+	my $result = qr/[\W ]*([A-Za-z0-9]+) ([A-Z]+)/;
+	my $inscount = 0;
+	my $results;
+	if ($query->param('swit') eq 'some')
 	{
-		@newarr = split('\n', $query->param('allsites')); 
-	}
-	elsif ($query->param('swit') eq 'some')
-	{
-		@array = split('\n', $query->param('allsites'));
-		for ($m = 1; $m <(@aa+1); $m++)
+		for my $m (1.. length($aaseq))
 		{
-			$curstr = 'site' . $m;
-			$box = $query->param($curstr);
-			$box = $1 if ($box =~ /\W([A-Za-z0-9]*)/);
+			my ($box, $seq) = ($1, $2) if ($query->param('site' . $m) =~ $result);
 			if($box ne '' && $box ne '-')
 			{
-				$aapos = $m;
-				foreach $l (@array)
-				{
-					$t = ' ' . $l;
-					$o = $aapos;
-					$aarecogniz = $1 if ($t =~ / $o: $box ([A-Z*]+)/);
-				}
-				$currstring = "$aapos: $box $aarecogniz";
-				push @newarr, $currstring;
+				$inscount++;
+#	print "GOT $box ($$OL_DATA{CLEAN}->{$box}) at $m with $seq<br>";
+				my $critseg = substr($nucseq, ($m*3) - 3, length($seq)*3);
+				my $peptide = translate($critseg, 1, $CODON_TABLE);
+				my $newpatt = pattern_aligner($critseg, $$OL_DATA{CLEAN}->{$box}, $peptide, $CODON_TABLE);
+				my $newcritseg = pattern_adder($critseg, $newpatt, $CODON_TABLE);
+#	print "pattern ", $$OL_DATA{CLEAN}->{$box}, ", peptide $peptide, critseg $critseg, newcritseg $newcritseg<br>";
+				substr($newnuc, $m*3 - 3, length($newcritseg)) = $newcritseg;
+			#	push @Error1, $box;
 			}
 		}
 	}
-	foreach $instance (@newarr)
-	{
-		if ($instance =~ /([0-9]+)\: [A-Z]+ ([A-Z]+)/)
-		{	
-			$curraapos = $1 - 1; $curraaseq = $2;  $currnucpos = ($curraapos *3); 
-			$matchers = ''; $diff = (length($curraaseq)*3) - length($remseq);
-			@reccedstr = split('', substr($aaseq, $curraapos, length($curraaseq)));
-			for ($i = 0; $i <= $diff; $i++)
-			{
-				$matchers = ((substr $nstring, 0, $i) . $remseq);
-				$matchers = $matchers . 'N' while (length($matchers) != length($curraaseq)*3);
-				$check ='';
-				$offset = 0;
-				for ($j = 0; $j < (int(length($matchers) / 3)); $j++)
-				{
-					@checker = getaaa(substr($matchers, $offset, 3));
-					for ($g = 0; $g < (@checker-0); $g++)	{	$check .= $checker[$g] if ($reccedstr[$j] eq $checker[$g]);	}
-					$offset += 3;
-				}
-				last if ($check eq substr($aaseq, $curraapos, length($curraaseq)));
-			}
-			$offset = 0; $newseq = '';
-			for ($i = 0; $i < (length( substr($nucseq, $currnucpos, length($curraaseq)*3)) / 3); $i++)
-			{
-				$curcod = substr  substr($nucseq, $currnucpos, length($curraaseq)*3), $offset, 3;
-				$curtar = substr $matchers, $offset, 3;
-				@workaal = getaaa($curcod);
-				foreach $g (@workaal)
-				{
-					@workcod = getcods($g);
-					if ($curcod ne $curtar && $curtar ne 'NNN')
-					{
-						foreach $l (@workcod)
-						{
-							$tot = compareseqs($curtar, $l);
-							$newseq .= $l if ($tot == 1);
-							last if ($tot == 1);
-						}
-					}
-					else
-					{
-						$newseq .= $curcod;
-					}					
-				}
-				$offset += 3;
-			}		
-		}
-	#	print "$currnucpos, $curraapos, aaseq ", substr($aaseq, $curraapos, length($curraaseq)), " nucseq ", substr($nucseq, $currnucpos, length($curraaseq)*3), " $matchers, $newseq, ", translate ($newseq), "<br>";
-		$newcurrstr = "$currnucpos..$newseq";
-		push @tobeinsarr, $newcurrstr;
-	}
-	$newnuc = ''; $curpos = 0; print "<br>"; $cannotdo = 0; $cananddid= 0;
-	foreach $treeeg (@tobeinsarr)
-	{
-		if ($treeeg =~ /([0-9]+)\.\.([A-Z]+)/) { $thispos = $1; $thisnew = $2; }
-		unless ($thispos <= $curpos)
-		{
-			$newnuc .= substr ( $nucseq, $curpos, (($thispos)-$curpos));
-			$newnuc .= $thisnew;
-			$curpos = length ($newnuc);
-#			print "..$thispos, $curpos<br>";
-			$cananddid++;
-		}
-		else
-		{
-			$cannotdo++;
-		}
-	}
-	$newnuc .= substr ($nucseq, $curpos, (length($nucseq)-$curpos));
-print "Translation error! please notify admin<br>" if (translate($nucseq) ne translate($newnuc));
-	if ($cannotdo > 0)
-	{
-		print "$cannotdo possible instance(s) of $remseq could not be inserted because they overlapped with other insertions that were made.\n";
-		print break(1);
-	}
-	print "$cananddid instance(s) of $remseq were inserted.\n";
-	print "</div>"; 
-	print break(1);
-	print ("<div id=\"gridgroup0\">Your altered nucleotide sequence:\n");
-	print $query->textarea(-name=>'nusseq', -rows=>6, -columns=>120, -default=>$newnuc), break(1);
-	@newal = ezalign($nucseq, $newnuc);
-		@bcou = count($newnuc); 
-	$GC = int(((($bcou[3]+$bcou[2])/$bcou[8])*100)+.5);
-	$AT = int(((($bcou[0]+$bcou[1])/$bcou[8])*100)+.5);
-
-	print "Your new sequence has $newal[0] identites, $newal[1] changes, and is $newal[4]% identical to the original sequence.<br>Composition : $GC% GC, $AT% AT</div>", break(3);
-		print ("<div id=\"gridgroup1\" align =\"center\" style=\"position:relative \">\n");
-	print $query->hidden(-name=>'passnucseq', value=>$nucseq);
+	$results .= "Translation error! the translation of your sequence has been altered.<br>" if (translate($nucseq, 1, $CODON_TABLE) ne translate($newnuc, 1, $CODON_TABLE));
+	my $newal = compare_sequences($nucseq, $newnuc);
+	my $bcou = count($newnuc); 
+	my $hiddenstring = hidden_fielder({"MODORG" => $org});
 	
-	print ("<div id=\"notes\" style=\"text-align:center;\">");
-	print ("You can take this nucleotide sequence to another module now.");
-	print ("</div>");	
-	print break(1), "<strong>Take this sequence to</strong>";
-	print break(1), $query->submit(-value=>'Silent Site Insertion', -onclick=>'SSIns();'), "<-- to insert restriction sites";
-	print break(1), $query->submit(-value=>'Silent Site Removal', -onclick=>'SSRem();'), "<-- to remove restriction sites";
-	print break(1), $query->submit(-value=>'Oligo Design', -onclick=>'OligoDesign();'), "<-- to get a list of oligos for assembly";
-	print break(1). $query->submit(-value=>'Sequence Analysis', -onclick=>'SeqAna();'), "<-- for information about this sequence";
-	print $query->endform, $query->end_html;
-
+print <<EOM;
+				<div id="notes">
+					I was asked to insert $inscount instance(s) of @insseqs.<br>
+					$results
+				</div>
+				<div id="gridgroup0">
+					Your altered nucleotide sequence:
+					<textarea name="PASSNUCSEQUENCE"  rows="6" cols="120">$newnuc</textarea><br>
+					&nbsp;_Base Count  : $$bcou{length} bp ($$bcou{A} A, $$bcou{T} T, $$bcou{C} C, $$bcou{G} G)<br>
+					&nbsp;_Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT<br>
+					$$newal{'I'} Identites, $$newal{'D'} Changes ($$newal{'T'} transitions $$newal{'V'} transversions), $$newal{'P'}% Identity<br><br><br>
+					$nextsteps
+				</div>
+				$hiddenstring	
+EOM
+	closer();
 }

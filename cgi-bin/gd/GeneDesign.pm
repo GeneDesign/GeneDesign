@@ -15,7 +15,7 @@ use Class::Struct;
 			define_codon_percentages index_codon_percentages
 			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
-			oligocruncher orf_finder
+			oligocruncher orf_finder define_oligos
 			codon_count generate_RSCU_values
 			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath
 			);
@@ -1055,7 +1055,23 @@ sub orf_finder
 }
 
 
-
+sub define_oligos
+{
+	my ($ollist_ref, $revcompswit) = @_;
+	my %OL_DATA;
+	( $OL_DATA{REGEX},	$OL_DATA{CLEAN} ) = ( {}, {} );
+	foreach my $oligo (@$ollist_ref)
+	{
+		$OL_DATA{CLEAN}->{$oligo}	= $oligo;		#recognition site
+	#regular expression array	
+		my @arr = ( $revcompswit == 1 && complement($oligo, 1) ne $oligo)	?	
+				  ( regres($oligo, 1), regres(complement($oligo, 1), 1) )	:	
+				  ( regres($oligo, 1) );
+		$OL_DATA{REGEX}->{$oligo} = \@arr;						
+	}
+	close IN;
+	return \%OL_DATA;
+}
 
 
 ##											##
