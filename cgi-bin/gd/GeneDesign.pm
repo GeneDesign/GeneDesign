@@ -25,7 +25,7 @@ struct REnz => { map { $_ => '$' } qw(SiteNumber CutterName AARecogniz NtRecogni
 
 struct Oligo => { map { $_ => '$' } qw(ChunkNumber OligoNumber OligoLength OligoStart OligoStop OligoSense FpOlapLeng TpOlapLeng OligoSeq) };
 
-struct Chunk => { map { $_ => '$' } qw(ChunkNumber NumberofOligos ChunkLength AvgOligoLength ChunkStart ChunkStop Collisions AvgGapLeng AvgOlapLeng 
+struct Chunk => { map { $_ => '$' } qw(Parameters ChunkNumber NumberofOligos ChunkLength AvgOligoLength ChunkStart ChunkStop Collisions AvgGapLeng AvgOlapLeng 
 					AvgOlapMelt ChunkSeq Oligos Olaps Users FivePrimeEnz ThreePrimeEnz ShrtOligo LongOligo ThreePrimeOlap Mask Name) };
 
 struct USERsite => { map { $_ => '$' } qw(Start nNumber Sequence) };
@@ -890,10 +890,11 @@ sub define_aa_defaults
 # 0 cleanup
 sub oligocruncher
 {
-	my ($tov, $hashref) = @_;
+	my ($tov) = @_;
 	my ($tar_chn_len, $tar_cur_dif, $cur_oli_num, $cur_oli_lap, $cur_oli_len, $cur_chn_mel, $cur_oli_gap, $avg_chn_mel, $avg_oli_len, $start, $starte, $starto, $avg) = 0;
 	my (@Overlaps, @tree, @begs, @ends, @Oligos);
-	my %pa = %$hashref;	my %Collisions;
+	my %pa = %{$tov->Parameters};	
+	my %Collisions;
 	$tar_chn_len = $pa{per_chn_len};	$cur_oli_num = $pa{tar_oli_num};	$cur_oli_len = $pa{tar_oli_len};
 	$cur_oli_gap = $pa{tar_oli_gap};	$cur_oli_lap = $pa{tar_oli_lap};	
 	$tar_cur_dif = $tov->ChunkLength - $tar_chn_len;
@@ -908,14 +909,12 @@ sub oligocruncher
 #print "rev 1 ", $tov->ChunkNumber, ", per $tar_chn_len, dif $tar_cur_dif, num $cur_oli_num, len $cur_oli_len, lap $cur_oli_lap, mel $pa{tar_chn_mel}, tol $pa{chn_mel_tol}, <br>";	
 	if ($pa{gapswit} == 1)
 	{
-		##-if difference can be spread equally across oligos, increase length
-		if (abs($tar_cur_dif) >= $cur_oli_num)					
+		if (abs($tar_cur_dif) >= $cur_oli_num)					##-if difference can be spread equally across oligos, increase length
 		{
 			$cur_oli_len = $pa{tar_oli_len} + int($tar_cur_dif / $cur_oli_num);
 			$tar_cur_dif = $tar_cur_dif - ($cur_oli_num * (int($tar_cur_dif / $cur_oli_num)));	
 		}
-		##-if the length is violating max_len, increase num by 2, decrease len by 10, recalc
-		if ( ($cur_oli_len >= $pa{max_oli_len}) || ($cur_oli_len == $pa{max_oli_len} && $tar_cur_dif > 0) )		
+		if ( ($cur_oli_len >= $pa{max_oli_len}) || ($cur_oli_len == $pa{max_oli_len} && $tar_cur_dif > 0) )		##-if the length is violating max_len, increase num by 2, decrease len by 10, recalc
 		{
 			$cur_oli_len = $pa{tar_oli_len}-10; 
 			$cur_oli_num += 2; 
@@ -942,12 +941,12 @@ sub oligocruncher
 			$start =  $start + $strlen - $cur_oli_lap;
 		}
 		@tree = map (melt($_, $pa{melform} , .05, .0000001), @Overlaps);
-		foreach (@tree)	{	$avg += $_;	}	$avg = int(($avg / scalar(@tree))+.5);
+		foreach (@tree)	{	$avg += $_;	}	$avg = int(($avg / (@tree-0))+.5);
 		$cur_chn_mel = ($avg < ($pa{tar_chn_mel}-10))	?	$pa{tar_chn_mel} - .2*($pa{tar_chn_mel}-$avg) :	$pa{tar_chn_mel};	#Adjust target melting temp for reality.
 #print "rev 3 ", $tov->ChunkNumber, ", per $tar_chn_len, dif $tar_cur_dif, num $cur_oli_num, len $cur_oli_len, lap $cur_oli_lap, mel $cur_chn_mel, tol $pa{chn_mel_tol}, <br>";	
 
 		$start = 0;
-		my @Overlaps = ();
+		undef @Overlaps;
 		for (my $w = 1; $w <= $cur_oli_num; $w++)					##-then make oligos, changing overlaps for melting temperature if appropriate
 		{
 			my $laplen = $cur_oli_lap;
@@ -1014,8 +1013,8 @@ sub oligocruncher
 		}
 	}
 	
-	$tov->AvgOlapMelt(int(($avg_chn_mel / scalar(@Overlaps))+.5));
-	$tov->AvgOligoLength(int(($avg_oli_len / scalar(@Oligos))+.5));
+	$tov->AvgOlapMelt(int(($avg_chn_mel / (@Overlaps-0))+.5));
+	$tov->AvgOligoLength(int(($avg_oli_len / (@Oligos-0))+.5));
 	$tov->Oligos(\@Oligos);
 	$tov->Olaps(\@Overlaps);
 	return;

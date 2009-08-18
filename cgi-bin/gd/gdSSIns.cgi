@@ -235,13 +235,7 @@ if ($query->param('swit') eq "pd")
 		if ($query->param('vecpic') eq "chosen")
 		{
 			$vecname = $query->param('vector');
-			open IN, '<', "vectors/$vecname.txt";	
-			while (<IN>)	
-			{	
-				$vecseq = $1 if ($_ =~ /([ATCG]*)/ig);	
-			}
-			close IN;	
-			$vecseq = cleanup($vecseq, 1);	
+			$vecseq = slurp("vectors/$vecname.txt");
 		}
 		if ($query->param('vecpic') eq "unknown")
 		{

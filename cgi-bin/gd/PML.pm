@@ -7,7 +7,8 @@ require Exporter;
 			cssbrowser platform 
 			gdheader closer take_exception take_note
 			hidden_fielder next_stepper next_codjug organism_selecter
-			annpsite friendly print_enzyme_table enzyme_chooser print_oligos_aligned);
+			annpsite friendly print_enzyme_table enzyme_chooser print_oligos_aligned
+			print_vector_table);
 			
 ###### Functions for Making Life Easier
 ##-break			: makes the passed number of html line breaks.
@@ -82,7 +83,7 @@ print <<EOM;
 	<body>
 		<div id="bigbox">
 			<div id="toppa">
-				<a href="$docpath/index.html"><img src="$linkpath/img/gdlogobanner.gif" align = "absmiddle"></a>
+				<a href="$linkpath/index.html"><img src="$linkpath/img/gdlogobanner.gif" align = "absmiddle"></a>
 				<a class="headli">$name</a>
 			</div>
 			<form method="post" action="./$cginame" enctype="application/x-www-form-urlencoded" name="form1">
@@ -101,11 +102,12 @@ EOM
 
 sub hidden_fielder
 {
-	my($hashref) = @_;
+	my ($hashref) = @_;
 	my $hiddenstring = "<div id = \"gridgoup1\">\n";
-	foreach my $tiv (sort keys %{$hashref})
+	foreach my $name (sort keys %{$hashref})
 	{
-		$hiddenstring .= tab(5) . "<input type=\"hidden\" name=\"$tiv\" value=\"$$hashref{$tiv}\" />\n";
+		my $value = $$hashref{$name} || " ";
+		$hiddenstring .= tab(5) . "<input type=\"hidden\" name=\"$name\" value=\"$value\" />\n";
 	}
 	$hiddenstring .= tab(4) . "</div>";
 	return $hiddenstring;
@@ -335,8 +337,8 @@ sub print_enzyme_table
 	my %RE_DATA = %$site_data_ref;
 	my $j = 1;
 	my $color = "9AB";
-	print $tab, "<div id = \"gridgroup1\">\n";
 print <<EOM;
+$tab<div id = "gridgroup1">
 $tab	<div id = "gridgroup1" style = "background-color: \43$color;">
 $tab		<span id = "cuNum"></span>
 $tab		<span id = "cuName">Name</span>
@@ -381,21 +383,97 @@ EOM
 	return;
 }
 
+sub print_vector_table
+{
+	my ($list_ref, $indent) = @_;
+	my $tab = tab($indent);
+	my $j = 0;
+	my $color = "9AB";
+print <<EOM;
+$tab<div id = "gridgroup1">
+$tab	<div id = "gridgroup1" style = "background-color: \43$color;">
+$tab		<span id = "vNum">s</span>
+$tab		<span id = "vName">vector name</span>
+$tab		<span id = "vLength">size (bp)</span>
+$tab		<span id = "vAbs" style="font-size: 12px;">absent sites</span>
+$tab		<span id = "vUni" style="font-size: 12px;">unique sites</span>
+$tab		&nbsp;<br>&nbsp;
+$tab	</div>
+EOM
+	foreach $m (@{$list_ref})
+	{
+		$color = ($j % 2)	?	"ABC"	:	"CDE"	;
+		$j++;
+print <<EOM;
+$tab	<div id = "gridgroup1" style = "background-color: \43$color;">
+$tab		<span id = "vNum">$j</span>
+$tab		<span id = "vName">$m->[0]</span>
+$tab		<span id = "vLength">$m->[1]</span>
+$tab		<span id = "vAbs" >@{$m->[2]}</span>
+$tab		<span id = "vUni">@{$m->[3]}</span>
+$tab		&nbsp;<br><br><br><br><br><br><br><br>&nbsp;
+$tab	</div>
+EOM
+	}
+print <<EOM;
+$tab	<div id = "gridgroup1" style = "background-color: \439AB;">
+$tab		&nbsp;<br>
+$tab	</div>
+$tab</div>
+EOM
+	return;
+}
+
 sub print_oligos_aligned
 {
-	my ($self, $gapswit, $indent) = @_;		
-	my $oliarrref = $self->Oligos;	my @oligoarr = @$oliarrref;
-	my $olapref   = $self->Olaps;    my @olaparr = @$olapref;
-	my $colhasref = $self->Collisions; my %colhas = %$colhasref; my @colkeys = keys %colhas;
+	my ($self, $indent, $maskswit) = @_;
+	$maskswit = 0 unless($maskswit);
+	my @oligoarr = @{$self->Oligos};  
+	my @olaparr = @{$self->Olaps};
+	my %colhas = %{$self->Collisions};
+	my $gapswit = $self->Parameters->{gapswit};
 	my $tab = tab($indent);
-	my $master = $self->ChunkSeq; my $retsam = complement($master);
-	my $toprow; my $botrow;
+	my $toprow;
+	my $botrow;
+	my $master = $self->ChunkSeq;
+	my $retsam = complement($master, 0);
+	if ($maskswit == 1)
+	{
+		my $mask = $self->Mask; 
+		my $tagstart = "<font color = \"\43FF0000\">"; 
+		my $tagstop = "</font>";
+		@masterarr = split("", $master);
+		@retsamarr = split("", $retsam);
+		my (@remaster, @reretsam);
+		$count = 0;
+		for ($x = 0; $x < scalar(@masterarr); $x++)
+		{
+			push @remaster, $masterarr[$x];
+			push @reretsam, $retsamarr[$x];
+			if (substr($mask, $x, 1) == 0 && substr($mask, $x+1, 1) == 1)
+			{
+				push @remaster, $tagstart;
+				push @reretsam, $tagstart; $count++;
+			}
+			elsif (substr($mask, $x, 1) == 1 && substr($mask, $x+1, 1) == 0)
+			{
+				push @remaster, $tagstop;
+				push @reretsam, $tagstop; $count--;
+			}
+		}
+		push @remaster, $tagstop if ($count == 1);
+		push @reretsam, $tagstop if ($count == 1);
+		$master = join("", @remaster);
+		$retsam = join("", @reretsam);
+	}
 	$k = 0;
-	for ($w = 0; $w <= @oligoarr-0; $w+=2)
+	for ($w = 0; $w < @oligoarr-0; $w+=2)
 	{
 		if (!exists($colhas{$w}) && !exists($colhas{$w-2}) && $gapswit == 1)
 		{
-			$toprow .= $oligoarr[$w] . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1])));
+			my $nextlap = $w+1 < @olaparr-0	?	length($olaparr[$w+1])	:	0;
+			my $nextoli = $w+1 < @oligoarr-0	?	length($oligoarr[$w+1])	:	0;
+			$toprow .= $oligoarr[$w] . space($nextoli-(length($olaparr[$w])+$nextlap));
 		}
 		elsif ($gapswit == 1)
 		{
@@ -417,11 +495,13 @@ sub print_oligos_aligned
 	}
 	$botrow = space(length($oligoarr[0])-length($olaparr[0])); 
 	$k = 0;
-	for ($w = 1; $w <= (@oligoarr-0); $w+=2)
+	for ($w = 1; $w < @oligoarr-0; $w+=2)
 	{
 		if (!exists($colhas{$w}) && !exists($colhas{$w-2}) && $gapswit == 1)
 		{
-			$botrow .= complement($oligoarr[$w]) . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1])));
+			my $nextlap = $w+1 < @olaparr-0	?	length($olaparr[$w+1])	:	0;
+			my $nextoli = $w+1 < @oligoarr-0	?	length($oligoarr[$w+1])	:	0;
+			$botrow .= complement($oligoarr[$w], 0) . space($nextoli-(length($olaparr[$w])+$nextlap));
 		}
 		elsif ($gapswit == 1)
 		{
@@ -451,4 +531,5 @@ $tab	$retsam&nbsp;&nbsp;&nbsp;&nbsp;.
 $tab</div>
 EOM
 }
+
 1;
