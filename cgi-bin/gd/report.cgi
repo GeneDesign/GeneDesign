@@ -1,38 +1,40 @@
 #!/usr/bin/perl
-
+use strict;
 use CGI;
-use PRISM;
-$query = new CGI;
+use GeneDesign;
+
+
+my $CODON_TABLE	 = define_codon_table(1);
+my $RE_DATA = define_sites("<newenz.txt");
+
+my $query = new CGI;
 print $query->header(-type=>'text/plain');
-@olarray = split(" ", $query->param('olarray'));
-$ch = "\11" if ($query->param('sepchar') eq 'tab');
-$ch = ','	if ($query->param('sepchar') eq 'comma');
-$ch = ' '	if ($query->param('sepchar') eq 'space');
-$ch = '_'	if ($query->param('sepchar') eq 'underscore');
-$nucseq = $query->param('nucseq');
-	@bcou = count($nucseq); 
-	$GC = int(((($bcou[3]+$bcou[2])/$bcou[8])*100)+.5);
-	$AT = int(((($bcou[0]+$bcou[1])/$bcou[8])*100)+.5);
-$aaseq  = $query->param('aaseq' );
-$aasiz  = length($aaseq) if ($aaseq !~ /was defined/);
-$codons = $query->param('codons');
-$vecname= $query->param('vecname');
-$absents= $query->param('absents');
-$enzcrit= $query->param('enzcrit');
-$inte = $query->param('inte');
-$actu = $query->param('actu');
-$insert = $query->param('insert');
-@inse = split(" ", $insert);
-$numin = (@inse-0);
-$remove = $query->param('remove');
-@nowabs = sort(siterunner(1, $nucseq));
-@nowuni = sort(siterunner(2, $nucseq));
-$cuslen  = $query->param('ollen');
-$cusmel  = $query->param('ovmel');
-$whtemp   = $query->param('whtemp');
-$flank   = $query->param('whflank');
-@joenz = split(" ", $query->param('joenz'));
-$joenznum = (@joenz+1);
+my %SEPCHAR = {tab => "\11", comma => ",", space => " ", underscore => "_"};
+
+my @olarray = split(" ", $query->param('olarray'));
+my $ch = $SEPCHAR{ $query->param('sepchar')};
+my $nucseq = $query->param('nucseq');
+my $SITE_STATUS = define_site_status($nucseq, $$RE_DATA{REGEX});
+my $bcou = count($nucseq); 
+my $aaseq  = $query->param('aaseq' );
+my $aasiz  = length($aaseq);
+my $codons = $query->param('codons');
+my $vecname= $query->param('vecname');
+my $absents= $query->param('absents');
+my $enzcrit= $query->param('enzcrit');
+my $inte = $query->param('inte');
+my $actu = $query->param('actu');
+my $insert = $query->param('insert');
+my $numin = scalar(split(" ", $insert));
+my $remove = $query->param('remove');
+my @nowabs = sort grep {$$SITE_STATUS{$_} == 0} keys %$SITE_STATUS;
+my @nowuni = sort grep {$$SITE_STATUS{$_} == 1} keys %$SITE_STATUS;
+my $cuslen  = $query->param('ollen');
+my $cusmel  = $query->param('ovmel');
+my $whtemp   = $query->param('whtemp');
+my $flank   = $query->param('whflank');
+my @joenz = split(" ", $query->param('joenz'));
+my $joenznum = scalar(@joenz)+1;
 
 # Nucleotide Sequence and Analysis
 	print "\n__Nucleotide Sequence__\n$nucseq\n";
@@ -70,9 +72,9 @@ $joenznum = (@joenz+1);
 	print "_Oligos (5' to 3') \n";
 
 	
-for ($y = 0; $y < @olarray-0; $y++)
+for my $y (0..scalar(@olarray)-1)
 {
-	$x = $y+1;
-	$x = '0' . $x while (length($x) < length(@olarray-0));
+	my $x = $y+1;
+	$x = '0' . $x while (length($x) < length(scalar(@olarray)));
 	print $query->param('oldesig'), $x, $ch, $olarray[$y], "\n";
 }
