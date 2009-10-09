@@ -98,7 +98,7 @@ elsif($query->param('WHOLESEQ') ne '')
 	{
 		take_note("The maximum allowable assembly oligo length is equal to the target assembly oligo length ($pa{tar_oli_len}).  This may cause some weird behavior, especially in terms of overlap melting temperature.");
 	}	
-	if ($chunk_name !~ /^\d+[RL]\.\d+_\d+\.[A-Z]\d$/)
+	if ($chunk_name !~ /^\d+[RL]\.\d+_\d+\.[A-Z]\d+$/)
 	{
 		take_note("Your chunk name does not conform to the expected format (chromosome)(arm).(genome version)_(chromosome version).(chunk letter)(chunk section)<br>
 					I am producing output with \"$chunk_name\", but you may wish to re-run primer design with a proper name.<br>");
