@@ -102,12 +102,11 @@ EOM
 
 sub hidden_fielder
 {
-	my ($hashref) = @_;
+	my($hashref) = @_;
 	my $hiddenstring = "<div id = \"gridgoup1\">\n";
-	foreach my $name (sort keys %{$hashref})
+	foreach my $tiv (sort keys %{$hashref})
 	{
-		my $value = $$hashref{$name} || " ";
-		$hiddenstring .= tab(5) . "<input type=\"hidden\" name=\"$name\" value=\"$value\" />\n";
+		$hiddenstring .= tab(5) . "<input type=\"hidden\" name=\"$tiv\" value=\"$$hashref{$tiv}\" />\n";
 	}
 	$hiddenstring .= tab(4) . "</div>";
 	return $hiddenstring;
@@ -426,54 +425,24 @@ EOM
 
 sub print_oligos_aligned
 {
-	my ($self, $indent, $maskswit) = @_;
-	$maskswit = 0 unless($maskswit);
-	my @oligoarr = @{$self->Oligos};  
-	my @olaparr = @{$self->Olaps};
-	my %colhas = %{$self->Collisions};
-	my $gapswit = $self->Parameters->{gapswit};
+	my ($self, $gapswit, $indent) = @_;		
+	my $oliarrref = $self->Oligos;	
+	my @oligoarr = @$oliarrref;
+	my $olapref   = $self->Olaps;    
+	my @olaparr = @$olapref;
+	my $colhasref = $self->Collisions; 
+	my %colhas = %$colhasref; 
+	my @colkeys = keys %colhas;
 	my $tab = tab($indent);
-	my $toprow;
-	my $botrow;
-	my $master = $self->ChunkSeq;
-	my $retsam = complement($master, 0);
-	if ($maskswit == 1)
-	{
-		my $mask = $self->Mask; 
-		my $tagstart = "<font color = \"\43FF0000\">"; 
-		my $tagstop = "</font>";
-		@masterarr = split("", $master);
-		@retsamarr = split("", $retsam);
-		my (@remaster, @reretsam);
-		$count = 0;
-		for ($x = 0; $x < scalar(@masterarr); $x++)
-		{
-			push @remaster, $masterarr[$x];
-			push @reretsam, $retsamarr[$x];
-			if (substr($mask, $x, 1) == 0 && substr($mask, $x+1, 1) == 1)
-			{
-				push @remaster, $tagstart;
-				push @reretsam, $tagstart; $count++;
-			}
-			elsif (substr($mask, $x, 1) == 1 && substr($mask, $x+1, 1) == 0)
-			{
-				push @remaster, $tagstop;
-				push @reretsam, $tagstop; $count--;
-			}
-		}
-		push @remaster, $tagstop if ($count == 1);
-		push @reretsam, $tagstop if ($count == 1);
-		$master = join("", @remaster);
-		$retsam = join("", @reretsam);
-	}
+	my $master = $self->ChunkSeq; 
+	my $retsam = complement($master);
+	my $toprow; my $botrow;
 	$k = 0;
-	for ($w = 0; $w < @oligoarr-0; $w+=2)
+	for ($w = 0; $w <= @oligoarr-0; $w+=2)
 	{
 		if (!exists($colhas{$w}) && !exists($colhas{$w-2}) && $gapswit == 1)
 		{
-			my $nextlap = $w+1 < @olaparr-0	?	length($olaparr[$w+1])	:	0;
-			my $nextoli = $w+1 < @oligoarr-0	?	length($oligoarr[$w+1])	:	0;
-			$toprow .= $oligoarr[$w] . space($nextoli-(length($olaparr[$w])+$nextlap));
+			$toprow .= $oligoarr[$w] . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1])));
 		}
 		elsif ($gapswit == 1)
 		{
@@ -495,13 +464,11 @@ sub print_oligos_aligned
 	}
 	$botrow = space(length($oligoarr[0])-length($olaparr[0])); 
 	$k = 0;
-	for ($w = 1; $w < @oligoarr-0; $w+=2)
+	for ($w = 1; $w <= (@oligoarr-0); $w+=2)
 	{
 		if (!exists($colhas{$w}) && !exists($colhas{$w-2}) && $gapswit == 1)
 		{
-			my $nextlap = $w+1 < @olaparr-0	?	length($olaparr[$w+1])	:	0;
-			my $nextoli = $w+1 < @oligoarr-0	?	length($oligoarr[$w+1])	:	0;
-			$botrow .= complement($oligoarr[$w], 0) . space($nextoli-(length($olaparr[$w])+$nextlap));
+			$botrow .= complement($oligoarr[$w]) . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1])));
 		}
 		elsif ($gapswit == 1)
 		{
@@ -531,5 +498,4 @@ $tab	$retsam&nbsp;&nbsp;&nbsp;&nbsp;.
 $tab</div>
 EOM
 }
-
 1;
