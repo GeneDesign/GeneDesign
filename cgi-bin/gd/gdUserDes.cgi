@@ -279,33 +279,30 @@ elsif($query->param('WHOLESEQ') ne '')
 			while ($userarr[1] =~ /(U)/ig)			{	$uniquelen = pos ($userarr[1]) - 2;	}
 			unless ($tiv->ChunkNumber eq "01")
 			{
-				print "<code>Left&nbsp;- 5' <b>", substr($userarr[0], 0, 1), "</b><u>", substr($userarr[0], 1, $uniquelen), "</u><b>", substr($userarr[0], $uniquelen+1, 1), "</b>", substr($userarr[0], $uniquelen+2), " 3'<br>";
+				print "<code>Left&nbsp; - 5' <b>", substr($userarr[0], 0, 1), "</b><u>", substr($userarr[0], 1, $uniquelen), "</u><b>", substr($userarr[0], $uniquelen+1, 1), "</b>", substr($userarr[0], $uniquelen+2), " 3'<br>";
 				print "LeftU - 5' <b>", substr($userarr[1], 0, 1), "</b><u>", substr($userarr[1], 1, $uniquelen), "</u><b>", substr($userarr[1], $uniquelen+1, 1), "</b>", substr($userarr[1], $uniquelen+2), " 3'</code><br>";
 			}
 			else
 			{
-				print "<code>Left&nbsp;- 5' $userarr[0] 3'</code><br>";
+				print "<code>Left&nbsp; - 5' $userarr[0] 3'</code><br>";
 			}
 			while ($userarr[3] =~ /(U)/ig)			{	$uniquelen = pos ($userarr[3]) - 2;	}
 			unless ($tiv->ChunkNumber == @Collection-0)
 			{
-				print "<code>Rght&nbsp;- 5' <b>", substr($userarr[2], 0, 1), "</b><u>", substr($userarr[2], 1, $uniquelen), "</u><b>", substr($userarr[2], $uniquelen+1, 1), "</b>", substr($userarr[2], $uniquelen+2), " 3'<br>";				
+				print "<code>Rght&nbsp; - 5' <b>", substr($userarr[2], 0, 1), "</b><u>", substr($userarr[2], 1, $uniquelen), "</u><b>", substr($userarr[2], $uniquelen+1, 1), "</b>", substr($userarr[2], $uniquelen+2), " 3'<br>";				
 				print "RghtU - 5' <b>", substr($userarr[3], 0, 1), "</b><u>", substr($userarr[3], 1, $uniquelen), "</u><b>", substr($userarr[3], $uniquelen+1, 1), "</b>", substr($userarr[3], $uniquelen+2), " 3'</code><br>";
 			}
 			else
 			{
-				print "<code>Rght&nbsp;- 5' $userarr[2] 3'</code><br>";
+				print "<code>Rght&nbsp; - 5' $userarr[2] 3'</code><br>";
 			}
 		}
 		print "Sequence:<br>", $query->textarea(-name=>$chunk_name.$count, -rows=>6, -columns=>150, -value=>$tiv->ChunkSeq, -readonly=>'true');
 		push @allbbs, $tiv->ChunkSeq;
 		push @coords, $tiv->ChunkStart. "..". $tiv->ChunkStop;
-		my $oliarrref = $tiv->Oligos;
-		my @oligoarr = @$oliarrref;
-		my $olapref   = $tiv->Olaps;
-		my @olaparr = @$olapref;
-		my $colhasref = $tiv->Collisions;
-		my %colhas = %$colhasref;
+		my @oligoarr = @{$tiv->Oligos};
+		my @olaparr = @{$tiv->Olaps};
+		my %colhas = %{$tiv->Collisions};
 		my @colkeys = keys %colhas;
 		my $prev;
 		print "<br>Assembly Oligos: average overlap Tm is ", $tiv->AvgOlapMelt, "&deg;;average oligo length is ", $tiv->AvgOligoLength, "bp.<br>";

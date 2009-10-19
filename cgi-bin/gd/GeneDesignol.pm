@@ -890,16 +890,13 @@ sub define_aa_defaults
 # 0 cleanup
 sub oligocruncher
 {
-	my ($tov, $hashref) = @_;
+	my ($tov) = @_;
 	my ($tar_chn_len, $tar_cur_dif, $cur_oli_num, $cur_oli_lap, $cur_oli_len, $cur_chn_mel, $cur_oli_gap, $avg_chn_mel, $avg_oli_len, $start, $starte, $starto, $avg) = 0;
 	my (@Overlaps, @tree, @begs, @ends, @Oligos);
-	my %pa = %$hashref;	
+	my %pa = %{$tov->Parameters};	
 	my %Collisions;
-	$tar_chn_len = $pa{per_chn_len};	
-	$cur_oli_num = $pa{tar_oli_num};	
-	$cur_oli_len = $pa{tar_oli_len};
-	$cur_oli_gap = $pa{tar_oli_gap};	
-	$cur_oli_lap = $pa{tar_oli_lap};	
+	$tar_chn_len = $pa{per_chn_len};	$cur_oli_num = $pa{tar_oli_num};	$cur_oli_len = $pa{tar_oli_len};
+	$cur_oli_gap = $pa{tar_oli_gap};	$cur_oli_lap = $pa{tar_oli_lap};	
 	$tar_cur_dif = $tov->ChunkLength - $tar_chn_len;
 #print "\n<br><br>\nrev 0 ", $tov->ChunkNumber, ", $tar_chn_len bp, dif $tar_cur_dif, num $cur_oli_num, len $cur_oli_len, lap $cur_oli_lap, mel $pa{tar_chn_mel}<br>";
 	if (abs($tar_cur_dif) >= ($pa{tar_oli_len}+$pa{tar_oli_gap}))	##-if difference btw perfect and current is bigger than another pair of oligos, increment oli_num

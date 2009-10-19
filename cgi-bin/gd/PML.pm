@@ -375,7 +375,7 @@ EOM
 print <<EOM;
 $tab	<div id = "gridgroup1" style = "background-color: \439AB;">
 $tab		<br> * This enzyme may exhibit star activity under certain conditions.
-$tab		<br>'1 This enzyme has a 1bp overhang and may be very difficult to ligate.&nbsp;<br>&nbsp;
+$tab		<br>\'1 This enzyme has a 1bp overhang and may be very difficult to ligate.&nbsp;<br>&nbsp;
 $tab	</div>
 $tab</div>
 EOM
@@ -425,24 +425,51 @@ EOM
 
 sub print_oligos_aligned
 {
-	my ($self, $gapswit, $indent) = @_;		
-	my $oliarrref = $self->Oligos;	
-	my @oligoarr = @$oliarrref;
-	my $olapref   = $self->Olaps;    
-	my @olaparr = @$olapref;
-	my $colhasref = $self->Collisions; 
-	my %colhas = %$colhasref; 
-	my @colkeys = keys %colhas;
+	my ($self, $gapswit, $indent, $maskswit) = @_;		
+	$maskswit = 0 unless($maskswit);
+	my $oliarrref = $self->Oligos;	my @oligoarr = @$oliarrref;
+	my $olapref   = $self->Olaps;    my @olaparr = @$olapref;
+	my $colhasref = $self->Collisions; my %colhas = %$colhasref; my @colkeys = keys %colhas;
 	my $tab = tab($indent);
-	my $master = $self->ChunkSeq; 
-	my $retsam = complement($master);
 	my $toprow; my $botrow;
+	my $master = $self->ChunkSeq; my $retsam = complement($master, 0);
+	if ($maskswit == 1)
+	{
+		my $mask = $self->Mask; 
+		my $tagstart = "<font color = \"\43FF0000\">"; 
+		my $tagstop = "</font>";
+		@masterarr = split("", $master);
+		@retsamarr = split("", $retsam);
+		my (@remaster, @reretsam);
+		$count = 0;
+		for ($x = 0; $x < @masterarr; $x++)
+		{
+			push @remaster, $masterarr[$x];
+			push @reretsam, $retsamarr[$x];
+			if (substr($mask, $x, 1) == 0 && substr($mask, $x+1, 1) == 1)
+			{
+				push @remaster, $tagstart;
+				push @reretsam, $tagstart; $count++;
+			}
+			elsif (substr($mask, $x, 1) == 1 && substr($mask, $x+1, 1) == 0)
+			{
+				push @remaster, $tagstop;
+				push @reretsam, $tagstop; $count--;
+			}
+		}
+		push @remaster, $tagstop if ($count == 1);
+		push @reretsam, $tagstop if ($count == 1);
+		$master = join("", @remaster);
+		$retsam = join("", @reretsam);
+	}
 	$k = 0;
-	for ($w = 0; $w <= @oligoarr-0; $w+=2)
+	for ($w = 0; $w < @oligoarr-0; $w+=2)
 	{
 		if (!exists($colhas{$w}) && !exists($colhas{$w-2}) && $gapswit == 1)
 		{
-			$toprow .= $oligoarr[$w] . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1])));
+			my $nextlap = $w+1 < @olaparr-0	?	length($olaparr[$w+1])	:	0;
+			my $nextoli = $w+1 < @oligoarr-0	?	length($oligoarr[$w+1])	:	0;
+			$toprow .= $oligoarr[$w] . space($nextoli-(length($olaparr[$w])+$nextlap));
 		}
 		elsif ($gapswit == 1)
 		{
@@ -464,27 +491,29 @@ sub print_oligos_aligned
 	}
 	$botrow = space(length($oligoarr[0])-length($olaparr[0])); 
 	$k = 0;
-	for ($w = 1; $w <= (@oligoarr-0); $w+=2)
+	for ($w = 1; $w < @oligoarr-0; $w+=2)
 	{
 		if (!exists($colhas{$w}) && !exists($colhas{$w-2}) && $gapswit == 1)
 		{
-			$botrow .= complement($oligoarr[$w]) . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1])));
+			my $nextlap = $w+1 < @olaparr-0	?	length($olaparr[$w+1])	:	0;
+			my $nextoli = $w+1 < @oligoarr-0	?	length($oligoarr[$w+1])	:	0;
+			$botrow .= complement($oligoarr[$w], 0) . space($nextoli-(length($olaparr[$w])+$nextlap));
 		}
 		elsif ($gapswit == 1)
 		{
 			$prev = 0;
 			if (exists($colhas{$w-2}) && $w != 1) #previous one collided - draw first bases in red
 			{
-				$botrow .= "<font color =\"\43FF0000\">" . complement(substr($oligoarr[$w-2], length($oligoarr[$w-2]) - $colhas{$w-2})) . "</font>";
+				$botrow .= "<font color =\"\43FF0000\">" . complement(substr($oligoarr[$w-2], length($oligoarr[$w-2]) - $colhas{$w-2}), 0) . "</font>";
 				$prev = $colhas{$w-2};
 			}
-			$botrow .= complement(substr($oligoarr[$w], $prev, (length($oligoarr[$w]) - $colhas{$w} - $prev)));
+			$botrow .= complement(substr($oligoarr[$w], $prev, (length($oligoarr[$w]) - $colhas{$w} - $prev)), 0);
 			$botrow .= space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1]))) if (!exists($colhas{$w}));
 		}
 		elsif ($gapswit == 0)
 		{
-			$botrow .= "<font color = \"437777DD\">" . complement($oligoarr[$w]) . "</font>" . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1]))) if ($k % 2 == 0);
-			$botrow .= complement($oligoarr[$w]) . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1]))) if ($k % 2 == 1);
+			$botrow .= "<font color = \"437777DD\">" . complement($oligoarr[$w], 0) . "</font>" . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1]))) if ($k % 2 == 0);
+			$botrow .= complement($oligoarr[$w], 0) . space(length($oligoarr[$w+1])-(length($olaparr[$w])+length($olaparr[$w+1]))) if ($k % 2 == 1);
 			$k++;
 		}					
 	}
