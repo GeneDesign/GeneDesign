@@ -1,7 +1,7 @@
 GeneDesign development branch
 
 installation prereqs:
-from cpan: GD::Graph, Perl6::Slurp
+from cpan: GD::Graph, Perl6::Slurp, List::MoreUtils, Spreadsheet::ParseExcel, Spreadsheet::WriteExcel
 
 gdOliReDes and gdFusionDes are not working!  I'm not sure that we need either one anymore although primer picking is a nice function I think.
 
