@@ -93,7 +93,7 @@ EOM
 	}
 print <<EOM;
 					</div>
-					<div style = "position:relative;top:300">
+					<div style = "position:relative;top:400">
 						<input type="hidden" name="MODORG" value="1"/>
 						<input type="submit" name=".submit" value=" Next Step: Remove these sites "/>
 					</div>

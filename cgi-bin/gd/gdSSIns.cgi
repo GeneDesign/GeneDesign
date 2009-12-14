@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-
+use warnings;
 use strict;
 use File::Find;
 use List::Util qw(first);
@@ -176,13 +176,13 @@ EOM
 
 
 ###all runs with pulldown menus
-if ($query->param('swit') eq "pd" || $query->param('swit') eq 'ih' || $query->param('nextrem') ne '')
+if ($query->param('swit') eq "pd" || $query->param('swit') eq 'ih' || $query->param('nextrem'))
 {	
 	my $nucseq	= $query->param('redo')		?	$query->param('oldnucseq')	:	cleanup($query->param('nucseq'), 1);
 	my $aaseq	= $query->param('aaseq')	||	translate($nucseq, 1, $CODON_TABLE);
 	my $codons	= $query->param('codons')	||	" ";
 
-	if ($query->param('nextrem') eq '')
+	if (! $query->param('nextrem'))
 	{
 		my @war2 = pattern_finder($nucseq, "*", 2, 1, $CODON_TABLE);
 		my $war3 = 1 if (@war2 && ((scalar(@war2) > 1 ) || (($war2[0] + 1) != length($aaseq))));
@@ -275,15 +275,23 @@ if ($query->param('swit') eq "pd")
 	my @SitArr = sort {$$RE_DATA{SCORE}->{$a} <=> $$RE_DATA{SCORE}->{$b}} filter_sites(\%pa, $RE_DATA);
 	@SitArr = grep { ! exists($banned{$_}) && $$SITE_STATUS{$_} == 0 && $$VECTOR_SITES{$_} == 0 } @SitArr;
 	
-	my $bigfatarr=[];
-	foreach my $tiv (@SitArr)	
+	my ($f_arr, $r_arr, $f_hsh, $r_hsh) = ([], [], {}, {});
+	foreach my $enz (@SitArr)
 	{
-		push @{$bigfatarr}, map {"$_ . $tiv"} amb_translation($$RE_DATA{CLEAN}->{$tiv}, $CODON_TABLE);	
+		my $site = $$RE_DATA{CLEAN}->{$enz};
+		my $etis = complement($site, 1);
+		push @{$f_arr}, map {"$_ . $enz"} amb_translation($site, $CODON_TABLE);
+		if ($etis ne $site)
+		{
+			push @{$r_arr}, map {"$_ . $enz"} amb_translation($etis, $CODON_TABLE);
+		}
 	}
-	my $hashref = {};
-	my $trnrentree = new_aa ResSufTree();	
-	$trnrentree->add_aa_paths($_, $hashref) foreach (@{$bigfatarr});
-	my @array = $trnrentree->find_aa_paths($aaseq); #looks like ("1: MlyI MSH", "1: PleI MSH"...)
+	my ($ftree, $rtree) = (new_aa GeneDesignSufTree(), new_aa GeneDesignSufTree());
+	$ftree->add_aa_paths($_, $f_hsh) foreach (@{$f_arr});
+	$rtree->add_aa_paths($_, $r_hsh) foreach (@{$r_arr});
+	
+	my @array = $ftree->find_aa_paths($aaseq);
+	push @array, $rtree->find_aa_paths($aaseq); #looks like ("1: MlyI MSH", "1: PleI MSH"...)
 	my @hits = map { $_ . " . " } @array;
 
 print <<EOM;
@@ -305,7 +313,7 @@ EOM
 
 
 ###Second+ Time Around, the choosing
-if ($query->param('swit') eq 'ih' || $query->param('nextrem') ne '')
+if ($query->param('swit') eq 'ih' || $query->param('nextrem'))
 {
 	my $nucseq  = $query->param('redo')	?	$query->param('oldnucseq')	:	$query->param('nucseq');
 	my $aaseq	 = $query->param('aaseq')	||	translate($nucseq, 1, $CODON_TABLE);
@@ -315,9 +323,10 @@ if ($query->param('swit') eq 'ih' || $query->param('nextrem') ne '')
 	my $num		= $query->param('num') || $query->param('number');
 	my $aasize = length($aaseq);
 	my %used		= map {$_ => -3} @nonos;
+	print "NONOS @nonos<br>\n\n";
 	my @absents	= split(" ", $query->param('absentsites'));
-#	print "hello, the choosing<br>";
-#	print "@Nomogo<br>";
+print "hello, the choosing<br>";
+print "@Nomogo<br>, ", scalar(@Nomogo), " ", scalar(@nonos), "<br>";
 	if (@Nomogo)
 	{
 		for (my $be = 0; $be < scalar(@absents); $be++)	
@@ -328,7 +337,7 @@ if ($query->param('swit') eq 'ih' || $query->param('nextrem') ne '')
 			}	
 		}
 	}
-#	print "@Nomogo<br>";
+print "@Nomogo<br>";
 	my %hitsite;
 	foreach my $tiv (split(" . ", $query->param('hits')))	
 	{	
@@ -356,12 +365,15 @@ if ($query->param('swit') eq 'ih' || $query->param('nextrem') ne '')
 		my $picked = first	{ ! exists( $used{$_} ) } 
 				  sort	{ $$RE_DATA{SCORE}->{$a} <=> $$RE_DATA{SCORE}->{$b} }
 				  keys	%allhits;
-		$used{$picked} = 1;
-#	foreach (sort keys %used)	{print "\t\tUSED $_<br>";}
-		$picked = $picked	?	"$allhits{$picked}->[0]: $picked $allhits{$picked}->[1]" :	0;	
-#	print "I PICKED $picked<Br>";
-		push @selly, $picked if ($picked);
-		%used = %{mutexclu(\%used, $$RE_DATA{CLEAN})};
+		if ($picked)
+		{
+			$used{$picked} = 1;
+foreach (sort keys %used)	{print "\t\tUSED $_<br>";}
+			$picked = "$allhits{$picked}->[0]: $picked $allhits{$picked}->[1]";	
+print "I PICKED $picked<Br>";
+			push @selly, $picked;
+			%used = %{mutexclu(\%used, $$RE_DATA{CLEAN})};
+		}
 	}
 	my $actual = scalar(@selly);
 	my $perc = int(($actual/(($aasize/$num)-1))+.5)*100;
@@ -421,15 +433,15 @@ if ($query->param('swit') eq 'wu')
 	$$RE_DATA{POST} = {};
 	for (my $m = 1; $m < length($aaseq); $m++)
 	{
-		my ($box, $seq) = ($1, $2) if ($query->param('site' . $m) =~ $result);
-		if($box ne '' && $box ne '-')
+		my ($box, $seq) = ($1, $2) if ($query->param('site' . $m) && $query->param('site' . $m) =~ $result);
+		if($box && $box ne '-')
 		{
 #	print "GOT $box ($$RE_DATA{CLEAN}->{$box}) at $m with $seq<br>";
 			my $critseg = substr($nucseq, ($m*3) - 3, length($seq)*3);
 			my $peptide = translate($critseg, 1, $CODON_TABLE);
 			my $newpatt = pattern_aligner($critseg, $$RE_DATA{CLEAN}->{$box}, $peptide, $CODON_TABLE);
 			my $newcritseg = pattern_adder($critseg, $newpatt, $CODON_TABLE);
-#	print "pattern ", $$RE_DATA{CLEAN}->{$box}, ", peptide $peptide, critseg $critseg, newcritseg $newcritseg<br>";
+#	print "pattern ", $$RE_DATA{CLEAN}->{$box}, ", pattern $newpatt, peptide $peptide, critseg $critseg, newcritseg $newcritseg<br>";
 			substr($newnuc, $m*3 - 3, length($newcritseg)) = $newcritseg;
 			push @Error1, $box;
 			$$RE_DATA{POST}->{$box} = $m*3 - 3;
@@ -472,11 +484,11 @@ print <<EOM;
 					</div><br><br>
 EOM
 	print_enzyme_table(\@Error1, $RE_DATA, 5);
-	my %hiddenhash = (	nucseq => $newnuc,					oldnucseq => $nucseq,				aaseq => $aaseq,					banned => $query->param('banned'),	
+	my $hiddenhash = {	nucseq => $newnuc,					oldnucseq => $nucseq,				aaseq => $aaseq,					banned => $query->param('banned'),	
 						MODORG => $query->param('MODORG'),	codons => $query->param('codons'),	hits => $query->param('hits'),		absentsites => $query->param('absentsites'), 
 						"redo" => 1,						swit => "ih",						vector => $query->param('vector'),	vecseq => $query->param('vecseq'), 
-						insert => join(" ", @Error1),		"num" => $query->param('number'));
-	my $hiddenstring = hidden_fielder(\%hiddenhash);
+						insert => join(" ", @Error1),		"num" => $query->param('number')};
+	my $hiddenstring = hidden_fielder($hiddenhash);
 print <<EOM;
 				</div>
 				$hiddenstring

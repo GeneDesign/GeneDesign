@@ -487,9 +487,11 @@ sub pattern_aligner
 	my ($critseg, $pattern, $peptide, $CODON_TABLE, $swit) = @_;
 	$swit = 0 if (!$swit);
 	my ($newpatt, $nstring, $rounds, $check) = ("", "N" x 2, 0, "");
-	while ($rounds <= length($critseg) - length($pattern) && $check ne $peptide)
+	while ($rounds <= (length($critseg) - length($pattern))*2 + 1 && $check ne $peptide)
 	{
-		$newpatt = substr($nstring, 0, $rounds) . $pattern;
+		$newpatt = $rounds <= (length($critseg) - length($pattern))	
+			?	substr($nstring, 0, $rounds) . $pattern	
+			:	substr($nstring, 0, ($rounds-3)) . complement($pattern, 1);
 		$newpatt .=  "N" while (length($newpatt) != length($critseg));
 		my ($noff, $poff) = (0, 0);
 		$check = "";

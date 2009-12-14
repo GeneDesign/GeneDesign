@@ -4,6 +4,7 @@ use strict;
 use CGI;
 use GeneDesign;
 use GeneDesignML;
+use List::Util qw (first);
 
 my $query = new CGI;
 print $query->header;
@@ -92,53 +93,42 @@ elsif($query->param('WHOLESEQ'))
 ## Form chunk objects,
 	if ($wholelen >1000)
 	{
-		my %bblen;
+		my %bblen = $pa{gapswit}	?	%gapperlen	:	%ungapperlen;
 		my $chunkcount = 0;
 		my @Olaps;
-		for my $y (1..16)
+		my $tar_num = int(($wholelen / $all_tar_bbl_len) + 0.5);
+		my $tar_len = $wholelen / $tar_num;
+		my $tar_oli_len = first {1} sort{ abs($a-$tar_len) <=> abs($b-$tar_len)} keys %bblen;
+		
+		print $tar_num, ", $tar_len, $tar_oli_len<br>";
+		my $laststart = 0;
+		my $cur = 0;
+		my $tar_cur_dif = length($wholeseq) - ($tar_num * $tar_len);
+		my $tar_bbl_len = $all_tar_bbl_len;
+		if (abs($tar_cur_dif) >= $tar_num)
 		{
-			$bblen{(($all_tar_bbl_len-$bbl_lap_len)*$y)+$bbl_lap_len} = $y;
+			$tar_bbl_len = $tar_bbl_len + int($tar_cur_dif / $tar_num);
+			$tar_cur_dif = $tar_cur_dif - ($tar_num * (int($tar_cur_dif / $tar_num)));
 		}
-		for (my $x = 0;	$x < @loxbounds-1;	$x++)
+		for my $cur (1..$tar_num)
 		{
-			my $schunkstart = $loxbounds[$x]-($bbl_lap_len/2) + 1;
-			my $schunkstop = $loxbounds[$x+1]+($bbl_lap_len/2);
-			my $schunklen = $schunkstop - $schunkstart + 1;
-			my $thisseq = substr($wholeseq, $schunkstart, $schunklen);
-			my $laststart = $schunkstart;
-			my $cur = $schunkstart;
-			my @posslen = sort{ abs($a-length($thisseq)) <=> abs($b-length($thisseq))} keys %bblen;
-			my $tar_len = $posslen[0];
-			my $tar_num = $bblen{$tar_len};
-			my $tar_cur_dif = length($thisseq) - $tar_len;
-			my $tar_bbl_len = $all_tar_bbl_len;
-			if (abs($tar_cur_dif) >= $tar_num)
-			{
-				$tar_bbl_len = $tar_bbl_len + int($tar_cur_dif / $tar_num);
-				$tar_cur_dif = $tar_cur_dif - ($tar_num * (int($tar_cur_dif / $tar_num)));
-			}
-			for my $cur (1..$tar_num)
-			{
-				my $cur_bbl_len = $tar_bbl_len;
-				$cur_bbl_len++ if ( $cur <= abs($tar_cur_dif) && $tar_cur_dif > 0);
-				$cur_bbl_len-- if ( $cur <= abs($tar_cur_dif) && $tar_cur_dif < 0);
-				my $tno = new Chunk;
-				my $countstr = $chunkcount + 1;
-				while (length(@Chunks-0) > length($countstr))	{	$countstr = "0" . $countstr;}
-				$tno->ChunkNumber($countstr);
-				$cur_bbl_len++ while (substr($MASK, $laststart + $cur_bbl_len - $bbl_lap_len, $bbl_lap_len) =~ /1/);
-				$tno->ChunkSeq(substr($wholeseq, $laststart, $cur_bbl_len));
-				$tno->ThreePrimeOlap(substr($wholeseq, $laststart + $cur_bbl_len - $bbl_lap_len, $bbl_lap_len));
-				$tno->ChunkLength(length($tno->ChunkSeq));
-				$tno->ChunkStart($laststart);
-				$tno->ChunkStop($tno->ChunkLength + $tno->ChunkStart - 1);
-				$tno->Mask(substr($MASK, $laststart, $cur_bbl_len));
-				push @Olaps, $tno->ThreePrimeOlap;
-				oligocruncher($tno, \%pa);
-				$laststart += $tno->ChunkLength - length($tno->ThreePrimeOlap);
-				push @Chunks, $tno;
-				$chunkcount++;
-			}
+			my $cur_bbl_len = $tar_bbl_len;
+			$cur_bbl_len++ if ( $cur <= abs($tar_cur_dif) && $tar_cur_dif > 0);
+			$cur_bbl_len-- if ( $cur <= abs($tar_cur_dif) && $tar_cur_dif < 0);
+			my $tno = new Chunk;
+			my $countstr = $chunkcount + 1;
+			while (length(@Chunks-0) > length($countstr))	{	$countstr = "0" . $countstr;}
+			$tno->ChunkNumber($countstr);
+			$tno->ChunkSeq(substr($wholeseq, $laststart, $cur_bbl_len));
+			$tno->ThreePrimeOlap(substr($wholeseq, $laststart + $cur_bbl_len - $bbl_lap_len, $bbl_lap_len));
+			$tno->ChunkLength(length($tno->ChunkSeq));
+			$tno->ChunkStart($laststart);
+			$tno->ChunkStop($tno->ChunkLength + $tno->ChunkStart - 1);
+			push @Olaps, $tno->ThreePrimeOlap;
+			oligocruncher($tno, \%pa);
+			$laststart += $tno->ChunkLength - length($tno->ThreePrimeOlap);
+			push @Chunks, $tno;
+			$chunkcount++;
 		}
 		take_note(scalar(@Chunks) . " building blocks were generated.<br>");#, int((length($wholeseq) / $tar_bbl_len)+.5), "<br><br>";
 	}
@@ -151,7 +141,6 @@ elsif($query->param('WHOLESEQ'))
 		$tno->ChunkSeq($wholeseq);
 		$tno->ChunkLength($wholelen);
 		$tno->ChunkStart(1);
-		$tno->Mask($MASK);
 		$tno->ChunkStop($tno->ChunkLength + $tno->ChunkStart - 1);
 		oligocruncher($tno, \%pa);
 		push @Chunks, $tno;
@@ -214,8 +203,8 @@ elsif($query->param('WHOLESEQ'))
 		}
 	}
 	
-	my %hiddenhash = ("startnum" => $startnum, "bbnums" => join(" ", @bbnums), "coords" => join(" ", @coords), "aonums" => join(" ", @aonums), "alloligos" => join(" ", @alloligos), "allbbs" => join(" ", @allbbs));
-	my $hiddenstring = hidden_fielder(\%hiddenhash);
+	my $hiddenhash = {"startnum" => $startnum, "bbnums" => join(" ", @bbnums), "coords" => join(" ", @coords), "aonums" => join(" ", @aonums), "alloligos" => join(" ", @alloligos), "allbbs" => join(" ", @allbbs)};
+	my $hiddenstring = hidden_fielder($hiddenhash);
 
 print <<EOM;
 			</form>
@@ -224,8 +213,6 @@ print <<EOM;
 				<input type="hidden" name="name" value="$chunk_name" />
 				FASTA format: <input type="submit" value="&nbsp;Assembly Oligos&nbsp;" onClick="FASTArizer(2)" /> <input type="submit" value="&nbsp;Building Blocks&nbsp;" onClick="FASTArizer(4)" /><br>
 				tabbed format: <input type="submit" value="&nbsp;Assembly Oligos&nbsp;" onClick="FASTArizer(5)" /> <br>
-				Excel file: <input type="submit" value="&nbsp;Master Order Sheet&nbsp;" onClick="FASTArizer(7)" /> <input type="submit" value="&nbsp;Individual Order Sheets&nbsp;" onClick="FASTArizer(8)" /><br>
-				zip archive: <input type="submit" value="&nbsp;BB $chunk_name order sheets&nbsp;" onClick="FASTArizer(9)" /><br><br>
 				$hiddenstring
 EOM
 	closer();

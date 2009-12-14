@@ -53,14 +53,13 @@ elsif ($query->param('firstaround') ne 'no')
 		take_exception("You need a short sequence to be inserted (at least two bp) <br> ");
 		exit;
 	}
-	if ($query->param('insseq') >= length($query->param('nuseq')))
+	if (length($query->param('insseq')) >= length($query->param('nuseq')))
 	{
 		take_exception("Your short sequence should be shorter than your nucleotide sequence.<br>\n");
 		exit;
 	}
 	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	cleanup($query->param('nuseq'));
 	my $aaseq = translate($nucseq, 1, $CODON_TABLE);
-	my $org = $query->param('MODORG');
 	my @war2 = pattern_finder($nucseq, "*", 2, 1, $CODON_TABLE);
 	my $war3 = 1 if (@war2 && ((scalar(@war2) > 1 ) || (($war2[0] + 1) != length($aaseq))));
 	if ((substr($nucseq, 0, 3) ne 'ATG' || $war3) && $nucseq)
@@ -85,18 +84,17 @@ EOM
 		my $site = $$OL_DATA{CLEAN}->{$oligo};
 		my $etis = complement($site, 1);
 		push @{$t_arr}, map {"$_ . $oligo"} amb_translation($site, $CODON_TABLE);
-		if ($etis ne $site && $query->param('revcomp') == 1)
+		if ($etis ne $site && $query->param('revcomp'))
 		{
 			push @{$t_arr}, map {"$_ . $oligo"} amb_translation($etis, $CODON_TABLE);
 		}
 	}
-	my $tree = new_aa ResSufTree();
+	my $tree = new_aa GeneDesignSufTree();
 	$tree->add_aa_paths($_, $t_hsh) foreach (@{$t_arr});
 	my @array = $tree->find_aa_paths($aaseq); #looks like ("1: MlyI MSH", "1: PleI MSH"...)
 	my @hits = map {$_ . " . "} @array;
 	
 	my $len = length($nucseq);
-	my $organism = $query->param('MODORG');
 	my $results;
 	foreach my $insseq (@insseqs)
 	{
@@ -107,14 +105,15 @@ EOM
 print <<EOM;
 				<div id="notes">
 					$results
-					<input type="submit" value=" Insert the instances I have selected " onClick="OliISum(0);">
+					<input type="submit" value=" Insert the instances you have selected " onClick="OliISum(0);">
 				</div>
 				<div id = "gridgroup0"><br>
 EOM
 #					<input type="submit" value=" Insert all possible instances " onClick="OliISum(1);"><br>
 	annpsite($aaseq, \@array);
-	my %hiddenhash = (swit => "some", insseq => join(" ", @insseqs), nucseq => $nucseq, firstaround => "no", org => $org, revcomp => $query->param('revcomp'));
-	my $hiddenstring = hidden_fielder(\%hiddenhash);
+	my $hiddenhash = {'swit' => "some", 'insseq' => join(" ", @insseqs), 'nucseq' => $nucseq, 'firstaround' => "no", 'revcomp' => $query->param('revcomp'),};
+	$$hiddenhash{org} = $query->param('MODORG') if ($query->param('MODORG'));
+	my $hiddenstring = hidden_fielder($hiddenhash);
 print <<EOM;
 				</div>
 				$hiddenstring
@@ -132,13 +131,13 @@ elsif ($query->param('swit') eq 'all' || $query->param('swit') eq 'some')
 	my $OL_DATA = define_oligos(\@insseqs, $query->param('revcomp'));
 	my $result = qr/[\W ]*([A-Za-z0-9]+) ([A-Z]+)/;
 	my $inscount = 0;
-	my $results;
+	my $results = " ";
 	if ($query->param('swit') eq 'some')
 	{
 		for my $m (1.. length($aaseq))
 		{
-			my ($box, $seq) = ($1, $2) if ($query->param('site' . $m) =~ $result);
-			if($box ne '' && $box ne '-')
+			my ($box, $seq) = ($1, $2) if ($query->param('site' . $m) && $query->param('site' . $m) =~ $result);
+			if($box && $box ne '-')
 			{
 				$inscount++;
 #	print "GOT $box ($$OL_DATA{CLEAN}->{$box}) at $m with $seq<br>";
@@ -146,7 +145,7 @@ elsif ($query->param('swit') eq 'all' || $query->param('swit') eq 'some')
 				my $peptide = translate($critseg, 1, $CODON_TABLE);
 				my $newpatt = pattern_aligner($critseg, $$OL_DATA{CLEAN}->{$box}, $peptide, $CODON_TABLE);
 				my $newcritseg = pattern_adder($critseg, $newpatt, $CODON_TABLE);
-#	print "pattern ", $$OL_DATA{CLEAN}->{$box}, ", peptide $peptide, critseg $critseg, newcritseg $newcritseg<br>";
+#	print "pattern ", $$OL_DATA{CLEAN}->{$box}, ", pattern $newpatt,  peptide $peptide, critseg $critseg, newcritseg $newcritseg<br>";
 				substr($newnuc, $m*3 - 3, length($newcritseg)) = $newcritseg;
 			#	push @Error1, $box;
 			}
