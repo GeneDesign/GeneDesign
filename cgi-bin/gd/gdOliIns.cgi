@@ -1,9 +1,10 @@
 #!/usr/bin/perl
+use warnings;
 use strict;
 use GeneDesign;
-use ResSufTree;
+use GeneDesignML;
+use GeneDesignSufTree;
 use CGI;
-use PML;
 
 my $query = new CGI;
 print $query->header;
@@ -16,7 +17,7 @@ my $nextsteps = next_stepper(\@nexts, 5);
 
 gdheader("Silent Short Sequence Insertion", "gdOliIns.cgi", \@styles);
 
-if ($query->param('swit') eq '' && $query->param('insseq') eq '')
+if (! $query->param('swit') && ! $query->param('insseq'))
 {
 	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	$query->param('nucseq');
 	my $readonly = $nucseq	?	'readonly = "true"'	:	'';

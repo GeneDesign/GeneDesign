@@ -1,33 +1,35 @@
 #!/usr/bin/perl
 use strict;
+use warnings;
 use GeneDesign;
+use GeneDesignML;
 use CGI;
-use PML;
 
 my $query = new CGI;
 print $query->header;
 
 my $CODON_TABLE	 = define_codon_table(1);
-my $RE_DATA = define_sites("<newenz.txt");
+my $RE_DATA = define_sites($enzfile);
 
 my @styles = qw(re);
 my @nexts  = qw(SSIns SSRem SeqAna OligoDesign);
 my $nextsteps = next_stepper(\@nexts, 5);
-my $orgchoice = organism_selecter();
 my $iter = 3;
 
-gdheader("Silent Restriction Site Removal", "gdSSRem.cgi", \@styles);
+gdheader("Restriction Site Subtraction", "gdSSRem.cgi", \@styles);
 
-if ($query->param('MODORG') eq '')
+if (! $query->param('MODORG'))
 {
+	my $orgchoice = organism_selecter();
 	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	$query->param('nucseq');
-	my $readonly = $nucseq	?	'readonly = "true"'	:	'';
+	$nucseq = $nucseq	?	$nucseq	:	"";
+	my $readonly = ! $nucseq ?	" "	:	'readonly = "true"';
 print <<EOM;
 				<div id="notes">
 					<strong>To use this module you need a nucleotide sequence.  An organism name is optional.</strong><br>
 					Your nucleotide sequence will be searched for restriction sites and you will be prompted to choose as many as you want for removal.<br>
 					Sites will be removed without changing the amino acid sequence by changing whole codons.<br><em>Please Note:</em><br>
-					&nbsp;&nbsp;&bull;If you select an organism, targeted codons will be replaced with the codon that enjoys the most optimal expression in that organism.<br>
+					&nbsp;&nbsp;&bull;If you select an organism, targeted codons will be replaced with the codon that has the closest RSCU value in that organism.<br>
 					&nbsp;&nbsp;&bull;If you select no optimization, targeted codons will be replaced with a random codon.<br>
 					See the <a href="$docpath/Guide/ssr.html" target="blank">manual</a> for more information.
 				</div>
@@ -43,7 +45,7 @@ EOM
 	closer();
 }
 
-elsif ($query->param('MODORG') ne '' && $query->param('removeme') eq '')
+elsif ($query->param('MODORG') && ! $query->param('removeme'))
 {
 	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	cleanup($query->param('nuseq'));
 	my $organism = $query->param('MODORG');
@@ -62,7 +64,6 @@ print <<EOM;
 				</div>
 EOM
 	}
-	
 print <<EOM;
 				<div id="notes">
 					Below are your nucleotide sequence and all of the restriction sites that I recognized. Your current organism is $ORGANISMS{$organism}.<br>
@@ -73,7 +74,7 @@ print <<EOM;
 					This is your nucleotide sequence:<br>
 					<textarea name="nucseq"  rows="6" cols="120" readonly="true">$nucseq</textarea><br><br>
 					Present Restriction Sites:<br>
-					<div id="gridgroup2">
+					<div id="gridgroup2" style = "position:relative">
 EOM
 	for (0..int(scalar(@presents)/10))
 	{
@@ -91,19 +92,19 @@ EOM
 		($curpos, $ypos, $xpos) = (0, $ypos+20, 0);
 	}
 print <<EOM;
-					</div><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
-					<input type="hidden" name="MODORG" value="1"  />
-					<input type="submit" name=".submit" value=" Next Step: Remove these sites " />
+					</div>
+					<div style = "position:relative;top:300">
+						<input type="hidden" name="MODORG" value="1"/>
+						<input type="submit" name=".submit" value=" Next Step: Remove these sites "/>
+					</div>
 				</div>
 EOM
 	closer();
 }
 
-
 else
 {
-	my $Error4;
-	my $Error0;
+	my ($Error4, $Error0) = (" ", "" );
 	my $org = $query->param('MODORG');
 	my $oldnuc = cleanup($query->param('nucseq'), 0);
 	my $newnuc = $oldnuc;

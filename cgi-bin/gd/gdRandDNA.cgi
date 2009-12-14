@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 use strict;
 use GeneDesign;
+use GeneDesignML;
 use CGI;
-use PML;
 
 my $query = new CGI;
 print $query->header;

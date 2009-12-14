@@ -2,15 +2,15 @@
 
 use strict;
 use GeneDesign;
+use GeneDesignML;
 use CGI;
-use PML;
 use Perl6::Slurp;
 
 my $query = new CGI;
 print $query->header;
 
 my $CODON_TABLE	 = define_codon_table(1);
-my $RE_DATA = define_sites("<newenz.txt");	
+my $RE_DATA = define_sites($enzfile);	
 my $REoptions = "";
 $REoptions .= "<option value=\"$_\">$_</option>\n" . tab(10)	foreach (sort keys %{$$RE_DATA{CLEAN}});
 

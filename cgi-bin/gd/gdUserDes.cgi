@@ -1,23 +1,21 @@
 #!/usr/bin/perl
-#use warnings;
+use warnings;
 use strict;
 use CGI;
-use PML;
 use GeneDesign;
+use GeneDesignML;
 
 my $query = new CGI;
 print $query->header;
 
 my @styles = qw(re ol);
-gdheader("USER primer design", "gdUserDes.cgi", \@styles);
+gdheader("Building Block Design (USER overlap)", "gdUserDes.cgi", \@styles);
 
 my %gapperlen   = (40 => 700, 50 => 740, 60 => 740, 70 => 720, 80 => 740, 90 => 720, 100 => 660);
 my %ungapperlen = (40 => 700, 50 => 700, 60 => 750, 70 => 735, 80 => 760, 90 => 765, 100 => 750);
 					
-
-
 my $loxpsym = "ATAACTTCGTATAATGTACATTATACGAAGTTAT";
-if ($query->param('TARBBLLEN') eq '')
+if (! $query->param('TARBBLLEN'))
 {
 	my $nucseq = $query->param('PASSNUCSEQ')	?	$query->param('PASSNUCSEQ')	:	cleanup($query->param('nucseq'), 1);	
 print <<EOM;
@@ -31,7 +29,7 @@ print <<EOM;
 				<div id="gridgroup0">
 					Chunk sequence:<br>
 					<textarea name="WHOLESEQ"  rows="6" cols="100"></textarea><br>
-					Chunk name: <input type="text" name="CHNNAM" value="" size="50" maxlength="50" /><br><br>
+					Sequence name: <input type="text" name="CHNNAM" value="" size="50" maxlength="50" /><br><br>
 					Begin numbering building blocks from: <input type="text" name="STARTNUM" value="1" size="3" maxlength="3" /><br><br>
 					Return USER primers of Tm: <input type="text" name="USRMEL" value="56" size="2" maxlength="2" />&deg;<br>
 					Eligible USER unique sequence lengths: 
@@ -64,18 +62,15 @@ EOM
 	closer();
 }
 
-elsif($query->param('WHOLESEQ') ne '')
+elsif($query->param('WHOLESEQ'))
 {
-	my $wholeseq  = cleanup($query->param('WHOLESEQ'), 0);
-	my $wholelen = length($wholeseq);
-	my $startnum = $query->param('STARTNUM');							#default is 1
-	my $tar_bbl_len  = $query->param('TARBBLLEN');							#default is 740bp
-	my $usr_mel  = $query->param('USRMEL');									#default is 56û
-	my @usr_uni_len = $query->param(-name=>'USRUNILEN');						#default is just 7 (FALSTAFF)
-#	@usr_uni_len = $query->param(-name=>'USRUNILEN', -values=>\@values);#default is just 7	(BIGBY)
-	my $chunk_name = $query->param('CHNNAM');
-
-
+	my $wholeseq	= cleanup($query->param('WHOLESEQ'), 0);
+	my $wholelen	= length($wholeseq);
+	my $startnum	= $query->param('STARTNUM');			#default is 1
+	my $tar_bbl_len	= $query->param('TARBBLLEN');			#default is 740bp
+	my $usr_mel		= $query->param('USRMEL');				#default is 56û
+	my @usr_uni_len	= $query->param(-name=>'USRUNILEN');	#default is just 7
+	my $chunk_name	= $query->param('CHNNAM');
 	
 	my %pa;
 	$pa{gapswit}		=	$query->param('GAPSWIT');			#default is 1;
@@ -105,13 +100,15 @@ elsif($query->param('WHOLESEQ') ne '')
 	}
 	
 	
-	my %FoundSite;my %FoundSiteCoor;
-	my @UniUsers;my @Collection;my @Chunks;
+	my %FoundSite;
+	my %FoundSiteCoor;
+	my @UniUsers;
+	my @Collection;
+	my @Chunks;
 	my $offset = 0;	
-	my $count = $startnum - 1;my $countstr;
+	my $count = $startnum - 1;
 	
 	my $MASK = "0" x length($wholeseq);
-	
 ##Mask loxpsym sites
 	my $exp = regres($loxpsym, 1);
 	while ($wholeseq =~ /($exp)/ig)
@@ -192,7 +189,8 @@ elsif($query->param('WHOLESEQ') ne '')
 		my $lastlength = 0;
 		foreach my $tiv (@Collection)
 		{
-			my $tno = new Chunk;	my @Users;
+			my $tno = new Chunk;
+			my @Users;
 		
 			$tno->ChunkSeq(substr($wholeseq, $lastfound - 1, $tiv->Start - $lastfound + $tiv->nNumber + 2));
 			if (length($tno->ChunkSeq) < length(substr($wholeseq, $lastfound-1)) && $count == int((length($wholeseq) / $tar_bbl_len)+.5) -1)
@@ -205,7 +203,8 @@ elsif($query->param('WHOLESEQ') ne '')
 			$tno->ChunkStop($tno->ChunkLength + $tno->ChunkStart - 1);
 			my $remain = length(substr($wholeseq, $tiv->Start-1));
 			if ($remain < $tar_bbl_len / 4)	{	$tno->ChunkSeq(substr($wholeseq, $lastfound - 1));	}
-			$countstr = $count + 1;	while (length(@Collection-0) > length($countstr))	{	$countstr = "0" . $countstr;	}		
+			my $countstr = $count + 1;
+			while (length(@Collection-0) > length($countstr))	{	$countstr = "0" . $countstr;}
 			$tno->ChunkNumber($countstr);
 			my $pri_len = 0;
 			if ($count > 0)
@@ -244,12 +243,13 @@ elsif($query->param('WHOLESEQ') ne '')
 			oligocruncher($tno, \%pa);
 			push @Chunks, $tno;
 		}
-		take_note(@Collection-0 . " building blocks were generated.<br>");#, int((length($wholeseq) / $tar_bbl_len)+.5), "<br><br>";		
+		take_note(scalar(@Collection) . " building blocks were generated.<br>");#, int((length($wholeseq) / $tar_bbl_len)+.5), "<br><br>";		
 	}
 	else
 	{
 		my $tno = new Chunk;
-		$countstr = $startnum;	while (2 > length($countstr))	{	$countstr = "0" . $countstr;	}
+		my $countstr = $startnum;
+		while (2 > length($countstr))	{	$countstr = "0" . $countstr;}
 		$tno->ChunkSeq($wholeseq);
 		$tno->ChunkLength($wholelen);
 		$tno->Mask($MASK);

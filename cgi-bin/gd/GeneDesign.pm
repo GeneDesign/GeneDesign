@@ -8,6 +8,7 @@ use POSIX(log10);
 use List::Util qw(shuffle min first);
 use List::MoreUtils qw(uniq);
 use Class::Struct;
+use Perl6::Slurp;
 
 @ISA = qw(Exporter);
 @EXPORT = qw(define_sites overhang define_site_status siteseeker filter_sites mutexclu first_base report_RE
@@ -15,9 +16,9 @@ use Class::Struct;
 			define_codon_percentages index_codon_percentages
 			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
-			oligocruncher orf_finder define_oligos
+			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
 			codon_count generate_RSCU_values
-			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath
+			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath $enzfile
 			);
 			
 struct REnz => { map { $_ => '$' } qw(SiteNumber CutterName AARecogniz NtRecogniz NtPosition MustChange NewSequenc Sticky RxnTemp StarAct 
@@ -30,8 +31,9 @@ struct Chunk => { map { $_ => '$' } qw(Parameters ChunkNumber NumberofOligos Chu
 
 struct USERsite => { map { $_ => '$' } qw(Start nNumber Sequence) };
 
-our $docpath = "../../Documents/gd2";
-our $linkpath = "http://localhost/gd2";
+our $docpath = "../../Documents/gd";
+our $linkpath = "http://localhost/gd";
+our $enzfile = "bs_enzymes.txt";
 
 my %NTIDES = (A => "A", B => "[BCGKSTY]", C => "C", D => "[ADGKRTW]", G => "G", H => "[ACHMTWY]", K => "[GKT]", M => "[ACM]", 
 				   N => "[ABCDGHKMNRSTVWY]", R => "[AGR]", S => "[CGS]", T => "T", V => "[ACGMRSV]", W => "[ATW]", Y => "[CTY]", );
@@ -40,8 +42,6 @@ our @NTSG = qw(B D H K M N R S V W Y);
 
 my %AACIDS = map { $_, $_ } qw(A C D E F G H I K L M N P Q R S T V W Y);
 $AACIDS{"*"} = "[\*]";
-
-my $docpath = "../../Documents/gd2";
 
 our %AA_NAMES = (A => "Ala", B => "Unk", C => "Cys", D => "Asp", E => "Glu", F => "Phe", G => "Gly", H => "His", I => "Ile",  
 				 J => "Unk", K => "Lys", L => "Leu", M => "Met", N => "Asn", O => "Unk", P => "Pro", Q => "Gln", R => "Arg", 
@@ -73,6 +73,7 @@ use strict;
 	
 #### count ####
 # takes a nucleotide sequence and returns a base count.  Looks for total length, purines, pyrimidines, and degenerate bases.   
+#  If degenerate bases are present assumes their substitution for non degenerate bases is totally random for percentage estimation. 
 # in: nucleotide sequence (string),
 # out: base count (hash)
 # 0 cleanup
@@ -80,16 +81,18 @@ sub count
 {
 	my ($strand) = @_;
 	return if (!$strand);
-	my %BASE_COUNT;
-	$BASE_COUNT{'length'} = length($strand);
-	foreach (@NTS, @NTSG)	{	$BASE_COUNT{$_}  = ($strand =~ s/$_//ig || 0);	};
-	foreach (@NTS)			{	$BASE_COUNT{'d'} += $BASE_COUNT{$_};			};
-	foreach (@NTSG)			{	$BASE_COUNT{'n'} += $BASE_COUNT{$_};			};
-	$BASE_COUNT{'?'} = ($BASE_COUNT{'d'} + $BASE_COUNT{'n'}) - $BASE_COUNT{'length'};
-	$BASE_COUNT{'U'} = ($strand =~ s/U//ig || 0);
-	$BASE_COUNT{'GCp'} = int(((($BASE_COUNT{'S'}+$BASE_COUNT{'G'}+$BASE_COUNT{'C'})/$BASE_COUNT{'length'})*100)+.5);
-	$BASE_COUNT{'ATp'} = int(((($BASE_COUNT{'W'}+$BASE_COUNT{'A'}+$BASE_COUNT{'T'})/$BASE_COUNT{'length'})*100)+.5);
-	return \%BASE_COUNT;
+	my $BC = {};
+	$$BC{'length'} = length($strand);
+	foreach (@NTS, @NTSG)	{	$$BC{$_}   = ($strand =~ s/$_//ig || 0);	};
+	foreach (@NTS)			{	$$BC{'d'} += $$BC{$_};			};
+	foreach (@NTSG)			{	$$BC{'n'} += $$BC{$_};			};
+	$$BC{'?'} = ($$BC{'d'} + $$BC{'n'}) - $$BC{'length'};
+	$$BC{'U'} = ($strand =~ s/U//ig || 0);
+	my $split = .5*$$BC{'R'}    + .5*$$BC{'Y'}    + .5*$$BC{'K'}    + .5*$$BC{'M'}    + .5*$$BC{'N'};
+	my $trip  = (2/3)*$$BC{'B'} + (2/3)*$$BC{'V'} + (1/3)*$$BC{'D'} + (1/3)*$$BC{'H'};
+	$$BC{'GCp'} = int(((($$BC{'S'}+$$BC{'G'}+$$BC{'C'}+$split + $trip)/$$BC{'length'})*100)+.5);
+	$$BC{'ATp'} = int(((($$BC{'W'}+$$BC{'A'}+$$BC{'T'}+$split + (.9-$trip))/$$BC{'length'})*100)+.5);
+	return $BC;
 }
 
 #### melt ####
@@ -105,14 +108,14 @@ sub melt
 	$salt = $salt || .05;
 	$conc = $conc || .0000001;
 	my $mgc = 1.987;
-	my $BASE_COUNT = count($strand);
+	my $BC = count($strand);
 	if ($swit == 1) #simple
 	{
-		return ((4 * ($$BASE_COUNT{'C'} + $$BASE_COUNT{'G'})) + (2 * ($$BASE_COUNT{'A'} + $$BASE_COUNT{'T'})));
+		return ((4 * ($$BC{'C'} + $$BC{'G'})) + (2 * ($$BC{'A'} + $$BC{'T'})));
 	}
 	if ($swit == 2 || $swit == 3) #baldwin, primer3
 	{
-		my $base = 81.5 + 16.6*log10($salt) + 41*(($$BASE_COUNT{'C'}+$$BASE_COUNT{'G'})/length($strand));
+		my $base = 81.5 + 16.6*log10($salt) + 41*(($$BC{'C'}+$$BC{'G'})/length($strand));
 		return $base - (675/length($strand)) if ($swit == 2);
 		return $base - (600/length($strand)) if ($swit == 3);
 	}
@@ -417,7 +420,10 @@ sub pattern_remover
 {
 	my ($critseg, $pattern, $CODON_TABLE, $RSCU_VALUES) = @_;
 	my $REV_CODON_TABLE = define_reverse_codon_table($CODON_TABLE); 
-	my @wholecodonarr;	my @rankings; my $tcv = 0; my $tcv2 = 0; my $RSCU; my $codonpos; my $codonreplace; my $copy; my $sflag = 0;
+	my @wholecodonarr;
+	my @rankings;
+	my ($tcv, $tcv2, $sflag) = (0, 0, 0);
+	my $copy;
 	for (my $offset = 0; $offset < (length($critseg)); $offset+=3)	# for each codon position, get array of synonymous codons
 	{
 		push @wholecodonarr, $$REV_CODON_TABLE{$$CODON_TABLE{substr($critseg, $offset, 3)}};
@@ -428,11 +434,12 @@ sub pattern_remover
 		{
 			push @rankings, abs($$RSCU_VALUES{$itc2} - $$RSCU_VALUES{substr($critseg, $tcv, 3)}) . " $tcv2 $itc2\n" if (substr($critseg, $tcv, 3) ne $itc2);	
 		}
-		$tcv+=3; $tcv2++;
+		$tcv += 3;
+		$tcv2++;
 	}
 	foreach my $itp (@rankings)
 	{
-		if ($itp =~ /([0-9\.]+) ([0-9]+) ([GCTA]+)/) { $RSCU = $1; $codonpos = $2; $codonreplace = $3;}
+		my ($RSCU, $codonpos, $codonreplace) = ($1, $2, $3) if ($itp =~ /([0-9\.]+) ([0-9]+) ([GCTA]+)/);
 		$copy = $critseg;
 		substr($copy, $codonpos * 3, 3) = $codonreplace;
 		next if ($copy =~ regres($pattern));
@@ -530,6 +537,24 @@ sub compare_sequences
 	return $alresults;
 }
 
+#### cons_seq ####
+sub cons_seq
+{
+	my ($arrref) = @_;
+	my $cons = '';
+	for my $x (0..length($$arrref[0]))
+	{
+		my $flag = 0;
+		my $init = substr($$arrref[0], $x, 1);
+		for my $y (1..scalar(@$arrref)-1)
+		{
+			$flag++ if ($init ne substr($$arrref[$y], $x, 1));
+		}
+		$cons .=  $flag == 0	?	substr($$arrref[0], $x, 1)	:	'_';
+	}
+	return $cons;
+}
+
 #### sitver ####
 sub sitver
 {
@@ -548,10 +573,9 @@ sub sitver
 #### change_codons ####
 # takes a nucleotide sequence and a few codon tables and tries to recode the nucleotide sequence to one of four algorithms, provided as a trailing switch.
 # in: nucleotide sequence (string), codon table (hash reference), reverse codon table (hash reference), 
-#     RSCU value table (hash reference), algorithm number (0 random, 1 most optimal, 2 next most optimal, 3 most different)
+#     RSCU value table (hash reference), algorithm number (0 random, 1 most optimal, 2 next most optimal, 3 most different, 4 least different)
 # out: nucleotide sequence (string)
 # 0 cleanup
-# this one is a doozy-tizzy! lets work on it.
 sub change_codons
 {
 	my ($oldseq, $CODON_TABLE, $RSCU_VALUES, $swit) = @_;
@@ -565,15 +589,15 @@ sub change_codons
 		my @posarr = sort { $$RSCU_VALUES{$b} <=> $$RSCU_VALUES{$a} } @{$$REV_CODON_TABLE{$aa}};
 		if (scalar(@posarr) != 1 && $aa ne '*')
 		{	
-			if ($swit == 0)		#Random
+			if    ($swit == 0)	#Random
 			{
 				$newcod = first { $_ ne $curcod } shuffle @posarr;
 			}
-			elsif ($swit == 1)	#Most optimal
+			elsif ($swit == 1)	#Optimal
 			{
 				$newcod = first {		1		} @posarr;
 			}
-			elsif ($swit == 2)	#Next Most Optimal
+			elsif ($swit == 2)	#Less Optimal
 			{
 				$newcod = first { $_ ne $curcod } @posarr;
 			}
@@ -600,18 +624,76 @@ sub change_codons
 			}
 			elsif ($swit == 4)	#Least Different
 			{
-				#$newcod = pattern_remover($curcod, $curcod, $CODON_TABLE, $RSCU_VALUES);
-				#$newcod = $curcod if (abs($$RSCU_VALUES{$newcod} - $$RSCU_VALUES{$curcod}) > .5);
-				@posarr = sort {abs($$RSCU_VALUES{$a} - $$RSCU_VALUES{$curcod}) <=> abs($$RSCU_VALUES{$b} - $$RSCU_VALUES{$curcod})} @posarr;
-				$newcod = first { $_ ne $curcod } @posarr;
+				my @sorarr = sort {abs($$RSCU_VALUES{$a} - $$RSCU_VALUES{$curcod}) <=> abs($$RSCU_VALUES{$b} - $$RSCU_VALUES{$curcod})} @posarr;
+				$newcod = first { $_ ne $curcod } @sorarr;
 				$newcod = $curcod if (abs($$RSCU_VALUES{$newcod} - $$RSCU_VALUES{$curcod}) > 1);
 			}
 		}
 		$newseq .= $newcod;
-		$offset+=3;
+		$offset += 3;
 	}
 	return $newseq;
 }
+
+#### fasta_parser ####
+#
+#
+#
+sub fasta_parser
+{
+	my ($instr) = @_;
+	my $seqhsh = {};
+	my @pre = split(">", $instr);
+	shift @pre;
+	foreach my $preseq (@pre)
+	{
+		my @pair = split(/[\n\r]/, $preseq);
+		my $id = shift @pair;
+		$$seqhsh{">" . $id} = join("", @pair);
+	}
+	return $seqhsh;
+}
+
+#### print_alignment ####
+#
+# $swit = 1 for html, 0 for text
+#
+sub print_alignment
+{
+	my ($nuchshref, $width, $swit, $aaseq) = @_;
+	my ($space, $break, $times) = $swit == 0	?	(" ", "\n", "x")	:	("&nbsp;", "<br>", "&times;");
+	my $start = 0;
+	my $output = $break;
+	while ($start < length($$nuchshref{first {1} keys %$nuchshref}))
+	{
+		my $count = 0;
+		my $iter = 1;
+		if ($aaseq)
+		{
+			my $rt;
+			$output.= $break . "0 tran" . $space;
+			for ($rt = ($start / 3); $rt < ($start / 3) + ($width / 3); $rt++)
+			{
+				$output .= substr($aaseq, $rt, 1) . $space x 2 if ($rt < length($aaseq));
+				$output .= $space x 3 if ($rt >= length($aaseq));
+			}
+			$output .= $space . $rt;
+		}
+		foreach (sort keys %$nuchshref)
+		{
+			$output .= $break . $_ . $space . substr($$nuchshref{$_}, $start, $width);
+			$output .= $space . ($start+$width)*$iter if ($count == 0 && ($start+$width)*$iter < length($$nuchshref{$_}));
+			$output .= ($space x (($start+$width)*$iter - length($$nuchshref{$_})+1)) . ($start+$width)*$iter if ($count == 0 && ($start+$width)*$iter >= length($$nuchshref{$_}));
+			$count++;
+		}
+		$iter++;
+		$output .= $break . $space x 5 . (($space x 9 . $times) x ($width / 10));
+		$output .= $break x 2;
+		$start += $width;
+	}
+	return $output;
+}
+
 
 #### define_codon_table ####
 # Generates a hash.  KEYS: codons (string)  VALUES: amino acids (string)
@@ -791,7 +873,7 @@ sub index_codon_percentages
 	my @xvalues; my @yvalues;
 	my %CODON_PERCENTAGE_TABLE = %$cpthashref;
 	my $index; my $sum;
-	for (my $x = int($window *(3/2))-3; $x < (length($ntseq) - int($window *(3/2))); $x+=3)
+	for (my $x = int($window *(3/2))-3; $x < (length($ntseq) - 3*(int($window *(3/2))-3)); $x+=3)
 	{
 		$sum = 0;
 		for(my $y = $x; $y < 3*$window + $x; $y += 3)
@@ -853,7 +935,7 @@ sub generate_RSCU_values
 		my $family = $$REV_CODON_TABLE{$$CODON_TABLE{$_}};
 		my $family_size = scalar(@$family);
 		$x_j += $$codon_count{$_} foreach (grep {exists $$codon_count{$_}} @$family);
-		$$RSCU_hash{$_} = sprintf("%.4f",  $x / ($x_j / $family_size) ) + 0;
+		$$RSCU_hash{$_} = sprintf("%.3f",  $x / ($x_j / $family_size) ) ;#+ 0;
 	}
 	return $RSCU_hash;
 }
@@ -912,12 +994,14 @@ sub oligocruncher
 #print "rev 1 ", $tov->ChunkNumber, ", per $tar_chn_len, dif $tar_cur_dif, num $cur_oli_num, len $cur_oli_len, lap $cur_oli_lap, mel $pa{tar_chn_mel}, tol $pa{chn_mel_tol}, <br>";	
 	if ($pa{gapswit} == 1)
 	{
-		if (abs($tar_cur_dif) >= $cur_oli_num)					##-if difference can be spread equally across oligos, increase length
+		##-if difference can be spread equally across oligos, increase length
+		if (abs($tar_cur_dif) >= $cur_oli_num)					
 		{
 			$cur_oli_len = $pa{tar_oli_len} + int($tar_cur_dif / $cur_oli_num);
 			$tar_cur_dif = $tar_cur_dif - ($cur_oli_num * (int($tar_cur_dif / $cur_oli_num)));	
 		}
-		if ( ($cur_oli_len >= $pa{max_oli_len}) || ($cur_oli_len == $pa{max_oli_len} && $tar_cur_dif > 0) )		##-if the length is violating max_len, increase num by 2, decrease len by 10, recalc
+		##-if the length is violating max_len, increase num by 2, decrease len by 10, recalc
+		if ( ($cur_oli_len >= $pa{max_oli_len}) || ($cur_oli_len == $pa{max_oli_len} && $tar_cur_dif > 0) )		
 		{
 			$cur_oli_len = $pa{tar_oli_len}-10; 
 			$cur_oli_num += 2; 
@@ -944,12 +1028,12 @@ sub oligocruncher
 			$start =  $start + $strlen - $cur_oli_lap;
 		}
 		@tree = map (melt($_, $pa{melform} , .05, .0000001), @Overlaps);
-		foreach (@tree)	{	$avg += $_;	}	$avg = int(($avg / (@tree-0))+.5);
+		foreach (@tree)	{	$avg += $_;	}	$avg = int(($avg / scalar(@tree))+.5);
 		$cur_chn_mel = ($avg < ($pa{tar_chn_mel}-10))	?	$pa{tar_chn_mel} - .2*($pa{tar_chn_mel}-$avg) :	$pa{tar_chn_mel};	#Adjust target melting temp for reality.
 #print "rev 3 ", $tov->ChunkNumber, ", per $tar_chn_len, dif $tar_cur_dif, num $cur_oli_num, len $cur_oli_len, lap $cur_oli_lap, mel $cur_chn_mel, tol $pa{chn_mel_tol}, <br>";	
 
 		$start = 0;
-		undef @Overlaps;
+		@Overlaps = ();
 		for (my $w = 1; $w <= $cur_oli_num; $w++)					##-then make oligos, changing overlaps for melting temperature if appropriate
 		{
 			my $laplen = $cur_oli_lap;
@@ -971,6 +1055,7 @@ sub oligocruncher
 					$laplen++;	$strlen++;
 				}				
 				push @Overlaps, substr($tov->ChunkSeq, $start + $strlen - $laplen, $laplen);
+#			print "&nbsp;&nbsp;$Overlaps[-1]<Br>";
 				$avg_chn_mel += melt(substr($tov->ChunkSeq, $start + $strlen - $laplen, $laplen), $pa{melform}, .05, .0000001);
 			}
 			push @Oligos, substr($tov->ChunkSeq, $start, $strlen);
@@ -982,7 +1067,6 @@ sub oligocruncher
 			$start =  $start + $strlen - $laplen;
 		}
 		for (my $w = 0; $w <= $cur_oli_num - 3; $w++)	{	$Collisions{$w} = $ends[$w] - $begs[$w+2]	if ($ends[$w] > $begs[$w+2]);	}
-		$tov->Collisions(\%Collisions);
 	}
 	elsif ($pa{gapswit} == 0)
 	{
@@ -1015,9 +1099,9 @@ sub oligocruncher
 			$avg_oli_len += length($Oligos[-1]);
 		}
 	}
-	
-	$tov->AvgOlapMelt(int(($avg_chn_mel / (@Overlaps-0))+.5));
-	$tov->AvgOligoLength(int(($avg_oli_len / (@Oligos-0))+.5));
+	$tov->Collisions(\%Collisions);	
+	$tov->AvgOlapMelt(int(($avg_chn_mel / scalar(@Overlaps))+.5));
+	$tov->AvgOligoLength(int(($avg_oli_len / scalar(@Oligos))+.5));
 	$tov->Oligos(\@Oligos);
 	$tov->Olaps(\@Overlaps);
 	return;
@@ -1099,55 +1183,61 @@ sub define_oligos
 sub define_sites
 {
 	my ($file) = @_;
-	open (IN, "$file")  || die "can't open enzyme list: $!.\n";
+	my @data = split(/\n/, slurp($file));
+	my $swit = $data[0] =~ /^name/ ? 1	:	0;
+	shift @data if ($swit == 1);
 	my %RE_DATA;
 	($RE_DATA{REGEX},	$RE_DATA{CLEAN},	$RE_DATA{TABLE},	$RE_DATA{SCORE},	$RE_DATA{TYPE},  
-	 $RE_DATA{METHB},	$RE_DATA{METHI},	$RE_DATA{VEND} ,	$RE_DATA{STAR} ,	$RE_DATA{TEMP}  ) = 
-	(	{}, {},				{}, {},				{}, {},				{}, {},				{}, {});
-	while (<IN>)
+	 $RE_DATA{DAM},		$RE_DATA{DCM},		$RE_DATA{CPG},		$RE_DATA{VEND} ,	$RE_DATA{STAR},	$RE_DATA{TEMP},
+	 $RE_DATA{BUF1},	$RE_DATA{BUF2},		$RE_DATA{BUF3} ,	$RE_DATA{BUF4} ,	$RE_DATA{BUFU}, $RE_DATA{INACT}    ) = 
+	(	{}, {}, {},		{}, {}, {},			{}, {}, {},			{}, {}, {},			{},	{}, {},		{}, {});
+	foreach my $line (@data)
 	{
-		if ($_ =~ /^(\w+)\t(\S+)\t(\d*)\t(\W?)\t([acp]*)\t([acp]*)\t(\w*)\t([.\d]+)/)
+		my ($name, $site, $temp, $inact, $buf1, $buf2, $buf3, $buf4, $bufu, $dam, $dcm, $cpg, $score, $star, $vendor) = split("\t", $line);
+		$RE_DATA{TABLE}->{$name}	= $site;		#annotated cleavage site
+		$site =~ s/\W*\d*//g;
+		$RE_DATA{CLEAN}->{$name}	= $site;		#recognition site
+		$RE_DATA{TEMP} ->{$name}	= $temp;		#optimal temperature 
+		$RE_DATA{INACT}->{$name}	= $inact;		#inactivation formula 
+		$RE_DATA{BUF1} ->{$name}	= $buf1; 
+		$RE_DATA{BUF2} ->{$name}	= $buf2; 
+		$RE_DATA{BUF3} ->{$name}	= $buf3; 
+		$RE_DATA{BUF4} ->{$name}	= $buf4; 
+		$RE_DATA{BUFU} ->{$name}	= $bufu;
+		$RE_DATA{DAM}  ->{$name}	= $dam; 
+		$RE_DATA{DCM}  ->{$name}	= $dcm; 
+		$RE_DATA{CPG}  ->{$name}	= $cpg;	
+		$RE_DATA{SCORE}->{$name}	= $score;		#price of the enzyme
+		$RE_DATA{STAR} ->{$name}	= $star;		#star activity?
+		$RE_DATA{VEND} ->{$name}	= $vendor;		#vendors provided by
+	#	$RE_DATA{METHB}->{$name}	= $block;		#blocked by methylation?
+	#	$RE_DATA{METHI}->{$name}	= $inhibit;		#inhibited by methylation?
+		my $sitelen = length($site);
+		my ($lef, $rig) = ("", "");
+		if ($RE_DATA{TABLE}->{$name} =~ $IIP)
 		{
-			my ($name,	$site,	$temp,	$star,	$block, $inhibit,	$vendor,	$score) = 
-			   ($1,		$2,		$3,		$4,		$5,		$6,			$7,			$8);
-				
-			$RE_DATA{SCORE}->{$name}	= $score;		#price of the enzyme
-			$RE_DATA{TABLE}->{$name}	= $site;		#annotated cleavage site
-			$site =~ s/\W*\d*//g;
-			$RE_DATA{CLEAN}->{$name}	= $site;		#recognition site
-			$RE_DATA{VEND} ->{$name}	= $vendor;		#vendors provided by
-			$RE_DATA{METHB}->{$name}	= $block;		#blocked by methylation?
-			$RE_DATA{METHI}->{$name}	= $inhibit;		#inhibited by methylation?
-			$RE_DATA{STAR} ->{$name}	= $star;		#star activity?
-			$RE_DATA{TEMP} ->{$name}	= $temp;		#optimal temperature 
-			my $sitelen = length($site);
-			my ($lef, $rig) = ("", "");
-			if ($RE_DATA{TABLE}->{$name} =~ $IIP)
-			{
-				$lef = length($1); 
-				$rig = $sitelen - $lef;
-			}
-			elsif ($RE_DATA{TABLE}->{$name} =~ $IIP2)
-			{
-				$lef = 0-$sitelen; 
-				$rig = $sitelen;
-			}
-			if ($RE_DATA{TABLE}->{$name} =~ $IIA || $RE_DATA{TABLE}->{$name} =~ $IIA2 || $RE_DATA{TABLE}->{$name} =~ $IIA3)
-			{
-				$lef = int($1); 
-				$rig = int($2);
-			}
-		#stickiness
-			$RE_DATA{TYPE}->{$name} .= ($lef < $rig)	?	"5'"	:	($lef > $rig)	?	"3'"	:	($lef == $rig)	?	"b"	:	"?";
-			$RE_DATA{TYPE}->{$name} .= "1" if (abs($lef - $rig) == 1);
-		#regular expression array	
-			my @arr = ( complement($site, 1) ne $site )						?	
-					  ( regres($site, 1), regres(complement($site, 1), 1) )	:	
-					  ( regres($site, 1) );
-			$RE_DATA{REGEX}->{$name} = \@arr;						
+			$lef = length($1); 
+			$rig = $sitelen - $lef;
 		}
+		elsif ($RE_DATA{TABLE}->{$name} =~ $IIP2)
+		{
+			$lef = 0-$sitelen; 
+			$rig = $sitelen;
+		}
+		elsif ($RE_DATA{TABLE}->{$name} =~ $IIA || $RE_DATA{TABLE}->{$name} =~ $IIA2 || $RE_DATA{TABLE}->{$name} =~ $IIA3)
+		{
+			$lef = int($1); 
+			$rig = int($2);
+		}
+	#stickiness
+		$RE_DATA{TYPE}->{$name} .= ($lef < $rig)	?	"5'"	:	($lef > $rig)	?	"3'"	:	($lef == $rig)	?	"b"	:	"?";
+		$RE_DATA{TYPE}->{$name} .= "1" if (abs($lef - $rig) == 1);
+	#regular expression array	
+		my $arr = ( complement($site, 1) ne $site )						?	
+				  [ regres($site, 1), regres(complement($site, 1), 1) ]	:	
+				  [ regres($site, 1) ];
+		$RE_DATA{REGEX}->{$name} = $arr;						
 	}
-	close IN;
 	return \%RE_DATA;
 }
 
@@ -1253,14 +1343,56 @@ sub filter_sites
 		@cutters = grep { ($pa{cleavage_site} =~ /P/ && ($$RE_DATA{TABLE}->{$_} =~ $IIP || $$RE_DATA{TABLE}->{$_} =~ $IIP2))
 						||($pa{cleavage_site} =~ /A/ && ($$RE_DATA{TABLE}->{$_} =~ $IIA || $$RE_DATA{TABLE}->{$_} =~ $IIA2 || $$RE_DATA{TABLE}->{$_} =~ $IIA3)) }	@cutters;
 	}
-	if ( $pa{check_price} )
-	{
-		@cutters = grep { $$RE_DATA{SCORE}->{$_} >= $pa{low_price} && $$RE_DATA{SCORE}->{$_} <= $pa{high_price} } @cutters;
-	}
 	if ( $pa{check_ambiguity} )
 	{
 		@cutters = grep {  ($pa{ambiguity} =~ /1/ && $$RE_DATA{CLEAN}->{$_} !~ /N/)
 						|| ($pa{ambiguity} =~ /2/ && $$RE_DATA{CLEAN}->{$_} !~ $ambnt) } @cutters;
+	}
+	if ( $pa{check_buffers})
+	{
+		if ($pa{buffer_bool} eq "OR")
+		{
+			my %temp;
+			foreach my $b (split(" ", $pa{buffers}))
+			{
+				$temp{$_}++ foreach( grep { $$RE_DATA{"BUF".$b}->{$_} >= $pa{buffer_activity} } @cutters);
+			}
+			@cutters = keys %temp;
+		}
+		else
+		{
+			foreach my $b (split(" ", $pa{buffers}))
+			{
+				@cutters = grep { $$RE_DATA{"BUF".$b}->{$_} >= $pa{buffer_activity} } @cutters;
+			}
+		}
+	}
+	if ( $pa{check_heat})
+	{
+		my %temp;
+		foreach my $h (split(" ", $pa{heat}))
+		{
+			$temp{$_}++ foreach( grep {$$RE_DATA{INACT}->{$_} =~ /\@$h/} @cutters);
+		}
+		@cutters = keys %temp;
+	}
+	if ( $pa{check_temperature})
+	{
+		my %temp;
+		foreach my $t (split(" ", $pa{temperature}))
+		{
+			$temp{$_}++ foreach( grep {$$RE_DATA{TEMP}->{$_} == $t} @cutters);
+		}
+		@cutters = keys %temp;
+	}
+	if ( $pa{check_star} )
+	{
+		@cutters = grep {  ($pa{check_star} =~ /1/ && $$RE_DATA{STAR}->{$_} eq "y")
+						|| ($pa{check_star} =~ /2/ && !$$RE_DATA{STAR}->{$_}) } @cutters;
+	}
+	if ( $pa{check_price} )
+	{
+		@cutters = grep { $$RE_DATA{SCORE}->{$_} >= $pa{low_price} && $$RE_DATA{SCORE}->{$_} <= $pa{high_price} } @cutters;
 	}
 	if ( $pa{check_site_length} )
 	{
@@ -1280,28 +1412,33 @@ sub filter_sites
 	}
 	if ( $pa{check_meth_status} )
 	{
-		my %methed;
 		if ($pa{check_meth_status} == 1)
 		{
-			$methed{$_}++ foreach ( grep { $$RE_DATA{METHI}->{$_} eq "" &&  $$RE_DATA{METHB}->{$_} eq "" } @cutters);
+			my %methed;
+			$methed{$_}++ foreach ( grep { ! $$RE_DATA{DAM}->{$_} &&  ! $$RE_DATA{CPG}->{$_}  && ! $$RE_DATA{DCM}->{$_} } @cutters);
+			@cutters = keys %methed;
 		}
 		elsif ($pa{check_meth_status} == 2)
 		{
-			foreach my $methstat (split " ", $pa{meth_status})
+			if ($pa{meth_bool} eq "OR")
 			{
-				my $stat = substr($methstat, 0, 1);
-				my $kind = substr($methstat, 1, 1);
-				if ($stat eq 'b')
+				my %temp;
+				foreach my $methstat (split " ", $pa{meth_status})
 				{
-					$methed{$_}++ foreach ( grep {$$RE_DATA{METHB}->{$_} =~ $kind} @cutters );
+					my ($type, $way) = ($1, uc $2) if ($methstat =~ /(\w)\.(\w+)/);
+					$temp{$_}++ foreach( grep { $$RE_DATA{$way}->{$_} eq $type || ($type eq "f" && ! $$RE_DATA{$way}->{$_}) } @cutters);
 				}
-				if ($stat eq 'i')
+				@cutters = keys %temp;
+			}
+			else
+			{
+				foreach my $methstat (split " ", $pa{meth_status})
 				{
-					$methed{$_}++ foreach ( grep {$$RE_DATA{METHI}->{$_} =~ $kind} @cutters );
+					my ($type, $way) = ($1, uc $2) if ($methstat =~ /(\w)\.(\w+)/);
+					@cutters = grep { $$RE_DATA{$way}->{$_} eq $type || ($type eq "f" && ! $$RE_DATA{$way}->{$_}) } @cutters;
 				}
 			}
 		}
-		@cutters = keys %methed;
 	}
 	foreach my $forbid (split " ", $pa{disallowed_seq})
 	{

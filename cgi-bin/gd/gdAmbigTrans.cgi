@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 use strict;
+use warnings;
 use CGI;
-use PML;
 use GeneDesign;
+use GeneDesignML;
 
 my $query = new CGI;
 print $query->header;
@@ -13,15 +14,13 @@ my @styles = qw(re);
 
 gdheader("Ambiguous Translation", "gdAmbigTrans.cgi", \@styles);
 
-if ($query->param('nseq') eq "")
+if (! $query->param('nseq'))
 {
 print <<EOM;
 				<div id="notes">
 					<strong>To use this module you need a nucleotide sequence.</strong><br>
 					This module is for the translation of DNA sequences that may include ambiguous bases.<br>
-					<em>Please Note:</em><br>
-					&nbsp;&nbsp;&bull;?<br>
-					See the <a href="$docpath/Guide/codjug.html" target="blank">manual</a> for more information.
+					See the <a href="$docpath/Guide/AmbTrans.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Your nucleotide sequence:<br>
@@ -36,11 +35,11 @@ EOM
 
 else
 {
-	my $nucseq = cleanup($query->param('nseq'), 2);
-	my @sortarr = sort(amb_translation($nucseq, $CODON_TABLE, 1));
-	my @sortarr2 = sort(amb_translation($nucseq, $CODON_TABLE));
-	my $number = scalar(@sortarr);
-	my $number2 = scalar(@sortarr2);
+	my $nucseq		= cleanup($query->param('nseq'), 2);
+	my @sortarr		= sort(amb_translation($nucseq, $CODON_TABLE, 1));
+	my @sortarr2	= sort(amb_translation($nucseq, $CODON_TABLE));
+	my $number		= scalar(@sortarr);
+	my $number2		= scalar(@sortarr2);
 print <<EOM;
 				<div id="notes">
 					There are $number possible peptides if we force the first base of your oligo to be the sense frame.<br>

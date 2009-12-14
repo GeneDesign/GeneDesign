@@ -18,7 +18,7 @@ my $vecs    = $query->param('vector');
 my $email   = $query->param('email');
 my $now = localtime(time);
 my $rand = rand (24);
-my $file = "$docpath/Errors/" . $email . $when . $rand  . ".log";
+my $file = "$docpath/errors/" . $email . $when . $rand  . ".log";
 open (OUT, ">$file") || die "$! can't open Errors log";
 print $file;
 

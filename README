@@ -1,12 +1,18 @@
 GeneDesign development branch
+GeneDesign is a group of cgi scripts fronting a nucleotide manipulation library.  It is entirely implemented in perl.
 
-installation prereqs:
-from cpan: GD::Graph, Perl6::Slurp, List::MoreUtils, Spreadsheet::ParseExcel, Spreadsheet::WriteExcel
+installation prereqs (all available from CPAN): 
+GD::Graph 
+Text::Wrap
+Perl6::Slurp
+List::Util 
+List::MoreUtils
+Spreadsheet::ParseExcel
+Spreadsheet::WriteExcel
 
-gdOliReDes and gdFusionDes are not working!  I'm not sure that we need either one anymore although primer picking is a nice function I think.
+gdOliReDes and gdFusionDes are not currently under development.
 
 
 To Do:
 -put all variables into hash that makes carrying through "design a gene" much much simpler"
--curate enzyme list
 

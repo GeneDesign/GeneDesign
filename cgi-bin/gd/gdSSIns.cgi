@@ -4,15 +4,16 @@ use strict;
 use File::Find;
 use List::Util qw(first);
 use GeneDesign;
-use ResSufTree;
-use PML;
+use GeneDesignML;
+use GeneDesignSufTree;
 use CGI qw(:standard);
+use Perl6::Slurp;
 
 my $query = new CGI;
 print $query->header;
 
 my $CODON_TABLE	 = define_codon_table(1);
-my $RE_DATA = define_sites("<newenz.txt");
+my $RE_DATA = define_sites($enzfile);
 
 my @styles = qw(re mg pd fn);
 my @nexts  = qw(SSIns SSRem SeqAna OligoDesign);
@@ -20,7 +21,7 @@ my $nextsteps = next_stepper(\@nexts, 5);
 
 gdheader("Silent Restriction Site Insertion", "gdSSIns.cgi", \@styles);
 
-if ($query->param('swit') eq '' && $query->param('nextrem') eq '')
+if (! $query->param('swit') && ! $query->param('nextrem'))
 {
 	my $nucseq		= $query->param('PASSNUCSEQUENCE')	||	$query->param('nucseq');
 	my $aaseq		= $query->param('AASEQUENCE')		||	translate($nucseq, 1, $CODON_TABLE);
@@ -245,19 +246,29 @@ if ($query->param('swit') eq "pd")
 	}
 	my $VECTOR_SITES = define_site_status($vecseq, $$RE_DATA{REGEX});
 	my %pa;
-	$pa{check_price}			=	$query->param('crPrir');
-	$pa{low_price}				=	$query->param('crPrlo');
-	$pa{high_price}				=	$query->param('crPrhi');
 	$pa{check_stickiness}		=	$query->param('crEndss');
 	$pa{stickiness}				=	join " ", $query->param('crEnds');
 	$pa{check_cleavage_site}	=	$query->param('crCutss');
 	$pa{cleavage_site}			=	join " ", $query->param('crCuts');
-	$pa{check_ambiguity}		=	$query->param('crAmbis');
-	$pa{ambiguity}				=	join " ", $query->param('crAmbi');
-	$pa{check_meth_status}		=	$query->param('crMeths');
-	$pa{meth_status}			=	join " ", $query->param('crMeth');
 	$pa{check_site_length}		=	$query->param('crLengs');
 	$pa{site_length}			=	join " ", $query->param('crLeng');
+	$pa{check_ambiguity}		=	$query->param('crAmbis');
+	$pa{ambiguity}				=	join " ", $query->param('crAmbi');
+	$pa{check_buffers}			=	$query->param('crBuffs');
+	$pa{buffers}				=	join " ", $query->param('crBuff');
+	$pa{buffer_activity}		=	join " ", $query->param('crBuffAct');
+	$pa{buffer_bool}			=	join " ", $query->param('crBuffBool');
+	$pa{check_heat}				=	$query->param('crHeats');
+	$pa{heat}					=	join " ", $query->param('crHeat');
+	$pa{check_temperature}		=	$query->param('crTemps');
+	$pa{temperature}			=	join " ", $query->param('crTemp');
+	$pa{check_star}				=	$query->param('crStars');
+	$pa{check_meth_status}		=	$query->param('crMeths');
+	$pa{meth_status}			=	join " ", $query->param('crMeth');
+	$pa{meth_bool}				=	join " ", $query->param('crMethBool');
+	$pa{check_price}			=	$query->param('crPrir');
+	$pa{low_price}				=	$query->param('crPrlo');
+	$pa{high_price}				=	$query->param('crPrhi');
 	$pa{disallowed_seq}			=	$query->param('crDisa');
 	$pa{required_seq}			=	$query->param('crAllo');
 

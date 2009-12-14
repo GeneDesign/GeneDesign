@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 use strict;
+use warnings;
 use GeneDesign;
+use GeneDesignML;
 use CGI;
-use PML;
 
 my $query = new CGI;
 print $query->header;
@@ -13,20 +14,21 @@ my $RE_DATA = define_sites("<newenz.txt");
 my @styles = qw(re);
 my @nexts  = qw(SSIns SSRem SeqAna OligoDesign);
 my $nextsteps = next_stepper(\@nexts, 5);
-my $orgchoice = organism_selecter();
 
 gdheader("Short Sequence Removal", "gdOliRem.cgi", \@styles);
 
-if ($query->param('REMSEQ') eq '')
+if (! $query->param('REMSEQ'))
 {
+	my $orgchoice = organism_selecter();
 	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	$query->param('nucseq');
-	my $readonly = $nucseq	?	'readonly = "true"'	:	'';
+	$nucseq = $nucseq	?	$nucseq	:	"";
+	my $readonly = ! $nucseq ?	" "	:	'readonly = "true"';
 print <<EOM;
 				<div id="notes">
 					<strong>To use this module you need two nucleotide sequences, large and small.  An organism name is optional.</strong><br>
 					Your nucleotide sequence will be searched for the short sequence you provide and as many iterations as possible will 
 					be removed by changing whole codons without changing the amino acid sequence.<br><em>Please Note:</em><br>
-					&nbsp;&nbsp;&bull;If you select an organism, targeted codons will be replaced with the codon that enjoys the most optimal expression in that organism.<br>
+					&nbsp;&nbsp;&bull;If you select an organism, targeted codons will be replaced with the codon that has the closest RSCU value in that organism.<br>
 					&nbsp;&nbsp;&bull;If you select no optimization, targeted codons will be replaced with a random codon.<br>
 					See the <a href="$docpath/Guide/shortr.html" target="blank">manual</a> for more information.
 				</div>
@@ -46,7 +48,7 @@ EOM
 
 else
 {
-	if ($query->param('nuseq') eq '')
+	if (! $query->param('nuseq'))
 	{
 		take_exception("You need a nucleotide sequence.<br>");
 		exit;
@@ -56,7 +58,7 @@ else
 		take_exception("You need a short sequence to be removed (at least two bp) <br> ");
 		exit;
 	}
-	if ($query->param('REMSEQ') >= length($query->param('nuseq')))
+	if (length($query->param('REMSEQ')) >= length($query->param('nuseq')))
 	{
 		take_exception("Your short sequence should be shorter than your nucleotide sequence.<br>\n");
 		exit;

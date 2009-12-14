@@ -1,4 +1,4 @@
-package ResSufTree;
+package GeneDesignSufTree;
 use 5.006;
 use strict;
 

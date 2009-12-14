@@ -1,4 +1,4 @@
-package PML;
+package GeneDesignML;
 use GeneDesign;
 use 5.006;
 require Exporter;
@@ -8,7 +8,7 @@ require Exporter;
 			gdheader closer take_exception take_note
 			hidden_fielder next_stepper next_codjug organism_selecter
 			annpsite friendly print_enzyme_table enzyme_chooser print_oligos_aligned
-			print_vector_table);
+			print_vector_table print_RSCU_table);
 			
 ###### Functions for Making Life Easier
 ##-break			: makes the passed number of html line breaks.
@@ -29,8 +29,8 @@ require Exporter;
 ##
 ##-organism_selecter		: prints the organism radio buttons
 
-my %dests = ('SSIns' => "Silent Site Insertion", 'SSRem' => "Silent Site Removal", 'SeqAna' => "Sequence Analysis", 
-			'OligoDesign' => "Oligo Design", 'toCodJug' => "Codon Juggling");
+my %dests = ('SSIns' => "RE Site Addition", 'SSRem' => "RE Site Subtraction", 'SeqAna' => "Sequence Analysis", 
+			'OligoDesign' => "Building Block Design", 'toCodJug' => "Codon Juggling");
 
 sub break
 {
@@ -133,7 +133,7 @@ sub next_codjug
 	my $taketo = "Go to:";
 	foreach my $tiv (@$arrref)
 	{
-		$taketo .= "\n" . tab($indent) . "<input type=\"submit\" name=\".submit\" value=\"$dests{$tiv}\" onclick=\"CodJug($swit, $count);\" />&nbsp;";
+		$taketo .= "\n" . tab($indent) . "<input type=\"submit\" name=\".submit\" value=\"$dests{$tiv}\" onclick=\"CodJug($swit, $count);\" />";
 		$count++;
 	}
 	return $taketo;
@@ -142,11 +142,11 @@ sub next_codjug
 sub organism_selecter
 {
 	my $string = "Select Your Organism: <br>\n";
-	  $string .= "\t\t\t\t\t\t\t\t<input type=\"radio\" name=\"MODORG\" value=\"1\" onClick=\"organism=1;SWMarkOptimal(form1);\">S. cerevisiae\n";
-	  $string .= "\t\t\t\t\t\t\t\t<input type=\"radio\" name=\"MODORG\" value=\"2\" onClick=\"organism=2;SWMarkOptimal(form1);\">E. coli\n";
-	  $string .= "\t\t\t\t\t\t\t\t<input type=\"radio\" name=\"MODORG\" value=\"3\" onClick=\"organism=3;SWMarkOptimal(form1);\">H. sapiens<br>\n";
-	  $string .= "\t\t\t\t\t\t\t\t<input type=\"radio\" name=\"MODORG\" value=\"4\" onClick=\"organism=4;SWMarkOptimal(form1);\">C. elegans\n";
-	  $string .= "\t\t\t\t\t\t\t\t<input type=\"radio\" name=\"MODORG\" value=\"5\" onClick=\"organism=4;SWMarkOptimal(form1);\">D. melanogaster";
+	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"1\" onClick=\"organism=1;SWMarkOptimal(form1);\"><i>S. cerevisiae</i>\n";
+	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"2\" onClick=\"organism=2;SWMarkOptimal(form1);\"><i>E. coli</i>\n";
+	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"3\" onClick=\"organism=3;SWMarkOptimal(form1);\"><i>H. sapiens</i><br>\n";
+	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"4\" onClick=\"organism=4;SWMarkOptimal(form1);\"><i>C. elegans</i>\n";
+	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"5\" onClick=\"organism=5;SWMarkOptimal(form1);\"><i>D. melanogaster</i>";
 	return $string;
 }
 
@@ -206,8 +206,8 @@ sub annpsite
 					($selsite{$curpos} eq $tiv)	?	print tab(7), "<option selected>&bull; $selsite{$curpos}</option>\n"	:	print tab(7), "<option>* $tiv</option>\n";
 				}
 				print tab(6), "</select>\n";
-				print tab(6), "<img id=\"dot$x\" style=\"left:$dotpos; z-index:325\" src=\"$docpath/img/d$color.gif\">\n";
-				print tab(6), "<img id=\"line$x\" style=\"left:$linpos; z-index:175\" src=\"$docpath/img/l$color.gif\">\n";
+				print tab(6), "<img id=\"dot$x\" style=\"left:$dotpos; z-index:325\" src=\"$linkpath/img/d$color.gif\">\n";
+				print tab(6), "<img id=\"line$x\" style=\"left:$linpos; z-index:175\" src=\"$linkpath/img/l$color.gif\">\n";
 			}
 		}
  		print tab(6), break(14), space(1);
@@ -234,16 +234,16 @@ $tab			<label><input type="checkbox" name="crEnds" value="1bp" />1bp overhangs
 $tab		</span>
 $tab	</div><br><br><br>
 $tab	<div id="critsep">
-$tab		<span id="critlabel">Cut</span>
+$tab		<span id="critlabel">Cleavage Site Relative to Recognition Site</span>
 $tab		<span id="criteria">
-$tab			<input type="radio" name="crCutss" value="0"> All Cuts<br>
+$tab			<input type="radio" name="crCutss" value="0"> All Cleavage Sites<br>
 $tab			<input type="radio" name="crCutss" value="1" checked> Only 
-$tab			<label><input type="checkbox" name="crCuts" value="P" checked="checked" />Inside Cutters</label>
-$tab			<label><input type="checkbox" name="crCuts" value="A" />Outside Cutters</label>
+$tab			<label><input type="checkbox" name="crCuts" value="P" checked="checked" />Inside Recognition Site</label>
+$tab			<label><input type="checkbox" name="crCuts" value="A" />Outside Recognition Site</label>
 $tab		</span>
 $tab	</div><br><br><br>
 $tab	<div id="critsep">
-$tab		<span id="critlabel">Site Length</span>
+$tab		<span id="critlabel">Recognition Site Length</span>
 $tab		<span id="criteria">
 $tab			<input type="radio" name="crLengs" value="0" checked> All Lengths<br>
 $tab			<input type="radio" name="crLengs" value="1"> Only Lengths of 
@@ -256,7 +256,7 @@ $tab			<label><input type="checkbox" name="crLeng" value="b" />&gt;8bp</label>
 $tab		</span>
 $tab	</div><br><br><br>
 $tab	<div id="critsep">
-$tab		<span id="critlabel">Allow Ambiguous Bases?</span>
+$tab		<span id="critlabel">Allow Ambiguous Bases in Recognition Site?</span>
 $tab		<span id="criteria">
 $tab			<input type="radio" name="crAmbis" value="0" checked> Allow Any Base<br>
 $tab			<input type="radio" name="crAmbis" value="1"> Allow Only 
@@ -265,36 +265,83 @@ $tab			<label><input type="checkbox" name="crAmbi" value="2" checked="checked" /
 $tab		</span>
 $tab	</div><br><br><br>
 $tab	<div id="critsep">
+$tab		<span id="critlabel">NEB Buffer (for enzymes available from NEB only</span>
+$tab		<span id="criteria">
+$tab			<input type="radio" name="crBuffs" value="0" checked> Any Buffer<br>
+$tab			<input type="radio" name="crBuffs" value="1"> At Least <input type="text" name="crBuffAct"  size="3" maxlength="3" value="50"/>% activity in: 
+$tab			<label><input type="checkbox" name="crBuff" value="1" />1</label>
+$tab			<label><input type="checkbox" name="crBuff" value="2" />2</label>
+$tab			<label><input type="checkbox" name="crBuff" value="3" />3</label>
+$tab			<label><input type="checkbox" name="crBuff" value="4" />4</label> 
+$tab				(<select name="crBuffBool"><option value="AND">AND</option><option value="OR">OR</option></select>)
+$tab		</span>
+$tab	</div><br><br><br>
+$tab	<div id="critsep">
+$tab		<span id="critlabel">Heat Inactivation</span>
+$tab		<span id="criteria">
+$tab			<input type="radio" name="crHeats" value="0" checked> Does not Matter<br>
+$tab			<input type="radio" name="crHeats" value="1"> Inactivates at 
+$tab			<label><input type="checkbox" name="crHeat" value="60" />60&deg;</label>
+$tab			<label><input type="checkbox" name="crHeat" value="80" />80&deg; </label>
+$tab		</span>
+$tab	</div><br><br><br>
+$tab	<div id="critsep">
+$tab		<span id="critlabel">Incubation Temperature</span>
+$tab		<span id="criteria">
+$tab			<input type="radio" name="crTemps" value="0" checked>  Any Temperature<br>
+$tab			<input type="radio" name="crTemps" value="1"> Allow Only 
+$tab			<label><input type="checkbox" name="crTemp" value="37" checked="checked" />37&deg;</label>
+$tab			<label><input type="checkbox" name="crTemp" value="45" />45&deg;</label>
+$tab			<label><input type="checkbox" name="crTemp" value="50" />50&deg;</label>
+$tab			<label><input type="checkbox" name="crTemp" value="55" />55&deg;</label>
+$tab			<label><input type="checkbox" name="crTemp" value="60" />60&deg;</label>
+$tab			<label><input type="checkbox" name="crTemp" value="65" />65&deg;</label>
+$tab			<label><input type="checkbox" name="crTemp" value="70" />70&deg;</label>
+$tab		</span>
+$tab	</div><br><br><br>
+$tab	<div id="critsep">
+$tab		<span id="critlabel">Star Activity</span>
+$tab		<span id="criteria">
+$tab			<input type="radio" name="crStars" value="0" checked> Does not Matter<br>
+$tab			<input type="radio" name="crStars" value="1"> Yes
+$tab			<input type="radio" name="crStars" value="2"> No
+$tab		</span>
+$tab	</div><br><br><br>
+$tab	<span id="critsep">
 $tab		<span id="critlabel">Methylation Sensitivity</span>
 $tab		<span id="criteria">
 $tab			<input type="radio" name="crMeths" value="0" checked> Allow Any Sensitivity<br>
 $tab			<input type="radio" name="crMeths" value="1"> Allow No Sensitivity<br>
-$tab			<input type="radio" name="crMeths" value="2">Allow Only Cutters that are<br>
-$tab			&nbsp;&nbsp;<label><input type="checkbox" name="crMeth" value="bp" />Blocked by CpG</label>
-$tab			<label><input type="checkbox" name="crMeth" value="ba" />Blocked by Dam</label>
-$tab			<label><input type="checkbox" name="crMeth" value="bc" />Blocked by Dcm</label><br>
-$tab			&nbsp;&nbsp;<label><input type="checkbox" name="crMeth" value="ip" />Inhibited by CpG</label>
-$tab			<label><input type="checkbox" name="crMeth" value="ia" />Inhibited by Dam</label>
-$tab			<label><input type="checkbox" name="crMeth" value="ic" />Inhibited by Dcm</label>
+$tab			<input type="radio" name="crMeths" value="2">Allow Only Cutters that are 
+$tab				(<select name="crMethBool"><option value="AND">AND</option><option value="OR">OR</option></select>)<br>
+$tab			&nbsp;&nbsp;<label><input type="checkbox" name="crMeth" value="b.cpg" />Blocked by CpG</label>
+$tab			&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="checkbox" name="crMeth" value="b.dam" />Blocked by Dam</label>
+$tab			&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="checkbox" name="crMeth" value="b.dcm" />Blocked by Dcm</label><br>
+$tab			&nbsp;&nbsp;<label><input type="checkbox" name="crMeth" value="i.cpg" />Inhibited by CpG</label>
+$tab			&nbsp;&nbsp;<label><input type="checkbox" name="crMeth" value="i.dam" />Inhibited by Dam</label>
+$tab			&nbsp;&nbsp;<label><input type="checkbox" name="crMeth" value="i.dcm" />Inhibited by Dcm</label><br>
+$tab			&nbsp;&nbsp;<label><input type="checkbox" name="crMeth" value="f.cpg" />Indifferent to CpG</label>
+$tab			<label><input type="checkbox" name="crMeth" value="f.dam" />Indifferent to Dam</label>
+$tab			<label><input type="checkbox" name="crMeth" value="f.dcm" />Indifferent to Dcm</label>
 $tab		</span>
-$tab	</div><br><br><br><br><br><br><br>
-$tab	<div id="critsep">
+$tab	</span><br><br><br><br><br><br><br><br>
+$tab	<span id="critsep">
 $tab		<span id="critlabel">Price Range</span>
 $tab		<span id="criteria">
-$tab			<input type="radio" name="crPrir" value="0" checked> Any (\$.00424 to \$2.304 per unit)<br>
+$tab			<input type="radio" name="crPrir" value="0" checked> Any (\$.00424 to \$6.18 per unit)<br>
 $tab			<input type="radio" name="crPrir" value="1"> Must be between &#36;
 $tab			<input type="text" name="crPrlo" value=".00424" size="7" maxlength="6" />and &#36;
 $tab			<input type="text" name="crPrhi" value=".504" size="7" maxlength="6" /> per unit
 $tab		</span>
-$tab	</div><br><br><br>
+$tab	</span><br><br><br>
 $tab	<div id="critsep">
-$tab		<span id="critlabel" style="width:200;">Disallow sites with: (boolean OR, separate by space)</span>
+$tab		<span id="critlabel" style="width:200;">Disallow sites with: (boolean OR, separate with spaces)</span>
 $tab		<span id="criteria" style="left:200;">
 $tab			<input type="text" name="crDisa"  size="20" />
 $tab		</span>
 $tab	</div><br><br><br>
 $tab	<div id="critsep">
-$tab		<span id="critlabel" style="width:200;">Allow only sites with: (boolean OR, separate by space)</span>
+$tab		<span id="critlabel" style="width:200;">Allow only sites with: (boolean OR, separate with spaces)</span>
 $tab		<span id="criteria" style="left:200;">
 $tab			<input type="text" name="crAllo"  size="20" />
 $tab		</span>
@@ -338,15 +385,17 @@ sub print_enzyme_table
 	my $color = "9AB";
 print <<EOM;
 $tab<div id = "gridgroup1">
-$tab	<div id = "gridgroup1" style = "background-color: \43$color;">
+$tab	<div id = "gridgroup1" style = "width:1100; background-color: \43$color">
 $tab		<span id = "cuNum"></span>
 $tab		<span id = "cuName">Name</span>
-$tab		<span id = "cuRecog">Cuts (StarAct)</span>
+$tab		<span id = "cuRecog">Cleaves (Star)</span>
 $tab		<span id = "cuSite" >At</span>
 $tab		<span id = "cuStick">Sticky?</span>
 $tab		<span id = "cuRxnTe">Incub.<br>Temp</span>
+$tab		<span id = "cuInact">Heat<br>Inactivation</span>
 $tab		<span id = "cuMethb">Blocked<br>by</span>
 $tab		<span id = "cuMethi">Impaired<br>by</span>
+$tab		<span id = "cuBuffs">NEB Buffers</span>
 $tab		<span id = "cuVendr">Available From</span>
 $tab		<span id = "cuUpric">NEB Price<br>Per Unit(\44)</span>
 $tab		&nbsp;<br>&nbsp;
@@ -356,16 +405,33 @@ EOM
 	{
 		$color = ($j % 2)	?	"CDE"	:	"ABC"	;
 		$j++;
+		my $star = $RE_DATA{STAR}->{$m}	?		"*"	:	"";
+		my (@block, @impair);
+		push @block, "dcm" if ($RE_DATA{DCM}->{$m} eq "b");
+		push @block, "dam" if ($RE_DATA{DAM}->{$m} eq "b");
+		push @block, "cpg" if ($RE_DATA{CPG}->{$m} eq "b");
+		push @impair, "dcm" if ($RE_DATA{DCM}->{$m} eq "i");
+		push @impair, "dam" if ($RE_DATA{DAM}->{$m} eq "i");
+		push @impair, "cpg" if ($RE_DATA{CPG}->{$m} eq "i");
+		my $blockstr = join " ", @block;
+		my $impairstr = join " ", @impair;
+		my $buffstr;
+		foreach my $b ((1, 2, 3, 4))
+		{
+			$buffstr .= "$b (". $RE_DATA{"BUF".$b}->{$m} .") " if ($RE_DATA{"BUF".$b}->{$m} > 0);
+		}
 print <<EOM;
-$tab	<div id = "gridgroup1" style = "background-color: \43$color;">
+$tab	<div id = "gridgroup1" style = "width:1100; background-color: \43$color;">
 $tab		<span id = "cuNum"><input type="checkbox" name="nextrem" value="$m" /></span>
 $tab		<span id = "cuName"><a href="http://rebase.neb.com/rebase/enz/$m.html" target="blank">$m</a></span>
-$tab		<span id = "cuRecog">$RE_DATA{TABLE}->{$m} $RE_DATA{STAR}->{$m}</span>
+$tab		<span id = "cuRecog">$RE_DATA{TABLE}->{$m}$star</span>
 $tab		<span id = "cuSite" >$RE_DATA{POST}->{$m}</span>
 $tab		<span id = "cuStick">$RE_DATA{TYPE}->{$m}</span>
 $tab		<span id = "cuRxnTe">$RE_DATA{TEMP}->{$m}&deg;</span>
-$tab		<span id = "cuMethb">$RE_DATA{METHB}->{$m}</span>
-$tab		<span id = "cuMethi">$RE_DATA{METHI}->{$m}</span>
+$tab		<span id = "cuInact">$RE_DATA{INACT}->{$m}&deg;</span>
+$tab		<span id = "cuMethb">$blockstr</span>
+$tab		<span id = "cuMethi">$impairstr</span>
+$tab		<span id = "cuBuffs">$buffstr</span>
 $tab		<span id = "cuVendr">$RE_DATA{VEND}->{$m}</span>
 $tab		<span id = "cuUpric">$RE_DATA{SCORE}->{$m}</span>
 $tab		&nbsp;<br>&nbsp;
@@ -427,12 +493,18 @@ sub print_oligos_aligned
 {
 	my ($self, $gapswit, $indent, $maskswit) = @_;		
 	$maskswit = 0 unless($maskswit);
-	my $oliarrref = $self->Oligos;	my @oligoarr = @$oliarrref;
-	my $olapref   = $self->Olaps;    my @olaparr = @$olapref;
-	my $colhasref = $self->Collisions; my %colhas = %$colhasref; my @colkeys = keys %colhas;
+	my $oliarrref = $self->Oligos;	
+	my @oligoarr = @$oliarrref;
+	my $olapref   = $self->Olaps;    
+	my @olaparr = @$olapref;
+	my $colhasref = $self->Collisions; 
+	my %colhas = %$colhasref; 
+	my @colkeys = keys %colhas;
 	my $tab = tab($indent);
-	my $toprow; my $botrow;
-	my $master = $self->ChunkSeq; my $retsam = complement($master, 0);
+	my $toprow; 
+	my $botrow;
+	my $master = $self->ChunkSeq; 
+	my $retsam = complement($master, 0);
 	if ($maskswit == 1)
 	{
 		my $mask = $self->Mask; 
@@ -467,8 +539,8 @@ sub print_oligos_aligned
 	{
 		if (!exists($colhas{$w}) && !exists($colhas{$w-2}) && $gapswit == 1)
 		{
-			my $nextlap = $w+1 < @olaparr-0	?	length($olaparr[$w+1])	:	0;
-			my $nextoli = $w+1 < @oligoarr-0	?	length($oligoarr[$w+1])	:	0;
+			my $nextlap = $w+1 < scalar(@olaparr)	?	length($olaparr[$w+1])	:	0;
+			my $nextoli = $w+1 < scalar(@oligoarr)	?	length($oligoarr[$w+1])	:	0;
 			$toprow .= $oligoarr[$w] . space($nextoli-(length($olaparr[$w])+$nextlap));
 		}
 		elsif ($gapswit == 1)
@@ -527,4 +599,30 @@ $tab	$retsam&nbsp;&nbsp;&nbsp;&nbsp;.
 $tab</div>
 EOM
 }
+
+
+sub print_RSCU_table
+{
+	my ($RSCUVal, $CODON_TABLE, $num) = @_;
+	my $tab = tab($num+1);
+	my @arr = qw(T C A G);
+	print tab($num) . "<code>\n";
+	foreach my $a ( @arr)
+	{
+		foreach my $c ( @arr )
+		{
+			print $tab;
+			foreach my $b ( @arr )
+			{
+				my $codon = $a . $b . $c;
+				print "$codon ($$CODON_TABLE{$codon}) $$RSCUVal{$codon}" . space(5);
+			}
+			print "<br>\n";
+		}
+		print "$tab<br><br>\n";
+	}
+	print tab($num) . "</code>\n";
+	return;
+}
+
 1;

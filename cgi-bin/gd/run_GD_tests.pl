@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use TestGeneDesign;
+use GeneDesignTest;
 
 print "\n";
 $flag = 0;
