@@ -156,11 +156,11 @@ elsif($query->param('WHOLESEQ'))
 		while ($target < length($wholeseq))
 		{
 			$target = $tar_bbl_len + $lasttarget;
-			my $seen = 0;my $door = 1;my $int = 1;
+			my ($seen, $door, $int) = (0, 1, 1);
 			while ($seen == 0)
 			{
 				my @grabbed = grep {$_->Start == $target} @UniUsers;
-				if (@grabbed-0 > 0)
+				if (scalar(@grabbed) > 0)
 				{
 					my $currchoice = $grabbed[0];
 					foreach my $tov (@grabbed)
@@ -174,7 +174,8 @@ elsif($query->param('WHOLESEQ'))
 				}
 				$target = $target - $int if ($door == 1);
 				$target = $target + $int if ($door == 0);
-				$door = abs($door-1);	$int++;
+				$door = abs($door-1);
+				$int++;
 				if ($target <= ($lasttarget + (.4 * $tar_bbl_len)))
 				{
 					$lasttarget += ($tar_bbl_len * .5);last;
@@ -277,7 +278,7 @@ elsif($query->param('WHOLESEQ'))
 		{
 			my $UserArrRef = $tiv->Users;my @userarr = @$UserArrRef;
 			while ($userarr[1] =~ /(U)/ig)			{	$uniquelen = pos ($userarr[1]) - 2;	}
-			unless ($tiv->ChunkNumber eq "01")
+			unless ($tiv->ChunkNumber eq "01" || $tiv->ChunkNumber == 1)
 			{
 				print "<code>Left&nbsp; - 5' <b>", substr($userarr[0], 0, 1), "</b><u>", substr($userarr[0], 1, $uniquelen), "</u><b>", substr($userarr[0], $uniquelen+1, 1), "</b>", substr($userarr[0], $uniquelen+2), " 3'<br>";
 				print "LeftU - 5' <b>", substr($userarr[1], 0, 1), "</b><u>", substr($userarr[1], 1, $uniquelen), "</u><b>", substr($userarr[1], $uniquelen+1, 1), "</b>", substr($userarr[1], $uniquelen+2), " 3'</code><br>";
