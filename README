@@ -1,5 +1,5 @@
-GeneDesign development branch
-GeneDesign is a group of cgi scripts fronting a nucleotide manipulation library.  It is entirely implemented in perl.
+GeneDesign Saccharomyces Cerevisiae 2.0 branch
+This branch is for SC2.0 specific installations.
 
 installation prereqs (all available from CPAN): 
 GD::Graph 
@@ -10,9 +10,4 @@ List::MoreUtils
 Spreadsheet::ParseExcel
 Spreadsheet::WriteExcel
 
-gdOliReDes and gdFusionDes are not currently under development.
-
-
-To Do:
--put all variables into hash that makes carrying through "design a gene" much much simpler"
 
