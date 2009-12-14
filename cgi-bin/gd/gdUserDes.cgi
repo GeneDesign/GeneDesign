@@ -14,7 +14,6 @@ gdheader("Building Block Design (USER overlap)", "gdUserDes.cgi", \@styles);
 my %gapperlen   = (40 => 700, 50 => 740, 60 => 740, 70 => 720, 80 => 740, 90 => 720, 100 => 660);
 my %ungapperlen = (40 => 700, 50 => 700, 60 => 750, 70 => 735, 80 => 760, 90 => 765, 100 => 750);
 					
-my $loxpsym = "ATAACTTCGTATAATGTACATTATACGAAGTTAT";
 if (! $query->param('TARBBLLEN'))
 {
 	my $nucseq = $query->param('PASSNUCSEQ')	?	$query->param('PASSNUCSEQ')	:	cleanup($query->param('nucseq'), 1);	
@@ -92,13 +91,7 @@ elsif($query->param('WHOLESEQ'))
 	if ($pa{max_oli_len} == $pa{tar_oli_len})
 	{
 		take_note("The maximum allowable assembly oligo length is equal to the target assembly oligo length ($pa{tar_oli_len}).  This may cause some weird behavior, especially in terms of overlap melting temperature.");
-	}	
-	if ($chunk_name !~ /^\d+[RL]\.\d+_\d+\.[A-Z]\d+$/)
-	{
-		take_note("Your chunk name does not conform to the expected format (chromosome)(arm).(genome version)_(chromosome version).(chunk letter)(chunk section)<br>
-					I am producing output with \"$chunk_name\", but you may wish to re-run primer design with a proper name.<br>");
 	}
-	
 	
 	my %FoundSite;
 	my %FoundSiteCoor;
@@ -107,16 +100,7 @@ elsif($query->param('WHOLESEQ'))
 	my @Chunks;
 	my $offset = 0;	
 	my $count = $startnum - 1;
-	
-	my $MASK = "0" x length($wholeseq);
-##Mask loxpsym sites
-	my $exp = regres($loxpsym, 1);
-	while ($wholeseq =~ /($exp)/ig)
-	{
-		my $sit =  (pos $wholeseq) - length($loxpsym);
-		substr($MASK, $sit, length($loxpsym)) = "1" x length($loxpsym) if ($sit ne '');
-	}	
-	
+		
 	if ($wholelen > 1000)
 	{
 	## Load two hashes with the number of times ANxT is seen and where the last one was seen. Parse the number hash for the unique ones, push into Data structure and store in array.
@@ -199,7 +183,6 @@ elsif($query->param('WHOLESEQ'))
 				$tno->ChunkSeq(substr($wholeseq, $lastfound-1));
 			}
 			$tno->ChunkLength(length($tno->ChunkSeq));
-			$tno->Mask(substr($MASK, $lastfound - 1, $tno->ChunkLength));
 			$tno->ChunkStart($lastfound);
 			$tno->ChunkStop($tno->ChunkLength + $tno->ChunkStart - 1);
 			my $remain = length(substr($wholeseq, $tiv->Start-1));
@@ -253,7 +236,6 @@ elsif($query->param('WHOLESEQ'))
 		while (2 > length($countstr))	{	$countstr = "0" . $countstr;}
 		$tno->ChunkSeq($wholeseq);
 		$tno->ChunkLength($wholelen);
-		$tno->Mask($MASK);
 		$tno->ChunkStart(1);
 		$tno->ChunkStop($tno->ChunkLength + $tno->ChunkStart - 1);
 		$tno->ChunkNumber($countstr);
@@ -344,8 +326,8 @@ elsif($query->param('WHOLESEQ'))
 		}
 	}
 	
-	my %hiddenhash = ("startnum" => $startnum, "bbnums" => join(" ", @bbnums), "coords" => join(" ", @coords), "aonums" => join(" ", @aonums), "alloligos" => join(" ", @alloligos), "allbbs" => join(" ", @allbbs), "allusers" => join(" ", @allusers) );
-	my $hiddenstring = hidden_fielder(\%hiddenhash);
+	my $hiddenhash = {"startnum" => $startnum, "bbnums" => join(" ", @bbnums), "coords" => join(" ", @coords), "aonums" => join(" ", @aonums), "alloligos" => join(" ", @alloligos), "allbbs" => join(" ", @allbbs), "allusers" => join(" ", @allusers) };
+	my $hiddenstring = hidden_fielder($hiddenhash);
 
 print <<EOM;
 			</form>
@@ -354,8 +336,6 @@ print <<EOM;
 				<input type="hidden" name="name" value="$chunk_name" />
 				FASTA format: <input type="submit" value="&nbsp;Assembly Oligos&nbsp;" onClick="FASTArizer(2)" /> <input type="submit" value="&nbsp;USER Oligos&nbsp;" onClick="FASTArizer(3)" /> <input type="submit" value="&nbsp;Building Blocks&nbsp;" onClick="FASTArizer(4)" /><br>
 				tabbed format: <input type="submit" value="&nbsp;Assembly Oligos&nbsp;" onClick="FASTArizer(5)" /> <input type="submit" value="&nbsp;USER Oligos&nbsp;" onClick="FASTArizer(6)" /><br>
-				Excel file: <input type="submit" value="&nbsp;Master Order Sheet&nbsp;" onClick="FASTArizer(7)" /> <input type="submit" value="&nbsp;Individual Order Sheets&nbsp;" onClick="FASTArizer(8)" /><br>
-				zip archive: <input type="submit" value="&nbsp;BB $chunk_name order sheets&nbsp;" onClick="FASTArizer(9)" /><br><br>
 				$hiddenstring
 EOM
 	closer();

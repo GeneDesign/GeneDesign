@@ -7,8 +7,6 @@ Text::Wrap
 Perl6::Slurp
 List::Util 
 List::MoreUtils
-Spreadsheet::ParseExcel
-Spreadsheet::WriteExcel
 
 gdOliReDes and gdFusionDes are not currently under development.
 

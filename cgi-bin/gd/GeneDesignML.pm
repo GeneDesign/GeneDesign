@@ -505,7 +505,7 @@ sub print_oligos_aligned
 	my $botrow;
 	my $master = $self->ChunkSeq; 
 	my $retsam = complement($master, 0);
-	if ($maskswit == 1)
+	if ($self->Mask && $maskswit == 1)
 	{
 		my $mask = $self->Mask; 
 		my $tagstart = "<font color = \"\43FF0000\">"; 

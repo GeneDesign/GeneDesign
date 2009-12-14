@@ -14,7 +14,6 @@ gdheader("Building Block Design (length overlap)", "gdOlapDes.cgi", \@styles);
 my %gapperlen   = (40 => 700, 50 => 740, 60 => 740, 70 => 720, 80 => 740, 90 => 720, 100 => 660);
 my %ungapperlen = (40 => 700, 50 => 700, 60 => 750, 70 => 735, 80 => 760, 90 => 765, 100 => 750);
 
-my $loxpsym = "ATAACTTCGTATAATGTACATTATACGAAGTTAT";
 if ( ! $query->param('TARBBLLEN'))
 {
 	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	$query->param('nucseq');
@@ -85,31 +84,10 @@ elsif($query->param('WHOLESEQ'))
 	if ($pa{max_oli_len} == $pa{tar_oli_len})
 	{
 		take_note("The maximum allowable assembly oligo length is equal to the target assembly oligo length ($pa{tar_oli_len}).  This may cause some weird behavior, especially in terms of overlap melting temperature.");
-	}	
-	if ($chunk_name !~ /^\d+[RL]\.\d+_\d+\.[A-Z]\d+$/)
-	{
-		take_note("Your chunk name does not conform to the expected format (chromosome)(arm).(genome version)_(chromosome version).(chunk letter)(chunk section)<br>
-					I am producing output with \"$chunk_name\", but you may wish to re-run primer design with a proper name.<br>");
 	}
 	
 	my @Olaps;
 	my @Chunks;
-	my $MASK = "0" x length($wholeseq);
-	my @loxbounds;
-	my $last;
-##Mask loxpsym sites
-	my $exp = regres($loxpsym, 1);
-	while ($wholeseq =~ /($exp)/ig)
-	{
-		my $sit =  (pos $wholeseq) - length($loxpsym);
-		substr($MASK, $sit, length($loxpsym)) = "1" x length($loxpsym) if ($sit ne '');
-	}
-	while ($MASK =~ /01/ig)
-	{
-		push @loxbounds, $last + int((pos($MASK) - $last)/2) if ($last > 0);
-		$last = pos($MASK);
-	}
-	push @loxbounds, length($MASK)-21;
 	
 ## Form chunk objects,
 	if ($wholelen >1000)
