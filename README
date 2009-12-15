@@ -1,6 +1,9 @@
 GeneDesign development branch
 GeneDesign is a group of cgi scripts fronting a nucleotide manipulation library.  It is entirely implemented in perl.
 
+To install locally, put the gd folder from cgi-bin into your CGI-Executables folder, and the gd folder from documents into your Documents folder.
+Then change the values $linkpath and $docpath at the top of GeneDesign.pm to the appropriate values for your webserver.
+
 installation prereqs (all available from CPAN): 
 GD::Graph 
 Text::Wrap
