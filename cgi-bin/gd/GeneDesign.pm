@@ -53,7 +53,7 @@ my %TEEFE = ("TC" => ([ 8.8, 23.5, 1.5]), "GA" => ([ 8.8, 23.5, 1.5]), "CT" => (
 			 "AT" => ([ 5.6, 15.2, 0.9]), "TA" => ([ 6.6, 18.4, 0.9]), "CG" => ([11.8, 29.0, 2.8]), "GC" => ([10.5, 26.4, 2.3]),
 			 "CA" => ([ 8.2, 21.0, 1.7]), "TG" => ([ 8.2, 21.0, 1.7]), "GT" => ([ 9.4, 25.5, 1.5]), "AC" => ([ 9.4, 25.5, 1.5]));
 
-our %ORGANISMS = (0 => "(no organism defined)", 1 => "Saccharomyces cerevisiae", 2 => "E. coli", 3 => "Homo sapiens", 4 => "C. elegans", 5 => "Drosophila melanogaster");
+our %ORGANISMS = (0 => "(no organism defined)", 1 => "Saccharomyces cerevisiae", 2 => "E. coli", 3 => "Homo sapiens", 4 => "C. elegans", 5 => "Drosophila melanogaster", 6 => "Bacillus subtilis");
 	
 our $IIA		= qr/ \( (    \d+) \/ (   \d+) \)	/x;
 our $IIA2		= qr/ \( (    \d+) \/ (\- \d+) \)	/x;
@@ -848,6 +848,25 @@ sub define_RSCU_values
 		$RSCU_TABLE{"CGT"} = 2.65;	$RSCU_TABLE{"CGC"} = 3.07;	$RSCU_TABLE{"CGA"} = 0.07;	$RSCU_TABLE{"CGG"} = 0.00;	
 		$RSCU_TABLE{"AGT"} = 0.04;	$RSCU_TABLE{"AGC"} = 1.13;	$RSCU_TABLE{"AGA"} = 0.00;	$RSCU_TABLE{"AGG"} = 0.21;	
 		$RSCU_TABLE{"GGT"} = 1.34;	$RSCU_TABLE{"GGC"} = 1.66;	$RSCU_TABLE{"GGA"} = 0.99;	$RSCU_TABLE{"GGG"} = 0.00;
+	}
+	elsif ($swit == 6)	#Bacillus subtilis
+	{
+		$RSCU_TABLE{"TTT"} = 0.70;	$RSCU_TABLE{"TTC"} = 1.30;	$RSCU_TABLE{"TTA"} = 2.71;	$RSCU_TABLE{"TTG"} = 0.00;	
+		$RSCU_TABLE{"CTT"} = 2.13;	$RSCU_TABLE{"CTC"} = 0.00;	$RSCU_TABLE{"CTA"} = 1.16;	$RSCU_TABLE{"CTG"} = 0.00;
+		$RSCU_TABLE{"ATT"} = 0.91;	$RSCU_TABLE{"ATC"} = 1.96;	$RSCU_TABLE{"ATA"} = 0.13;	$RSCU_TABLE{"ATG"} = 1.00;	
+		$RSCU_TABLE{"GTT"} = 1.88;	$RSCU_TABLE{"GTC"} = 0.25;	$RSCU_TABLE{"GTA"} = 1.38;	$RSCU_TABLE{"GTG"} = 0.50;
+		$RSCU_TABLE{"TCT"} = 3.45;	$RSCU_TABLE{"TCC"} = 0.00;	$RSCU_TABLE{"TCA"} = 1.50;	$RSCU_TABLE{"TCG"} = 0.00;	
+		$RSCU_TABLE{"CCT"} = 2.29;	$RSCU_TABLE{"CCC"} = 0.00;	$RSCU_TABLE{"CCA"} = 1.14;	$RSCU_TABLE{"CCG"} = 0.57;
+		$RSCU_TABLE{"ACT"} = 2.21;	$RSCU_TABLE{"ACC"} = 0.00;	$RSCU_TABLE{"ACA"} = 1.38;	$RSCU_TABLE{"ACG"} = 0.41;	
+		$RSCU_TABLE{"GCT"} = 2.94;	$RSCU_TABLE{"GCC"} = 0.08;	$RSCU_TABLE{"GCA"} = 0.60;	$RSCU_TABLE{"GCG"} = 0.38;
+		$RSCU_TABLE{"TAT"} = 0.50;	$RSCU_TABLE{"TAC"} = 1.50;	$RSCU_TABLE{"TAA"} = 0.00;	$RSCU_TABLE{"TAG"} = 0.00;	
+		$RSCU_TABLE{"CAT"} = 2.00;	$RSCU_TABLE{"CAC"} = 0.00;	$RSCU_TABLE{"CAA"} = 1.71;	$RSCU_TABLE{"CAG"} = 0.29;
+		$RSCU_TABLE{"AAT"} = 0.47;	$RSCU_TABLE{"AAC"} = 1.53;	$RSCU_TABLE{"AAA"} = 1.83;	$RSCU_TABLE{"AAG"} = 0.17;	
+		$RSCU_TABLE{"GAT"} = 0.53;	$RSCU_TABLE{"GAC"} = 1.47;	$RSCU_TABLE{"GAA"} = 1.40;	$RSCU_TABLE{"GAG"} = 0.60;
+		$RSCU_TABLE{"TGT"} = 0.00;	$RSCU_TABLE{"TGC"} = 2.00;	$RSCU_TABLE{"TGA"} = 0.00;	$RSCU_TABLE{"TGG"} = 1.00;	
+		$RSCU_TABLE{"CGT"} = 3.11;	$RSCU_TABLE{"CGC"} = 1.78;	$RSCU_TABLE{"CGA"} = 0.00;	$RSCU_TABLE{"CGG"} = 0.00;	
+		$RSCU_TABLE{"AGT"} = 0.45;	$RSCU_TABLE{"AGC"} = 0.60;	$RSCU_TABLE{"AGA"} = 1.11;	$RSCU_TABLE{"AGG"} = 0.00;	
+		$RSCU_TABLE{"GGT"} = 1.38;	$RSCU_TABLE{"GGC"} = 0.97;	$RSCU_TABLE{"GGA"} = 1.66;	$RSCU_TABLE{"GGG"} = 0.00;	
 	}
 	return \%RSCU_TABLE;
 }

@@ -142,11 +142,12 @@ sub next_codjug
 sub organism_selecter
 {
 	my $string = "Select Your Organism: <br>\n";
-	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"1\" onClick=\"organism=1;SWMarkOptimal(form1);\"><i>S. cerevisiae</i>\n";
-	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"2\" onClick=\"organism=2;SWMarkOptimal(form1);\"><i>E. coli</i>\n";
-	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"3\" onClick=\"organism=3;SWMarkOptimal(form1);\"><i>H. sapiens</i><br>\n";
-	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"4\" onClick=\"organism=4;SWMarkOptimal(form1);\"><i>C. elegans</i>\n";
-	  $string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"5\" onClick=\"organism=5;SWMarkOptimal(form1);\"><i>D. melanogaster</i>";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"1\" onClick=\"organism=1;SWMarkOptimal(form1);\"><i>S. cerevisiae</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"2\" onClick=\"organism=2;SWMarkOptimal(form1);\"><i>E. coli</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"3\" onClick=\"organism=3;SWMarkOptimal(form1);\"><i>H. sapiens</i><br>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"4\" onClick=\"organism=4;SWMarkOptimal(form1);\"><i>C. elegans</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"5\" onClick=\"organism=5;SWMarkOptimal(form1);\"><i>D. melanogaster</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"6\" onClick=\"organism=6;SWMarkOptimal(form1);\"><i>B. subtilis</i>\n";
 	return $string;
 }
 
@@ -281,7 +282,7 @@ $tab		<span id="critlabel">Heat Inactivation</span>
 $tab		<span id="criteria">
 $tab			<input type="radio" name="crHeats" value="0" checked> Does not Matter<br>
 $tab			<input type="radio" name="crHeats" value="1"> Inactivates at 
-$tab			<label><input type="checkbox" name="crHeat" value="60" />60&deg;</label>
+$tab			<label><input type="checkbox" name="crHeat" value="65" />65&deg;</label>
 $tab			<label><input type="checkbox" name="crHeat" value="80" />80&deg; </label>
 $tab		</span>
 $tab	</div><br><br><br>

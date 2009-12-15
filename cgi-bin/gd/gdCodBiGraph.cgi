@@ -70,13 +70,14 @@ else
 		title             => "Sliding window of size $window using RSCU values from $ORGANISMS{$org}",
 		y_max_value       => 1,
 		y_min_value       => 0,
-		tick_length       => 3,
+		line_width		  => 10,
+		tick_length       => 5,
 		y_tick_number     => 1,
 		x_label_position  => 0.5,
 		y_label_skip      => 0.1,
 		x_label_skip      => int(length($nucseq)/50),
 		markers           => [1],
-		marker_size       => 2,
+		marker_size       => 5,
 		dclrs             => \@colors,
 	) or die $graph->error;
 	my $first = 0;
