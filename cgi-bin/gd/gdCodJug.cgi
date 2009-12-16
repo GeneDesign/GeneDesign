@@ -169,7 +169,7 @@ EOM
 		my $window = length($nucseq) > 1000	?	20 * (int(length($nucseq)/1000))	:	length($nucseq) > 500	?	20	:	10; #$query->param('WINDOW');
 		my $graph = GD::Graph::lines->new(800, 600);
 		$graph->set( 
-			x_label           => 'Codon Postion',
+			x_label           => 'Window Position (Codon Offset)',
 			y_label           => 'Average Relative Synonymous Codon Usage Value',
 			title             => "Sliding window of $window using RSCU values from $ORGANISMS{$org}",
 			y_max_value       => 1,

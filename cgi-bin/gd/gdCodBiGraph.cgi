@@ -65,7 +65,7 @@ else
 	}
 	my $graph = GD::Graph::lines->new(800, 600);
 	$graph->set( 
-		x_label           => 'Codon Postion',
+		x_label           => 'Window Postion (Codon Offset)',
 		y_label           => 'Average Relative Synonymous Codon Usage Value',
 		title             => "Sliding window of size $window using RSCU values from $ORGANISMS{$org}",
 		y_max_value       => 1,
