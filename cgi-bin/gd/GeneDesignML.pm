@@ -228,10 +228,10 @@ $tab		<span id="critlabel">Ends</span>
 $tab		<span id="criteria">
 $tab			<input type="radio" name="crEndss" value="0"> All Ends<br>
 $tab			<input type="radio" name="crEndss" value="1" checked> Only 
-$tab			<label><input type="checkbox" name="crEnds" value="5'" checked="checked" />5&rsquo; overhangs</label>
-$tab			<label><input type="checkbox" name="crEnds" value="3'" checked="checked" />3&rsquo; overhangs</label>
+$tab			<label><input type="checkbox" name="crEnds" value="5" checked="checked" />5&rsquo; overhangs</label>
+$tab			<label><input type="checkbox" name="crEnds" value="3" checked="checked" />3&rsquo; overhangs</label>
 $tab			<label><input type="checkbox" name="crEnds" value="b" />blunt ends</label>
-$tab			<label><input type="checkbox" name="crEnds" value="1bp" />1bp overhangs
+$tab			<label><input type="checkbox" name="crEnds" value="1" />1bp overhangs</label>
 $tab		</span>
 $tab	</div><br><br><br>
 $tab	<div id="critsep">
@@ -241,6 +241,16 @@ $tab			<input type="radio" name="crCutss" value="0"> All Cleavage Sites<br>
 $tab			<input type="radio" name="crCutss" value="1" checked> Only 
 $tab			<label><input type="checkbox" name="crCuts" value="P" checked="checked" />Inside Recognition Site</label>
 $tab			<label><input type="checkbox" name="crCuts" value="A" />Outside Recognition Site</label>
+$tab		</span>
+$tab	</div><br><br><br>
+$tab	<div id="critsep">
+$tab		<span id="critlabel">Overhang Palindromy</span>
+$tab		<span id="criteria">
+$tab			<input type="radio" name="crOhangss" value="0" checked> All Overhangs<br>
+$tab			<input type="radio" name="crOhangss" value="1"> Only 
+$tab			<label><input type="checkbox" name="crOhangs" value="P" />Palindromic</label>
+$tab			<label><input type="checkbox" name="crOhangs" value="A" />Potentially Nonpalindromic</label>
+$tab			<label><input type="checkbox" name="crOhangs" value="N" />Nonpalindromic</label>
 $tab		</span>
 $tab	</div><br><br><br>
 $tab	<div id="critsep">
@@ -336,15 +346,15 @@ $tab			<input type="text" name="crPrhi" value=".504" size="7" maxlength="6" /> p
 $tab		</span>
 $tab	</span><br><br><br>
 $tab	<div id="critsep">
-$tab		<span id="critlabel" style="width:200;">Disallow sites with: (boolean OR, separate with spaces)</span>
-$tab		<span id="criteria" style="left:200;">
-$tab			<input type="text" name="crDisa"  size="20" />
+$tab		<span id="critlabel" style="width:300;">Disallow sites containing sequences: </span>
+$tab		<span id="criteria" style="left:240;">
+$tab			<input type="text" name="crDisa"  size="20" /> (boolean OR, separate with spaces)
 $tab		</span>
 $tab	</div><br><br><br>
 $tab	<div id="critsep">
-$tab		<span id="critlabel" style="width:200;">Allow only sites with: (boolean OR, separate with spaces)</span>
-$tab		<span id="criteria" style="left:200;">
-$tab			<input type="text" name="crAllo"  size="20" />
+$tab		<span id="critlabel" style="width:300;">Allow only sites containing sequences: </span>
+$tab		<span id="criteria" style="left:240;">
+$tab			<input type="text" name="crAllo"  size="20" /> (boolean OR, separate with spaces)
 $tab		</span>
 $tab	</div><br><br><br>
 $tab	<input type="button"  name="ShowAll" value="Most Permissive Settings" onclick="EnzMostPerm();" />

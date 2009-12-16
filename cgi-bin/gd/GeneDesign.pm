@@ -1357,12 +1357,39 @@ sub filter_sites
 	
 	if ( $pa{check_stickiness} )
 	{
-		@cutters = grep { $pa{stickiness} =~ $$RE_DATA{TYPE}->{$_} } @cutters;
+		my %temp;
+		my $regres = "[" . join("", split(" ", $pa{stickiness})) . "]";
+		@cutters = grep {$$RE_DATA{TYPE}->{$_} =~ $regres} @cutters;
 	}
 	if ( $pa{check_cleavage_site} )
 	{
 		@cutters = grep { ($pa{cleavage_site} =~ /P/ && ($$RE_DATA{TABLE}->{$_} =~ $IIP || $$RE_DATA{TABLE}->{$_} =~ $IIP2))
 						||($pa{cleavage_site} =~ /A/ && ($$RE_DATA{TABLE}->{$_} =~ $IIA || $$RE_DATA{TABLE}->{$_} =~ $IIA2 || $$RE_DATA{TABLE}->{$_} =~ $IIA3)) }	@cutters;
+	}
+	if ( $pa{check_overhang} )
+	{
+		my %temp = map {$_ => 0} grep {$$RE_DATA{TYPE}->{$_} !~ /[1b]/} @cutters;
+		foreach (keys %temp)
+		{
+			if ($$RE_DATA{TABLE}->{$_} =~ $IIP || $$RE_DATA{TABLE}->{$_} =~ $IIP2)
+			{
+				my $cutoff = length($1);
+				my $clean = $$RE_DATA{CLEAN}->{$_};
+				$cutoff = length($clean) - $cutoff if ($cutoff > (.5 * length($clean))); 
+				my $mattersbit = substr($clean, $cutoff, length($clean)-(2*$cutoff));
+				if ($mattersbit =~ $ambnt && length($mattersbit) % 2 == 0)
+				{
+					$temp{$_}++ if ($pa{overhang} =~ 'A');
+				}
+				else
+				{
+					$temp{$_}++ if (($mattersbit eq complement($mattersbit, 1) && length($mattersbit) % 2 == 0) && $pa{overhang} =~ 'P');
+					$temp{$_}++ if (($mattersbit ne complement($mattersbit, 1) || length($mattersbit) % 2 == 1) && $pa{overhang} =~ 'N');
+				}
+			}
+			$temp{$_}++ if (($$RE_DATA{TABLE}->{$_} =~ $IIA || $$RE_DATA{TABLE}->{$_} =~ $IIA2 || $$RE_DATA{TABLE}->{$_} =~ $IIA3) && $pa{overhang} =~ 'A');
+		}
+		@cutters = grep {$temp{$_} != 0} keys %temp;
 	}
 	if ( $pa{check_ambiguity} )
 	{

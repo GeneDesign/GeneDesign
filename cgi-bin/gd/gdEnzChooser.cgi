@@ -43,6 +43,8 @@ else
 	$pa{stickiness}				=	join " ", $query->param('crEnds');
 	$pa{check_cleavage_site}	=	$query->param('crCutss');
 	$pa{cleavage_site}			=	join " ", $query->param('crCuts');
+	$pa{check_overhang}			=	$query->param('crOhangss');
+	$pa{overhang}				=	join " ", $query->param('crOhangs');
 	$pa{check_site_length}		=	$query->param('crLengs');
 	$pa{site_length}			=	join " ", $query->param('crLeng');
 	$pa{check_ambiguity}		=	$query->param('crAmbis');
