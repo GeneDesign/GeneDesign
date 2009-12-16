@@ -86,9 +86,9 @@ else
 		$table =~ tr/[a-z]/[A-Z]/;
 		$table =~ tr/U/T/;
 		$table .="\nB XXX\nJ XXX\nO XXX\nU XXX\nX XXX\nZ XXX";
-		foreach (split('\n', $table))	
+		foreach (split(/[\n\r]/, $table))	
 		{	
-			$codon_scheme{$1} = $2	if ($_ =~ /([\w])\s([\w]{3})/);
+			$codon_scheme{$1} = $2	if ($_ =~ /([\w])\W*\s([\w]{3})/);
 		}
 		$org = 0;
 	}
