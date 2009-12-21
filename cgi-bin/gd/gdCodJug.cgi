@@ -100,8 +100,8 @@ print <<EOM;
 					The reference organism for optimal codons is <i>$ORGANISMS{$org}</i>.<br><br>
 					The <strong>Optimized</strong> sequence replaces each codon in the original sequence with the optimal codon as determined by expressivity in the organism you chose.
 					 This algorithm will not be applied if organism is undefined.<br>
-					The <strong>Most Different</strong> sequence has as many base changes as possible, with transversions being the most preferred change.  It uses the more optimal codon when possible.<br>
-					The <strong>Least Different</strong> sequence has replaced every codon it can with a codon that has an RSCU value as close as possible to that of the original codon, with a difference no greater than 1. This algorithm will not be applied if organism is undefined.<br>
+					The <strong>Most Different Sequence</strong> sequence has as many base changes as possible, with transversions being the most preferred change.  It uses the more optimal codon when possible.<br>
+					The <strong>Least Different RSCU</strong> sequence has replaced every codon it can with a codon that has an RSCU value as close as possible to that of the original codon, with a difference no greater than 1. This algorithm will not be applied if organism is undefined.<br>
 					The <strong>Less Optimized</strong> sequence uses the first optimal codon that is not the original codon. This algorithm will not be applied if organism is undefined.<br>
 					The <strong>Random</strong> sequence uses a random codon that is not the original codon. No optimization is applied.<br><br>
 					You can take any one of these sequences to another module by clicking the appropriate button.<br>
@@ -115,7 +115,7 @@ print <<EOM;
 					<div style ="position: relative">
 						<div style="position:absolute; top:0; left:550; width:600;">
 							<textarea name="msdfnucseq"  rows="6" cols="65" readonly="true">$msdf_seq</textarea><br>
-							<strong>Most Different</strong><br>
+							<strong>Most Different Sequence</strong><br>
 							&nbsp;_Base Count  : $$msdf_cnt{'length'} bp ($$msdf_cnt{'A'} A, $$msdf_cnt{'T'} T, $$msdf_cnt{'C'} C, $$msdf_cnt{'G'} G)<br>
 							&nbsp;_Composition : $$msdf_cnt{'GCp'}% GC, $$msdf_cnt{'ATp'}% AT<br>
 							$$msdf_aln{'I'} Identites, $$msdf_aln{'D'} Changes ($$msdf_aln{'T'} transitions $$msdf_aln{'V'} transversions), $$msdf_aln{'P'}% Identity<br>
@@ -153,7 +153,7 @@ print <<EOM;
 						</div>
 						<div style="position:absolute; top:400; left:0; width:600;">
 							<textarea name="lsdfnucseq" rows="6" cols="65" readonly="true">$lsdf_seq</textarea><br>
-							<strong>Least Different</strong><br>
+							<strong>Least Different RSCU</strong><br>
 							&nbsp;_Base Count  : $$lsdf_cnt{'length'} bp ($$lsdf_cnt{'A'} A, $$lsdf_cnt{'T'} T, $$lsdf_cnt{'C'} C, $$lsdf_cnt{'G'} G)<br>
 							&nbsp;_Composition : $$lsdf_cnt{'GCp'}% GC, $$lsdf_cnt{'ATp'}% AT<br>
 							$$lsdf_aln{'I'} Identites, $$lsdf_aln{'D'} Changes ($$lsdf_aln{'T'} transitions $$lsdf_aln{'V'} transversions), $$lsdf_aln{'P'}% Identity<br>
@@ -184,7 +184,7 @@ EOM
 			marker_size		  => 2,
 			dclrs => [ qw(black green gray red orange yellow)],
 		) or die $graph->error;
-		$graph->set_legend(("Original", "Optimized", "Least different", "Most different", "Less optimized", "Random"));
+		$graph->set_legend(("Original", "Optimized", "Least different RSCU", "Most different Sequence", "Less optimized", "Random"));
 		my $CODON_PERCENTAGE_TABLE = define_codon_percentages($CODON_TABLE, $RSCU_VALUES);
 
 		my ($nucseqx,   $nucseqy)   = index_codon_percentages($nucseq,   $window, $CODON_PERCENTAGE_TABLE);
