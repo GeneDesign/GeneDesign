@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 use strict;
+use warnings;
 
 use Getopt::Long;
 use File::Basename qw(fileparse);
@@ -13,10 +14,11 @@ use GD::Graph::lines;
 $| = 1;
 
 my %ALGORITHMS = ("r" => 0, "o" => 1, "p" => 2, "m" => 3, "l" => 4);
-my %ALGNAME	 = ("r" => "random", "o" => "optimization", "p" => "less optimization", 
-				"m" => "most different sequence", "l" => "least different RSCU");
-my %ALGSHORT = ("r" => "6 rand", "o" => "2 opti", "p" => "3 lopt", 
-				"m" => "4 msdf", "l" => "5 lsdf");
+my %ALGNAME	 = (r => "random", o => "optimization", p => "less optimization", 
+				m => "most different sequence", l => "least different RSCU");
+my %ALGSHORT = (r => "6 rand", o => "2 opti", p => "3 lopt", 
+				m => "4 msdf", l => "5 lsdf");
+my @COLORS = qw(black green gray red orange yellow);
 my %ORGNAME = %ORGANISMS;
 my $CODON_TABLE = define_codon_table(1);
 $columns = 81;
@@ -92,7 +94,7 @@ Codon_Juggling.pl
     -h,   --help : display this message
 
 ";
-#    -s,   --stats: output statistics (identy, AT%, et al.) for juggled sequences
+#   -s,   --stats: output statistics (identy, AT%, et al.) for juggled sequences
 	exit;
 }
 
@@ -108,7 +110,8 @@ warn "\n WARNING: $_ is not a recognized organism and will be ignored.\n"
 	foreach (grep {! exists($ORGANISMS{$_})} split ("", $config{ORGANISM}) );
 if ($config{ALGORITHMS})
 {	warn "\n WARNING: $_ is not a recognized algorithm and will be ignored.\n"
-		foreach (grep {! exists($ALGORITHMS{$_})} split ("", $config{ALGORITHMS}) );}
+		foreach (grep { ! exists( $ALGORITHMS{$_} ) } 
+				 split ("", $config{ALGORITHMS}) );}
 
 
 ##Fetch input sequences, RSCU table, organisms, algorithms
@@ -186,6 +189,7 @@ foreach my $org (@ORGSDO)
 		make_path($filename . '_gdCJ/Graphs');
 		foreach my $seqkey (grep {length($$ORIG_SEQUENCE{$_}) % 3 == 0} keys %$ORIG_SEQUENCE)
 		{
+			my @lcolors = @COLORS;
 			my $window = length($$ORIG_SEQUENCE{$seqkey}) > 1000	
 				?	20 * (int(length($$ORIG_SEQUENCE{$seqkey})/1000))	
 				:	length($$ORIG_SEQUENCE{$seqkey}) > 500	
@@ -196,16 +200,17 @@ foreach my $org (@ORGSDO)
 			my ($origx, $origy) = index_codon_percentages($$ORIG_SEQUENCE{$seqkey}, $window, $CODON_PERCENTAGE_TABLE);
 			my @data = ($origx, $origy);
 			my @legend = ("1 orig");
-			my @Golors = qw(black);
+			my @gcolors = (shift @lcolors);
 			foreach my $newkey (sort grep {$_ =~ /$seqkey /} keys %$GRAPHS)
 			{
 				my ($tempx, $tempy) = index_codon_percentages($$OUTPUT{$$GRAPHS{$newkey}}, $window, $CODON_PERCENTAGE_TABLE) ;
-				push @data, $tempx;
-				push @data, $tempy;
+				push @data, $tempx, $tempy;
 				push @legend, $1 if ($newkey =~ /$seqkey (\d \w+)/);
+				push @gcolors, shift @lcolors;
 			}
 			print "LEGEND: @legend\n";
-			print "DATA: @data\n";
+			print "\tDATA: @data\n";
+			print "\tCOLORS: @gcolors\n";
 			
 			my $graph = GD::Graph::lines->new(800, 600);
 			$graph->set( 
@@ -222,7 +227,7 @@ foreach my $org (@ORGSDO)
 				markers           => [1], 
 				line_width		  => 2,
 				marker_size		  => 2,
-				dclrs => [ qw(black green gray red orange yellow)],
+				dclrs			  => \@gcolors,
 			) or die $graph->error;
 			
 			$graph->set_legend(@legend);
