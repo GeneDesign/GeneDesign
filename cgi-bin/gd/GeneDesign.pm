@@ -17,7 +17,7 @@ use Perl6::Slurp;
 			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
 			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
-			codon_count generate_RSCU_values
+			codon_count generate_RSCU_values rscu_parser
 			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath $enzfile
 			);
 			
@@ -582,7 +582,7 @@ sub change_codons
 {
 	my ($oldseq, $CODON_TABLE, $RSCU_VALUES, $swit) = @_;
 	my $REV_CODON_TABLE = define_reverse_codon_table($CODON_TABLE);	
-	my ($offset, $newcod, $curcod, $newseq, $aa) = (0, "", "", "", "");
+	my ($offset, $newcod, $curcod, $newseq, $aa) = (0, undef, undef, undef, undef);
 	while ($offset < length($oldseq))
 	{
 		$curcod = substr($oldseq, $offset, 3);
@@ -649,11 +649,29 @@ sub fasta_parser
 	shift @pre;
 	foreach my $preseq (@pre)
 	{
-		my @pair = split(/[\n\r]/, $preseq);
+		my @pair = split(/[\n\r]/g, $preseq);
 		my $id = shift @pair;
 		$$seqhsh{">" . $id} = join("", @pair);
 	}
 	return $seqhsh;
+}
+
+#### rscu_parser ####
+# takes the form AAA (K) 0.540
+#
+#
+sub rscu_parser
+{
+	my ($instr) = @_;
+	my $rscuhsh = {};
+	foreach my $pre (split(/[\n\r]/g, $instr))
+	{
+		my @trip = split(/ /g, $pre);
+		my $id = $trip[0];
+		my $val = $trip[2];
+		$$rscuhsh{$id} = $val;
+	}
+	return $rscuhsh;
 }
 
 #### print_alignment ####
@@ -1328,7 +1346,7 @@ sub first_base
 sub overhang
 {
 	my ($dna, $pos, $grabbedseq, $table, $clean, $swit) = @_;
-	my ($lef, $rig, $mattersbit, $cutoff) = (0, 0, "", 0);
+	my ($lef, $rig, $mattersbit, $cutoff) = (0, 0, undef, 0);
 	my $orient = $grabbedseq =~ regres($clean)	? "+"	:	"-";
 	$swit = 0 if (!$swit);
 	if ($table =~ $IIA || $table =~ $IIA2 || $table =~ $IIA3)
