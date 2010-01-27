@@ -7,7 +7,7 @@ use File::Path qw(make_path);
 use Perl6::Slurp;
 use Text::Wrap qw($columns &wrap);
 use GeneDesign;
-#use GD::Graph::lines;
+use GD::Graph::lines;
 
 
 $| = 1;
@@ -30,7 +30,7 @@ GetOptions (
 			'algorithm=s'	=> \$config{ALGORITHMS},
 			'align!'		=> \$config{ALIGNMENTS},
 #			'stats!'		=> \$config{STATISTICS},
-#			'graph!'		=> \$config{GRAPHS},
+			'graph!'		=> \$config{GRAPHS},
 			'help'			=> \$config{HELP}
 		   );
 
@@ -88,11 +88,11 @@ Codon_Juggling.pl
         (o = optimization,            p = less optimization,
          m = most different sequence, l = least different RSCU, r = random)
     -ali, --align: output alignments of the juggled sequences
+    -g,   --graph: output a graph of the RSCU curves for juggled sequences
     -h,   --help : display this message
 
 ";
 #    -s,   --stats: output statistics (identy, AT%, et al.) for juggled sequences
-#    -g,   --graph: output a graph of the RSCU curves for juggled sequences
 	exit;
 }
 
@@ -186,18 +186,27 @@ foreach my $org (@ORGSDO)
 		make_path($filename . '_gdCJ/Graphs');
 		foreach my $seqkey (grep {length($$ORIG_SEQUENCE{$_}) % 3 == 0} keys %$ORIG_SEQUENCE)
 		{
-			my @legend = ("1 orig");
-			foreach my $newkey (grep {$_ =~/$seqkey /} sort keys %$GRAPHS)
-			{
-				push @legend, $1 if ($newkey =~ /$seqkey (\d \w+)/);
-			}
-			my $gifname = $seqkey;
-			$gifname =~ s/>//;
 			my $window = length($$ORIG_SEQUENCE{$seqkey}) > 1000	
 				?	20 * (int(length($$ORIG_SEQUENCE{$seqkey})/1000))	
 				:	length($$ORIG_SEQUENCE{$seqkey}) > 500	
 					?	20	
 					:	10; #$query->param('WINDOW');
+			my $CODON_PERCENTAGE_TABLE = define_codon_percentages($CODON_TABLE, $RSCU_VALUES);
+			
+			my ($origx, $origy) = index_codon_percentages($$ORIG_SEQUENCE{$seqkey}, $window, $CODON_PERCENTAGE_TABLE);
+			my @data = ($origx, $origy);
+			my @legend = ("1 orig");
+			my @Golors = qw(black);
+			foreach my $newkey (sort grep {$_ =~ /$seqkey /} keys %$GRAPHS)
+			{
+				my ($tempx, $tempy) = index_codon_percentages($$OUTPUT{$$GRAPHS{$newkey}}, $window, $CODON_PERCENTAGE_TABLE) ;
+				push @data, $tempx;
+				push @data, $tempy;
+				push @legend, $1 if ($newkey =~ /$seqkey (\d \w+)/);
+			}
+			print "LEGEND: @legend\n";
+			print "DATA: @data\n";
+			
 			my $graph = GD::Graph::lines->new(800, 600);
 			$graph->set( 
 				x_label           => 'Window Position (Codon Offset)',
@@ -215,14 +224,12 @@ foreach my $org (@ORGSDO)
 				marker_size		  => 2,
 				dclrs => [ qw(black green gray red orange yellow)],
 			) or die $graph->error;
-			$graph->set_legend(@legend);
-			my $CODON_PERCENTAGE_TABLE = define_codon_percentages($CODON_TABLE, $RSCU_VALUES);
-
-			my @data = index_codon_percentages($$ORIG_SEQUENCE{$seqkey},   $window, $CODON_PERCENTAGE_TABLE);
-			push @data, index_codon_percentages($_, $window, $CODON_PERCENTAGE_TABLE) foreach(sort keys %$GRAPHS);
 			
+			$graph->set_legend(@legend);
+			my $gifname = $seqkey;
+			$gifname =~ s/>//;			
 			my $format = $graph->export_format;
-			open   (IMG, $filename . "_gdCJ/Graphs/".$gifname."_$org.$format") or die $!;
+			open   (IMG, ">" . $filename . "_gdCJ/Graphs/" . $gifname."_$org.$format") or die $!;
 			binmode IMG;
 			print   IMG $graph->plot(\@data)->$format();
 			close   IMG;
