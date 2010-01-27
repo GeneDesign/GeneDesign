@@ -75,7 +75,7 @@ Codon_Juggling.pl
 
   Required arguments:
     -i,   --input : a FASTA file containing nucleotide sequences.
-    -r,   --rscu : a txt file containing an RSCU table from gen_RSCU.pl
+    -r,   --rscu : a txt file with an RSCU table from Generate_RSCU_Table.pl
     -o,   --organism : at least one organism number.
         Each organism given represents another iteration the algorithm must run.
         (1 = S.cerevisiae,  2 = E.coli,         3 = H.sapiens,
