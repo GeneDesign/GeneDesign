@@ -21,10 +21,16 @@ $columns = 81;
 my %config = ();
 GetOptions (
 			'input=s'		=> \$config{INPUT},
-			'rscu=s'		=> \$config{RSCU_FILE},
 			'algorithm=i'	=> \$config{ALGORITHM},
-			'oligolen=i'	=> \$config{OLIGOLEN},
 			'ungapped'		=> \$config{OLIGOGAP},
+			'length:i'		=> \$config{TARBBLEN},
+			'lap:i'			=> \$config{TARBBLAP},
+			'oligolen:i'	=> \$config{OLIGOLEN},
+			'maxoligolen:i'	=> \$config{MAXOLILEN},
+			'temp:i'		=> \$config{TARMEL},
+			'tolerance:f'	=> \$config{MELSWING},
+			'utemp:i'		=> \$config{TARUSRMEL},
+			'ulength:s'		=> \$config{TARUSRLEN},
 			'help'			=> \$config{HELP}
 		   );
 
@@ -58,8 +64,8 @@ Design_Building_Blocks.pl
         defined for USER oligos.
 
   Usage examples:
-    perl Design_Building_Blocks.pl -i Test_YCLBB.FASTA -a 2 -oligolen 60
-    ./Design_Building_Blocks.pl --input Test_YCLBB.FASTA -a 1 -lap 40 --ungapped
+    perl Design_Building_Blocks.pl -i=Test_YCLBB.FASTA -a=2 --oligolen=60
+    ./Design_Building_Blocks.pl --input=Test_YCLBB.FASTA -a=1 --ungapped
 
   Required arguments:
     -i,  --input : a FASTA file containing protein sequences.
@@ -72,8 +78,9 @@ Design_Building_Blocks.pl
     -le, --length: the target length in bp of building blocks.
         (default is 740)
     -la, --lap: the target overlap between building blocks.  This parameter is
-	
-    -o,  --oligolen: the target length in bp of assembly oligos. Best results in 
+        ignored by the USER algorithm
+        (default is 20 for RE overlap, 40 for length overlap)
+    -o,  --oligolen: the target length in bp of assembly oligos. Best results in
         steps of 10 bp between 40 and 100 (default = 60)
     -m,  --maxoligolen: the maximum length of assembly oligos permitted
         (default is 80)
@@ -81,12 +88,13 @@ Design_Building_Blocks.pl
         (default is 56)
     -to, --tolerance: the allowable amount of ± variation in melting temperature
         (default is 2.5˚)
-    -ut, --utemp: the target temperature in degrees C of user oligos (USER ONLY)
-        (default is 56)
+    -ut, --utemp: the target melting temperature in degrees C of user oligos
+        (default is 56, USER overlap only)
     -ul, --ulength: the target length of unique sequence in user oligos. This
         refers to the number of Ns in the sequence A(N)xT.  More than one may be
         provided seperated by commas from the set 5, 7, 9, or 11.
         (default is 5,7,9,11)
+    -h,  --help: display this message
 
 
 ";
@@ -99,15 +107,22 @@ die "\n ERROR: No input file was supplied.\n"
 	if (! $config{INPUT});
 die "\n ERROR: $config{INPUT} does not exist.\n"
 	if (! -e $config{INPUT});
-warn "\n ERROR: No such algorithm as $_ - ignoring.\n"
+die "\n ERROR: No such algorithm as $_.\n"
 	foreach ( grep{! exists $ALGORITHM{$_}} split("", $config{ALGORITHM}));
 die "\n ERROR: No algorithm was supplied.\n"
 	unless (scalar( grep{exists $ALGORITHM{$_}} split("",$config{ALGORITHM})));
+if ($config{TARBBLLEN})
+{
+	die "\n ERROR:
+}
+else 
+{
+	$config{TARBBLLEN} = 740;
+}
 
-
-##Fetch input sequences, RSCU table, organisms, algorithms
+##Fetch input sequences
 my $filename	  = fileparse( $config{INPUT}, qr/\.[^.]*/);
-make_path($filename . "_gdRT");
+make_path($filename . "_gdBB_$config{ALGORITHM}");
 my $input		  = slurp( $config{INPUT} );
 my $ORIG_SEQUENCE = fasta_parser( $input );
 

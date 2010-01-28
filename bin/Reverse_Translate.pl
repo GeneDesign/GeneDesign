@@ -53,6 +53,9 @@ Reverse_Translation.pl
     -r OR -o must be provided. If both are given the table will be treated as
         another organism, named after the table's filename.
 
+  Optional arguments:
+    -h,   --help : Display this message
+
 
 ";
 	exit;
@@ -70,7 +73,7 @@ warn "\n WARNING: $_ is not a recognized organism and will be ignored.\n"
 	foreach (grep {! exists($ORGANISMS{$_})} split ("", $config{ORGANISM}) );
 
 
-##Fetch input sequences, RSCU table, organisms, algorithms
+##Fetch input sequences, RSCU table, organisms
 my $filename	  = fileparse( $config{INPUT}, qr/\.[^.]*/);
 make_path($filename . "_gdRT");
 my $input		  = slurp( $config{INPUT} );

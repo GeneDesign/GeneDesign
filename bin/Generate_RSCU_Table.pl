@@ -47,7 +47,7 @@ Generate_RSCU_Table.pl
 die "\n ERROR: $config{INPUT} does not exist.\n"
 	if (! -e $config{INPUT});
 
-##Fetch input sequences, RSCU table, organisms, algorithms
+##Fetch input sequences
 my $filename	  = fileparse( $config{INPUT}, qr/\.[^.]*/) . "_RSCU.txt";
 my $input		  = slurp( $config{INPUT} );
 my $ORIG_SEQUENCE = fasta_parser( $input );
