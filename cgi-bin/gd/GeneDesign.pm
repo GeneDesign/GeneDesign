@@ -9,6 +9,7 @@ use List::Util qw(shuffle min first);
 use List::MoreUtils qw(uniq);
 use Class::Struct;
 use Perl6::Slurp;
+use Text::Wrap qw($columns &wrap);
 
 @ISA = qw(Exporter);
 @EXPORT = qw(define_sites overhang define_site_status siteseeker filter_sites mutexclu first_base report_RE
@@ -17,7 +18,7 @@ use Perl6::Slurp;
 			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
 			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
-			codon_count generate_RSCU_values rscu_parser
+			codon_count generate_RSCU_values rscu_parser fasta_writer
 			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath $enzfile
 			);
 			
@@ -656,6 +657,23 @@ sub fasta_parser
 	return $seqhsh;
 }
 
+#### fasta_writer ####
+#
+#
+#
+sub fasta_writer
+{
+	my ($seqhsh) = @_;
+	my $outstr = '';
+	$columns = 81;
+	foreach my $id (sort {$a cmp $b} keys %$seqhsh)
+	{
+		$outstr .= $id . "\n";
+		$outstr .= wrap("","", $$seqhsh{$id}). "\n";
+	}
+	return $outstr;
+}
+
 #### rscu_parser ####
 # takes the form AAA (K) 0.540
 #
@@ -672,6 +690,16 @@ sub rscu_parser
 		$$rscuhsh{$id} = $val;
 	}
 	return $rscuhsh;
+}
+
+#### rscu_writer ####
+# takes the form AAA (K) 0.540
+#
+#
+sub rscu_writer
+{
+	my ($rscuhsh) = @_;
+	my $outstr = '';
 }
 
 #### print_alignment ####

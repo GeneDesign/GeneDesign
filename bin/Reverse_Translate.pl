@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 use strict;
+use warnings;
 
 use Getopt::Long;
 use File::Basename qw(fileparse);
@@ -102,7 +103,7 @@ foreach my $org (@ORGSDO)
 		$$OUTPUT{$new_key} = $new_seq;
 	}
 	open (my $fh, ">" . $filename . "_gdRT/" . $filename. "_gdRT_$org.FASTA") || die "can't create output file, $!";
-	print $fh $_, "\n", wrap("","",	$$OUTPUT{$_}), "\n" foreach (sort keys %$OUTPUT);
+	print $fh fasta_writer($OUTPUT);
 	close $fh;
 	print $filename . "_gdRT_$org.FASTA has been written.\n";
 }

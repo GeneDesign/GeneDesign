@@ -152,10 +152,8 @@ foreach my $org (@ORGSDO)
 			$$GRAPHS{"$seqkey $ALGSHORT{$alg}"} = $new_key if ($config{GRAPHS});
 		}
 	}
-	open (my $fh, ">" . $filename . "_gdCJ/" . $filename. "_gdCJ_$org.FASTA") 
-		|| die "can't create output file, $!";
-	print $fh $_, "\n", wrap("","",	$$OUTPUT{$_}), "\n" 
-		foreach (sort keys %$OUTPUT);
+	open (my $fh, ">" . $filename . "_gdCJ/" . $filename. "_gdCJ_$org.FASTA") || die "can't create output file, $!";
+	print $fh fasta_writer($OUTPUT);
 	close $fh;
 	print $filename . "_gdCJ_$org.FASTA has been written.\n";
 	
@@ -174,8 +172,7 @@ foreach my $org (@ORGSDO)
 			}
 			my $alnname = $seqkey;
 			$alnname =~ s/>//;
-			open (my $fh, ">$alnpath/$alnname" . "_gdCJ_$org.txt") 
-				|| die "can't create output file, $!";
+			open (my $fh, ">$alnpath/$alnname" . "_gdCJ_$org.txt") || die "can't create alignment file, $!";
 			print $fh print_alignment($ALIGNOUT, 120, 0, $aaseq);
 			close $fh;
 			print "\t$alnpath/$alnname"."_gdCJ_$org.txt has been written.\n";
@@ -223,7 +220,7 @@ foreach my $org (@ORGSDO)
 			my $gifname = $seqkey;
 			$gifname =~ s/>//;			
 			my $format = $graph->export_format;
-			open   (IMG, ">$graphpath/$gifname" . "_$org.$format") or die $!;
+			open   (IMG, ">$graphpath/$gifname" . "_$org.$format") or die "can't create graph file, $!";
 			binmode IMG;
 			print   IMG $graph->plot(\@data)->$format();
 			close   IMG;
