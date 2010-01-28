@@ -9,7 +9,6 @@ use Text::Wrap qw($columns &wrap);
 use List::Util qw(first);
 use GeneDesign;
 
-
 $| = 1;
 
 my %ALGORITHM = (0 => "Restriction Enzyme Overlap",
@@ -112,7 +111,6 @@ Design_Building_Blocks.pl
 	exit;
 }
 
-
 ##Check the consistency of required arguments
 die "\n ERROR: No input file was supplied.\n"
 	if (! $config{INPUT});
@@ -143,7 +141,6 @@ warn "\n WARNING: Maximum oligo length is equal to the target oligo length.\n"
 die "\n ERROR: building block size is outside of allowable range.\n"
 	if ($config{TARBBLEN} < 400 || $config{TARBBLEN} > 1000);
 
-
 ##Fetch input sequences
 my $filename	  = fileparse( $config{INPUT}, qr/\.[^.]*/);
 make_path($filename . "_gdBB_$config{ALGORITHM}");
@@ -170,84 +167,88 @@ foreach my $seqid ( grep {  length($$ORIG_SEQUENCE{$_}) < 1.5 * $config{TARBBLEN
 						 && length($$ORIG_SEQUENCE{$_}) >= 120} 
 					keys %$ORIG_SEQUENCE)
 {
-		my %pa;
-		my $chunk_name		= substr($seqid, 1);
-		my $wholeseq		= $$ORIG_SEQUENCE{$seqid};
-		my $wholelen		= length($wholeseq);
-		
-		$pa{gapswit}		= $config{GAPSWIT};
-		$pa{tar_chn_mel}	= $config{TARCHNMEL};
-		$pa{tar_oli_len}	= $config{TAROLILEN};
-		$pa{per_chn_len}	= $pa{gapswit} == 1	?	$gapperlen{$pa{tar_oli_len}}			:	$ungapperlen{$pa{tar_oli_len}};
-		$pa{tar_oli_lap}	= $pa{gapswit} == 1	?	20										:	.5 * $pa{tar_oli_len};# these are the defaults, 12 60mers with 20bp overlaps and 20bp gaps, nongapped oligos overlap by half the oligo length
-		$pa{tar_oli_gap}	= $pa{gapswit} == 1	?	$pa{tar_oli_len}-(2*$pa{tar_oli_lap})	:	0;						# length = 2*(overlap) + gap, nongapped oligos have no gaps.
-		$pa{tar_oli_num}	= ($pa{per_chn_len} - $pa{tar_oli_lap}) / ($pa{tar_oli_len} - $pa{tar_oli_lap});#18;
-		$pa{chn_mel_tol}	= $config{CHNMELTOL};
-		$pa{max_oli_len}	= $config{MAXOLILEN};
-		$pa{melform}		= 3;
-		
-		my $tno = new Chunk;
-		$tno->ChunkNumber("01");
-		$tno->ChunkSeq($wholeseq);
-		$tno->ChunkLength($wholelen);
-		$tno->ChunkStart(1);
-		$tno->ChunkStop($tno->ChunkLength + $tno->ChunkStart - 1);
-		oligocruncher($tno, \%pa);
-		print("1 building block was generated for $chunk_name.\n");
-		open (my $bbfh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB.FASTA") || die "can't create output file, $!";
-		print $bbfh ">$chunk_name.", $tno->ChunkNumber, " (", $tno->ChunkLength, " bp)\n";
-		print $bbfh wrap( "", "", $tno->ChunkSeq), "\n";
-		close $bbfh;
-		print "\t" . $chunk_name . "_gdBB.FASTA has been written.\n";	
-		open (my $ofh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB_oligos.FASTA") || die "can't create output file, $!";
-		my $x = 1;
-		foreach my $oligo (@{$tno->Oligos})
-		{
-			my $te = $x;
-			$te = '0' . $te while (length($te) < length(scalar(@{$tno->Oligos})) || length($te) < 2);
-			print $ofh ">$chunk_name.", $tno->ChunkNumber, ".o$te (", length($oligo), " bp)\n";
-			print $ofh "$oligo\n" if ($x % 2);
-			print $ofh complement($oligo, 1), "\n" if ($x % 2 == 0);
-			$x++;
-		}
-		close $ofh;
-		print "\t" . $chunk_name . "_gdBB_oligos.FASTA has been written.\n";
-}
-if ($config{ALGORITHM} == 0)
-{
-
-}
-elsif ($config{ALGORITHM} == 1)
-{
-	foreach my $seqid ( grep { length($$ORIG_SEQUENCE{$_}) >= 1.5 * $config{TARBBLEN} } keys %$ORIG_SEQUENCE)
+	my %pa;
+	my $chunk_name		= substr($seqid, 1);
+	my $wholeseq		= $$ORIG_SEQUENCE{$seqid};
+	my $wholelen		= length($wholeseq);
+	
+	$pa{gapswit}		= $config{GAPSWIT};
+	$pa{tar_chn_mel}	= $config{TARCHNMEL};
+	$pa{tar_oli_len}	= $config{TAROLILEN};
+	$pa{per_chn_len}	= $pa{gapswit} == 1	?	$gapperlen{$pa{tar_oli_len}}			:	$ungapperlen{$pa{tar_oli_len}};
+	$pa{tar_oli_lap}	= $pa{gapswit} == 1	?	20										:	.5 * $pa{tar_oli_len};# these are the defaults, 12 60mers with 20bp overlaps and 20bp gaps, nongapped oligos overlap by half the oligo length
+	$pa{tar_oli_gap}	= $pa{gapswit} == 1	?	$pa{tar_oli_len}-(2*$pa{tar_oli_lap})	:	0;						# length = 2*(overlap) + gap, nongapped oligos have no gaps.
+	$pa{tar_oli_num}	= ($pa{per_chn_len} - $pa{tar_oli_lap}) / ($pa{tar_oli_len} - $pa{tar_oli_lap});#18;
+	$pa{chn_mel_tol}	= $config{CHNMELTOL};
+	$pa{max_oli_len}	= $config{MAXOLILEN};
+	$pa{melform}		= 3;
+	
+	my $tno = new Chunk;
+	$tno->ChunkNumber("01");
+	$tno->ChunkSeq($wholeseq);
+	$tno->ChunkLength($wholelen);
+	$tno->ChunkStart(1);
+	$tno->ChunkStop($tno->ChunkLength + $tno->ChunkStart - 1);
+	oligocruncher($tno, \%pa);
+	print("1 building block was generated for $chunk_name.\n");
+	open (my $bbfh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB.FASTA") || die "can't create output file, $!";
+	print $bbfh ">$chunk_name.", $tno->ChunkNumber, " (", $tno->ChunkLength, " bp)\n";
+	print $bbfh wrap( "", "", $tno->ChunkSeq), "\n";
+	close $bbfh;
+	print "\t" . $chunk_name . "_gdBB.FASTA has been written.\n";	
+	open (my $ofh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB_oligos.FASTA") || die "can't create output file, $!";
+	my $x = 1;
+	foreach my $oligo (@{$tno->Oligos})
 	{
-		my %pa;
-		my $chunk_name		= substr($seqid, 1);
-		my $wholeseq		= $$ORIG_SEQUENCE{$seqid};
-		my $wholelen		= length($wholeseq);
-		my $all_tar_bbl_len	= $config{TARBBLEN};
-		my $bbl_lap_len		= $config{TARBBLAP};
+		my $te = $x;
+		$te = '0' . $te while (length($te) < length(scalar(@{$tno->Oligos})) || length($te) < 2);
+		print $ofh ">$chunk_name.", $tno->ChunkNumber, ".o$te (", length($oligo), " bp)\n";
+		print $ofh "$oligo\n" if ($x % 2);
+		print $ofh complement($oligo, 1), "\n" if ($x % 2 == 0);
+		$x++;
+	}
+	close $ofh;
+	print "\t" . $chunk_name . "_gdBB_oligos.FASTA has been written.\n";
+}
+
+foreach my $seqid ( grep { length($$ORIG_SEQUENCE{$_}) >= 1.5 * $config{TARBBLEN} } 
+					keys %$ORIG_SEQUENCE)
+{
+	my %pa;
+	my @BBlocks;
+	my $chunk_name		= substr($seqid, 1);
+	my $wholeseq		= $$ORIG_SEQUENCE{$seqid};
+	my $wholelen		= length($wholeseq);
+	my $tar_bbl_len		= $config{TARBBLEN};
+	my $bbl_lap_len		= $config{TARBBLAP};
+	
+	$pa{gapswit}		= $config{GAPSWIT};
+	$pa{tar_chn_mel}	= $config{TARCHNMEL};
+	$pa{tar_oli_len}	= $config{TAROLILEN};
+	$pa{per_chn_len}	= $pa{gapswit} == 1	?	$gapperlen{$pa{tar_oli_len}}			:	$ungapperlen{$pa{tar_oli_len}};
+	$pa{tar_oli_lap}	= $pa{gapswit} == 1	?	20										:	.5 * $pa{tar_oli_len};# these are the defaults, 12 60mers with 20bp overlaps and 20bp gaps, nongapped oligos overlap by half the oligo length
+	$pa{tar_oli_gap}	= $pa{gapswit} == 1	?	$pa{tar_oli_len}-(2*$pa{tar_oli_lap})	:	0;						# length = 2*(overlap) + gap, nongapped oligos have no gaps.
+	$pa{tar_oli_num}	= ($pa{per_chn_len} - $pa{tar_oli_lap}) / ($pa{tar_oli_len} - $pa{tar_oli_lap});#18;
+	$pa{chn_mel_tol}	= $config{CHNMELTOL};
+	$pa{max_oli_len}	= $config{MAXOLILEN};
+	$pa{melform}		= 3;
 		
-		$pa{gapswit}		= $config{GAPSWIT};
-		$pa{tar_chn_mel}	= $config{TARCHNMEL};
-		$pa{tar_oli_len}	= $config{TAROLILEN};
-		$pa{per_chn_len}	= $pa{gapswit} == 1	?	$gapperlen{$pa{tar_oli_len}}			:	$ungapperlen{$pa{tar_oli_len}};
-		$pa{tar_oli_lap}	= $pa{gapswit} == 1	?	20										:	.5 * $pa{tar_oli_len};# these are the defaults, 12 60mers with 20bp overlaps and 20bp gaps, nongapped oligos overlap by half the oligo length
-		$pa{tar_oli_gap}	= $pa{gapswit} == 1	?	$pa{tar_oli_len}-(2*$pa{tar_oli_lap})	:	0;						# length = 2*(overlap) + gap, nongapped oligos have no gaps.
-		$pa{tar_oli_num}	= ($pa{per_chn_len} - $pa{tar_oli_lap}) / ($pa{tar_oli_len} - $pa{tar_oli_lap});#18;
-		$pa{chn_mel_tol}	= $config{CHNMELTOL};
-		$pa{max_oli_len}	= $config{MAXOLILEN};
-		$pa{melform}		= 3;
-		
-		my (@Olaps, @BBlocks) = ((), ());
+	if ($config{ALGORITHM} == 0)
+	{
+		my $RE_DATA = define_sites("bs_enzymes.txt");
+		my $tar_chn_lap		= .5 * $config{TARBBLAP};
+	}
+	elsif ($config{ALGORITHM} == 1)
+	{
+		my @Olaps;
 		my %bblen = $pa{gapswit}	?	%gapperlen	:	%ungapperlen;
 		my $chunkcount = 0;
-		my $tar_num = int(($wholelen / ($all_tar_bbl_len-$bbl_lap_len)) + 0.5);
+		my $tar_num = int(($wholelen / ($tar_bbl_len-$bbl_lap_len)) + 0.5);
 		my $tar_len = int(($wholelen / $tar_num) + 0.5) - 1;
 		
 		my ($laststart, $cur) = (0, 0);
-		my $tar_cur_dif = length($wholeseq) - ($tar_num * ($all_tar_bbl_len) - $bbl_lap_len * ($tar_num - 1));
-		my $tar_bbl_len = $all_tar_bbl_len;
+		my $tar_cur_dif = length($wholeseq) - ($tar_num * ($tar_bbl_len) - $bbl_lap_len * ($tar_num - 1));
+		my $tar_bbl_len = $tar_bbl_len;
 		if (abs($tar_cur_dif) >= $tar_num)
 		{
 			$tar_bbl_len = $tar_bbl_len + int($tar_cur_dif / $tar_num);
@@ -273,60 +274,14 @@ elsif ($config{ALGORITHM} == 1)
 			push @BBlocks, $tno;
 			$chunkcount++;
 		}
-		print (scalar(@BBlocks) . " building blocks were generated for $chunk_name.\n");
-		open (my $bbfh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB.FASTA") || die "can't create output file, $!";
-		foreach my $bb (@BBlocks)
-		{
-			my $te = $bb->ChunkNumber;
-			$te = '0' . $te while (length($te) < length(scalar(@BBlocks)) || length($te) < 2);
-			print $bbfh ">$chunk_name.$te (", $bb->ChunkLength, " bp)\n";
-			print $bbfh wrap( "", "", $bb->ChunkSeq), "\n";
-		}
-		close $bbfh;
-		print "\t" . $chunk_name . "_gdBB.FASTA has been written.\n";	
-		open (my $ofh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB_oligos.FASTA") || die "can't create output file, $!";
-		foreach my $bb (@BBlocks)
-		{
-			my $x = 1;
-			foreach my $oligo (@{$bb->Oligos})
-			{
-				my $te = $x;
-				$te = '0' . $te while (length($te) < length(scalar(@{$bb->Oligos})) || length($te) < 2);
-				print $ofh ">$chunk_name.", $bb->ChunkNumber, ".o$te (", length($oligo), " bp)\n";
-				print $ofh "$oligo\n" if ($x % 2);
-				print $ofh complement($oligo, 1), "\n" if ($x % 2 == 0);
-				$x++;
-			}
-		}
-		close $ofh;
-		print "\t" . $chunk_name . "_gdBB_oligos.FASTA has been written.\n";
 	}
-}
-elsif ($config{ALGORITHM} == 2)
-{
-	foreach my $seqid ( grep { length($$ORIG_SEQUENCE{$_}) >= 1.5 * $config{TARBBLEN} } keys %$ORIG_SEQUENCE)
+	elsif ($config{ALGORITHM} == 2)
 	{
-		my %pa;
-		my $chunk_name		= substr($seqid, 1);
-		my $wholeseq		= $$ORIG_SEQUENCE{$seqid};
-		my $wholelen		= length($wholeseq);
-		my $tar_bbl_len		= $config{TARBBLEN};
 		my $usr_mel			= $config{TARUSRMEL};
 		my @usr_uni_len		= @{$config{USRUNILEN}};
-		
-		$pa{gapswit}		= $config{GAPSWIT};
-		$pa{tar_chn_mel}	= $config{TARCHNMEL};
-		$pa{tar_oli_len}	= $config{TAROLILEN};
-		$pa{per_chn_len}	= $pa{gapswit} == 1	?	$gapperlen{$pa{tar_oli_len}}			:	$ungapperlen{$pa{tar_oli_len}};
-		$pa{tar_oli_lap}	= $pa{gapswit} == 1	?	20										:	.5 * $pa{tar_oli_len};# these are the defaults, 12 60mers with 20bp overlaps and 20bp gaps, nongapped oligos overlap by half the oligo length
-		$pa{tar_oli_gap}	= $pa{gapswit} == 1	?	$pa{tar_oli_len}-(2*$pa{tar_oli_lap})	:	0;						# length = 2*(overlap) + gap, nongapped oligos have no gaps.
-		$pa{tar_oli_num}	= ($pa{per_chn_len} - $pa{tar_oli_lap}) / ($pa{tar_oli_len} - $pa{tar_oli_lap});#18;
-		$pa{chn_mel_tol}	= $config{CHNMELTOL};
-		$pa{max_oli_len}	= $config{MAXOLILEN};
-		$pa{melform}		= 3;
 		my %FoundSite;
 		my %FoundSiteCoor;
-		my (@UniUsers, @Collection, @BBlocks) = ((), (), ());
+		my (@UniUsers, @Collection) = ((), ());
 		my ($offset, $count) = (0, 0);
 			
 	## Load two hashes with the number of times ANxT is seen and where the last one was seen. Parse the number hash for the unique ones, push into Data structure and store in array.
@@ -360,7 +315,6 @@ elsif ($config{ALGORITHM} == 2)
 		$tar_bbl_len = (($diff/$tarnum)*12.5 >= $tar_bbl_len)	
 			?	int(length($wholeseq)/($tarnum+1) + .5)	
 			:	$tar_bbl_len + int($diff/$tarnum);
-		
 	## Pick the unique sites as close as possible to the requested intervals.
 		my $lasttarget = $offset;
 		my $target = 0;
@@ -395,7 +349,6 @@ elsif ($config{ALGORITHM} == 2)
 				$seen = 0;	
 			}
 		}
-		
 	## Form chunk objects, fill with user primers and oligos
 		my $lastfound = 1;
 		my $laststart;
@@ -469,18 +422,38 @@ elsif ($config{ALGORITHM} == 2)
 			oligocruncher($tno, \%pa);
 			push @BBlocks, $tno;
 		}
-		print (scalar(@Collection) . " building blocks were generated for $chunk_name\n");		
-
-		open (my $bbfh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB.FASTA") || die "can't create output file, $!";
-		foreach my $bb (@BBlocks)
+	}
+	
+	##FASTA output
+	print (scalar(@BBlocks) . " building blocks were generated for $chunk_name.\n");	
+	open (my $bbfh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB.FASTA") || die "can't create output file, $!";
+	foreach my $bb (@BBlocks)
+	{
+		my $te = $bb->ChunkNumber;
+		$te = '0' . $te while (length($te) < length(scalar(@BBlocks)) || length($te) < 2);
+		print $bbfh ">$chunk_name.$te (", $bb->ChunkLength, " bp)\n";
+		print $bbfh wrap( "", "", $bb->ChunkSeq), "\n";
+	}
+	close $bbfh;
+	print "\t" . $chunk_name . "_gdBB.FASTA has been written.\n";	
+	open (my $ofh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB_oligos.FASTA") || die "can't create output file, $!";
+	foreach my $bb (@BBlocks)
+	{
+		my $x = 1;
+		foreach my $oligo (@{$bb->Oligos})
 		{
-			my $te = $bb->ChunkNumber;
-			$te = '0' . $te while (length($te) < length(scalar(@BBlocks)) || length($te) < 2);
-			print $bbfh ">$chunk_name.$te (", $bb->ChunkLength, " bp)\n";
-			print $bbfh wrap( "", "", $bb->ChunkSeq), "\n";
+			my $te = $x;
+			$te = '0' . $te while (length($te) < length(scalar(@{$bb->Oligos})) || length($te) < 2);
+			print $ofh ">$chunk_name.", $bb->ChunkNumber, ".o$te (", length($oligo), " bp)\n";
+			print $ofh "$oligo\n" if ($x % 2);
+			print $ofh complement($oligo, 1), "\n" if ($x % 2 == 0);
+			$x++;
 		}
-		close $bbfh;
-		print "\t" . $chunk_name . "_gdBB.FASTA has been written.\n";	
+	}
+	close $ofh;
+	print "\t" . $chunk_name . "_gdBB_oligos.FASTA has been written.\n";
+	if ($config{ALGORITHM} == 2)
+	{
 		open (my $ufh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB_users.FASTA") || die "can't create output file, $!";
 		foreach my $bb (@BBlocks)
 		{
@@ -492,23 +465,7 @@ elsif ($config{ALGORITHM} == 2)
 			}
 		}
 		close $ufh;
-		print "\t" . $chunk_name . "_gdBB_users.FASTA has been written.\n";	
-		open (my $ofh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB_oligos.FASTA") || die "can't create output file, $!";
-		foreach my $bb (@BBlocks)
-		{
-			my $x = 1;
-			foreach my $oligo (@{$bb->Oligos})
-			{
-				my $te = $x;
-				$te = '0' . $te while (length($te) < length(scalar(@{$bb->Oligos})) || length($te) < 2);
-				print $ofh ">$chunk_name.", $bb->ChunkNumber, ".o$te (", length($oligo), " bp)\n";
-				print $ofh "$oligo\n" if ($x % 2);
-				print $ofh complement($oligo, 1), "\n" if ($x % 2 == 0);
-				$x++;
-			}
-		}
-		close $ofh;
-		print "\t" . $chunk_name . "_gdBB_oligos.FASTA has been written.\n";
+		print "\t" . $chunk_name . "_gdBB_users.FASTA has been written.\n";
 	}
 }
 
