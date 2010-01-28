@@ -30,7 +30,7 @@ GetOptions (
 			'rscu=s'		=> \$config{RSCU_FILE},
 			'organism=i'	=> \$config{ORGANISM},
 			'algorithm=s'	=> \$config{ALGORITHMS},
-			'align!'		=> \$config{ALIGNMENTS},
+			'align!'		=> \$config{ALIGNS},
 #			'stats!'		=> \$config{STATISTICS},
 			'graph!'		=> \$config{GRAPHS},
 			'help'			=> \$config{HELP}
@@ -72,8 +72,8 @@ Codon_Juggling.pl
     r: The random algorithm makes random replacements.
 	
   Usage examples:
-    perl Codon_Juggling.pl -i Test_YAR000W.FASTA -o 13 --algorithm om
-    ./Codon_Juggling.pl --input Test_YAR000W.FASTA -r Test_TY1_RSCU.txt --align
+    perl Codon_Juggling.pl -i=Test_YAR000W.FASTA -o=13 --algorithm=om
+    ./Codon_Juggling.pl --input=Test_YAR000W.FASTA -r=Test_TY1_RSCU.txt --align
 
   Required arguments:
     -i,   --input : a FASTA file containing nucleotide sequences.
@@ -98,7 +98,6 @@ Codon_Juggling.pl
 	exit;
 }
 
-
 ##Check the consistency of arguments
 die "\n ERROR: Neither an organism nor an RSCU table were supplied.\n"
 	if (! $config{ORGANISM} && ! $config{RSCU_FILE});
@@ -113,7 +112,6 @@ if ($config{ALGORITHMS})
 		foreach (grep { ! exists( $ALGORITHMS{$_} ) } 
 				 split ("", $config{ALGORITHMS}) );}
 
-
 ##Fetch input sequences, RSCU table, organisms, algorithms
 my $filename	  = fileparse( $config{INPUT}, qr/\.[^.]*/);
 make_path($filename . "_gdCJ");
@@ -121,22 +119,19 @@ my $input		  = slurp( $config{INPUT} );
 my $ORIG_SEQUENCE = fasta_parser( $input );
 warn "\n WARNING: $_ is not the right length for an ORF and will be ignored.\n"
 	foreach (grep {length($$ORIG_SEQUENCE{$_}) % 3} keys %$ORIG_SEQUENCE );
+my @goodkeys = grep {length($$ORIG_SEQUENCE{$_}) % 3 == 0} keys %$ORIG_SEQUENCE;
 
-my $rscu		  = $config{RSCU_FILE}	?	slurp( $config{RSCU_FILE} )	:	0;
-my $RSCU_DEFN	  = $rscu				?	rscu_parser( $rscu )		:	{};
-	
-my @ORGSDO		  = grep { exists $ORGANISMS{$_} }
+my $rscu		= $config{RSCU_FILE}	?	slurp( $config{RSCU_FILE} )	:	0;
+my $RSCU_DEFN	= $rscu					?	rscu_parser( $rscu )		:	{};
+my @ORGSDO		= grep { exists $ORGANISMS{$_} }
 					split( "", $config{ORGANISM} );
-push @ORGSDO, 0	  if ($rscu);
-$ORGNAME{0}		  = fileparse( $config{RSCU_FILE}, qr/\.[^.]*/) if ($rscu);
-my %ALGSDO;
-if ($config{ALGORITHMS})
-{
-	%ALGSDO		  = map { $_ => 1 }
-					grep { exists $ALGNAME{$_} }
-					split( "", $config{ALGORITHMS} );
-}
-else {$ALGSDO{"o"} = 1;}
+push @ORGSDO, 0	if ($rscu);
+$ORGNAME{0}		= fileparse( $config{RSCU_FILE}, qr/\.[^.]*/) if ($rscu);
+my %ALGSDO		= $config{ALGORITHMS}
+					?	map { $_ => 1 }
+						grep { exists $ALGNAME{$_} }
+						split( "", $config{ALGORITHMS} )
+					:	("o" => 1); 
 print "\n";
 
 ##Juggle!
@@ -146,29 +141,31 @@ foreach my $org (@ORGSDO)
 	my $ALIGNS = {};
 	my $GRAPHS = {};
 	my $RSCU_VALUES = $org	?	define_RSCU_values( $org )	:	$RSCU_DEFN;
-	foreach my $seqkey (grep {length($$ORIG_SEQUENCE{$_}) % 3 == 0} keys %$ORIG_SEQUENCE)
+	foreach my $seqkey (@goodkeys)
 	{
 		foreach my $alg (sort keys %ALGSDO)
 		{
 			my $new_seq = change_codons( $$ORIG_SEQUENCE{$seqkey}, $CODON_TABLE, $RSCU_VALUES, $ALGORITHMS{$alg} );
 			my $new_key = $seqkey . " after the $ALGNAME{$alg} codon juggling algorithm, using $ORGNAME{$org} RSCU values";
 			$$OUTPUT{$new_key} = $new_seq;
-			$$ALIGNS{"$seqkey $ALGSHORT{$alg}"} = $new_key if ($config{ALIGNMENTS});
+			$$ALIGNS{"$seqkey $ALGSHORT{$alg}"} = $new_key if ($config{ALIGNS});
 			$$GRAPHS{"$seqkey $ALGSHORT{$alg}"} = $new_key if ($config{GRAPHS});
 		}
 	}
-	open (my $fh, ">" . $filename . "_gdCJ/" . $filename. "_gdCJ_$org.FASTA") || die "can't create output file, $!";
-	print $fh $_, "\n", wrap("","",	$$OUTPUT{$_}), "\n" foreach (sort keys %$OUTPUT);
+	open (my $fh, ">" . $filename . "_gdCJ/" . $filename. "_gdCJ_$org.FASTA") 
+		|| die "can't create output file, $!";
+	print $fh $_, "\n", wrap("","",	$$OUTPUT{$_}), "\n" 
+		foreach (sort keys %$OUTPUT);
 	close $fh;
 	print $filename . "_gdCJ_$org.FASTA has been written.\n";
 	
-	if ($config{ALIGNMENTS})
+	if ($config{ALIGNS})
 	{
-		make_path($filename . '_gdCJ/Alignments');
-		foreach my $seqkey (grep {length($$ORIG_SEQUENCE{$_}) % 3 == 0} keys %$ORIG_SEQUENCE)
+		my $alnpath = $filename . '_gdCJ/Alignments';
+		make_path($alnpath);
+		foreach my $seqkey (@goodkeys)
 		{
-			my $ALIGNOUT = {};
-			$$ALIGNOUT{"1 orig"} = $$ORIG_SEQUENCE{$seqkey};
+			my $ALIGNOUT = {"1 orig" => $$ORIG_SEQUENCE{$seqkey}};
 			my $aaseq = translate($$ORIG_SEQUENCE{$seqkey}, 1, $CODON_TABLE);
 			foreach my $newkey ( grep {$_ =~ /$seqkey /} sort keys %$ALIGNS)
 			{
@@ -177,66 +174,60 @@ foreach my $org (@ORGSDO)
 			}
 			my $alnname = $seqkey;
 			$alnname =~ s/>//;
-			open (my $fh, ">" . $filename . "_gdCJ/Alignments/" . $alnname . "_gdCJ_$org.txt") 
+			open (my $fh, ">$alnpath/$alnname" . "_gdCJ_$org.txt") 
 				|| die "can't create output file, $!";
 			print $fh print_alignment($ALIGNOUT, 120, 0, $aaseq);
 			close $fh;
-			print "\t" . $filename . "_gdCJ/Alignments/$alnname"."_gdCJ_$org.txt has been written.\n";
+			print "\t$alnpath/$alnname"."_gdCJ_$org.txt has been written.\n";
 		}
 	}
 	
 	if ($config{GRAPHS})
 	{
-		make_path($filename . '_gdCJ/Graphs');
-		foreach my $seqkey (grep {length($$ORIG_SEQUENCE{$_}) % 3 == 0} keys %$ORIG_SEQUENCE)
+		my $graphpath = $filename . '_gdCJ/Graphs';
+		make_path($graphpath);
+		foreach my $seqkey (@goodkeys)
 		{
-			my @lcolors = @COLORS;
 			my $window = length($$ORIG_SEQUENCE{$seqkey}) > 1000	
 				?	20 * (int(length($$ORIG_SEQUENCE{$seqkey})/1000))	
 				:	length($$ORIG_SEQUENCE{$seqkey}) > 500	
 					?	20	
 					:	10; #$query->param('WINDOW');
 			my $CODON_PERCENTAGE_TABLE = define_codon_percentages($CODON_TABLE, $RSCU_VALUES);
-			
-			my ($origx, $origy) = index_codon_percentages($$ORIG_SEQUENCE{$seqkey}, $window, $CODON_PERCENTAGE_TABLE);
-			my $data = [$origx, $origy];
+			my @data = index_codon_percentages($$ORIG_SEQUENCE{$seqkey}, $window, $CODON_PERCENTAGE_TABLE);
 			my @legend = ("1 orig");
-			my @gcolors = (shift @lcolors);
 			foreach my $newkey (sort grep {$_ =~ /$seqkey /} keys %$GRAPHS)
 			{
-				my ($tempx, $tempy) = index_codon_percentages($$OUTPUT{$$GRAPHS{$newkey}}, $window, $CODON_PERCENTAGE_TABLE) ;
-				push @$data, $tempy;
+				my ($tempx, $tempy) = index_codon_percentages($$OUTPUT{$$GRAPHS{$newkey}}, $window, $CODON_PERCENTAGE_TABLE);
+				push @data, $tempy;
 				push @legend, $1 if ($newkey =~ /$seqkey (\d \w+)/);
-				push @gcolors, shift @lcolors;
 			}
-			
 			my $graph = GD::Graph::lines->new(800, 600);
 			$graph->set( 
 				x_label           => 'Window Position (Codon Offset)',
 				y_label           => 'Average Relative Synonymous Codon Usage Value',
 				title             => "Sliding window of $window using RSCU values from $ORGNAME{$org}",
 				y_max_value       => 1,
-				y_min_value       =>  0,
+				y_min_value       => 0,
 				tick_length       => 3,
 				y_tick_number     => 1,
 				x_label_position  => 0.5,
-				y_label_skip      => .1,
+				y_label_skip      => 0.1,
 				x_label_skip      => int(length($$ORIG_SEQUENCE{$seqkey})/50),
 				markers           => [1], 
 				line_width		  => 2,
 				marker_size		  => 2,
-				dclrs			  => \@gcolors,
+				dclrs			  => \@COLORS,
 			) or die $graph->error;
-			
 			$graph->set_legend(@legend);
 			my $gifname = $seqkey;
 			$gifname =~ s/>//;			
 			my $format = $graph->export_format;
-			open   (IMG, ">" . $filename . "_gdCJ/Graphs/" . $gifname."_$org.$format") or die $!;
+			open   (IMG, ">$graphpath/$gifname" . "_$org.$format") or die $!;
 			binmode IMG;
-			print   IMG $graph->plot($data)->$format();
+			print   IMG $graph->plot(\@data)->$format();
 			close   IMG;
-			print "\t" . $filename . "_gdCJ/Graphs/$gifname"."_$org.$format has been written.\n";
+			print "\t$graphpath/$gifname"."_$org.$format has been written.\n";
 		}
 	}
 }
