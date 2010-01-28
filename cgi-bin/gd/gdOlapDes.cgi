@@ -96,14 +96,13 @@ elsif($query->param('WHOLESEQ'))
 		my %bblen = $pa{gapswit}	?	%gapperlen	:	%ungapperlen;
 		my $chunkcount = 0;
 		my @Olaps;
-		my $tar_num = int(($wholelen / $all_tar_bbl_len) + 0.5);
-		my $tar_len = $wholelen / $tar_num;
-		my $tar_oli_len = first {1} sort{ abs($a-$tar_len) <=> abs($b-$tar_len)} keys %bblen;
+		my $tar_num = int(($wholelen / ($all_tar_bbl_len-$bbl_lap_len)) + 0.5);
+		my $tar_len = int(($wholelen / $tar_num) + 0.5) - 1;
 		
 		print $tar_num, ", $tar_len, $tar_oli_len<br>";
 		my $laststart = 0;
 		my $cur = 0;
-		my $tar_cur_dif = length($wholeseq) - ($tar_num * $tar_len);
+		my $tar_cur_dif = length($wholeseq) - ($tar_num * ($all_tar_bbl_len) - $bbl_lap_len * ($tar_num - 1));
 		my $tar_bbl_len = $all_tar_bbl_len;
 		if (abs($tar_cur_dif) >= $tar_num)
 		{
@@ -130,6 +129,7 @@ elsif($query->param('WHOLESEQ'))
 			push @Chunks, $tno;
 			$chunkcount++;
 		}
+		
 		take_note(scalar(@Chunks) . " building blocks were generated.<br>");#, int((length($wholeseq) / $tar_bbl_len)+.5), "<br><br>";
 	}
 	else
