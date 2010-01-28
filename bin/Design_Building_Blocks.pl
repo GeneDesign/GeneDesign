@@ -55,6 +55,10 @@ Design_Building_Blocks.pl
     values are assumed for every parameter not provided. Oligos are always
     printed 5' to 3'.
 
+    Any sequence provided that is less than one and a half times the target
+    building block size will not be divided into building blocks, but will be
+    made into oligos.
+
   Algorithms:
     0: Restriction Enzyme Overlap: Building Blocks will overlap on unique 
         restriction enzyme recognition sites. An overlap parameter may be 
@@ -64,11 +68,11 @@ Design_Building_Blocks.pl
         enough evenly spaced, unique RE sites the algorithm will fault. This
         algorithm is not suitable for dividing sequence over 12000 bp long.
     1: Length Overlap: Building Blocks will overlap by a user-defined overlap
-        length parameter. Input sequences must be at least 5000 bp long.
+        length parameter. Input sequences must be at least 1000 bp long.
     2: USER Overlap: Building Blocks will overlap on A(N)xT sequences, so as to 
         be compatible with a uracil exicision (USER) assembly protocol. The 
         width of overlap is user definable, and a melting temperature may be 
-        defined for USER oligos. Input sequences must be at least 5000 bp long.
+        defined for USER oligos. Input sequences must be at least 1000 bp long.
 
   Usage examples:
     perl Design_Building_Blocks.pl -i=Test_YCLBB.FASTA -a=2 --oligolen=60
@@ -145,10 +149,14 @@ my $filename	  = fileparse( $config{INPUT}, qr/\.[^.]*/);
 make_path($filename . "_gdBB_$config{ALGORITHM}");
 my $input		  = slurp( $config{INPUT} );
 my $ORIG_SEQUENCE = fasta_parser( $input );
-warn "\n WARNING: $_ is not long enough to be processed by this algorithm.\n"
+warn "\n WARNING: $_ is too small to be made into oligos.\n"
 	foreach(
-		grep {   ($config{ALGORITHM} > 0 && length($$ORIG_SEQUENCE{$_}) < 1000) 
-			  || ($config{ALGORITHM} == 0 && length($$ORIG_SEQUENCE{$_}) < 500)}
+		grep {   length($$ORIG_SEQUENCE{$_}) < 120}
+		keys %$ORIG_SEQUENCE);
+warn "\n WARNING: $_ will be a single building block.\n"
+	foreach(
+		grep {   length($$ORIG_SEQUENCE{$_}) < 1.5 * $config{TARBBLEN}
+				&& length($$ORIG_SEQUENCE{$_}) >= 120}
 		keys %$ORIG_SEQUENCE);
 warn "\n WARNING: $_ is too long to be processed by this algorithm.\n"
 	foreach(
@@ -158,12 +166,60 @@ warn "\n WARNING: $_ is too long to be processed by this algorithm.\n"
 print "\n";
 print "$_, $config{$_}\n" foreach (keys %config);
 
+foreach my $seqid ( grep {  length($$ORIG_SEQUENCE{$_}) < 1.5 * $config{TARBBLEN} 
+						 && length($$ORIG_SEQUENCE{$_}) >= 120} 
+					keys %$ORIG_SEQUENCE)
+{
+		my %pa;
+		my $chunk_name		= substr($seqid, 1);
+		my $wholeseq		= $$ORIG_SEQUENCE{$seqid};
+		my $wholelen		= length($wholeseq);
+		
+		$pa{gapswit}		= $config{GAPSWIT};
+		$pa{tar_chn_mel}	= $config{TARCHNMEL};
+		$pa{tar_oli_len}	= $config{TAROLILEN};
+		$pa{per_chn_len}	= $pa{gapswit} == 1	?	$gapperlen{$pa{tar_oli_len}}			:	$ungapperlen{$pa{tar_oli_len}};
+		$pa{tar_oli_lap}	= $pa{gapswit} == 1	?	20										:	.5 * $pa{tar_oli_len};# these are the defaults, 12 60mers with 20bp overlaps and 20bp gaps, nongapped oligos overlap by half the oligo length
+		$pa{tar_oli_gap}	= $pa{gapswit} == 1	?	$pa{tar_oli_len}-(2*$pa{tar_oli_lap})	:	0;						# length = 2*(overlap) + gap, nongapped oligos have no gaps.
+		$pa{tar_oli_num}	= ($pa{per_chn_len} - $pa{tar_oli_lap}) / ($pa{tar_oli_len} - $pa{tar_oli_lap});#18;
+		$pa{chn_mel_tol}	= $config{CHNMELTOL};
+		$pa{max_oli_len}	= $config{MAXOLILEN};
+		$pa{melform}		= 3;
+		
+		my $tno = new Chunk;
+		$tno->ChunkNumber("01");
+		$tno->ChunkSeq($wholeseq);
+		$tno->ChunkLength($wholelen);
+		$tno->ChunkStart(1);
+		$tno->ChunkStop($tno->ChunkLength + $tno->ChunkStart - 1);
+		oligocruncher($tno, \%pa);
+		print("1 building block was generated for $chunk_name.\n");
+		open (my $bbfh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB.FASTA") || die "can't create output file, $!";
+		print $bbfh ">$chunk_name.", $tno->ChunkNumber, " (", $tno->ChunkLength, " bp)\n";
+		print $bbfh wrap( "", "", $tno->ChunkSeq), "\n";
+		close $bbfh;
+		print "\t" . $chunk_name . "_gdBB.FASTA has been written.\n";	
+		open (my $ofh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB_oligos.FASTA") || die "can't create output file, $!";
+		my $x = 1;
+		foreach my $oligo (@{$tno->Oligos})
+		{
+			my $te = $x;
+			$te = '0' . $te while (length($te) < length(scalar(@{$tno->Oligos})) || length($te) < 2);
+			print $ofh ">$chunk_name.", $tno->ChunkNumber, ".o$te (", length($oligo), " bp)\n";
+			print $ofh "$oligo\n" if ($x % 2);
+			print $ofh complement($oligo, 1), "\n" if ($x % 2 == 0);
+			$x++;
+		}
+		close $ofh;
+		print "\t" . $chunk_name . "_gdBB_oligos.FASTA has been written.\n";
+}
 if ($config{ALGORITHM} == 0)
 {
+
 }
 elsif ($config{ALGORITHM} == 1)
 {
-	foreach my $seqid ( grep { length($$ORIG_SEQUENCE{$_}) >= 1000 } keys %$ORIG_SEQUENCE)
+	foreach my $seqid ( grep { length($$ORIG_SEQUENCE{$_}) >= 1.5 * $config{TARBBLEN} } keys %$ORIG_SEQUENCE)
 	{
 		my %pa;
 		my $chunk_name		= substr($seqid, 1);
@@ -186,12 +242,11 @@ elsif ($config{ALGORITHM} == 1)
 		my (@Olaps, @BBlocks) = ((), ());
 		my %bblen = $pa{gapswit}	?	%gapperlen	:	%ungapperlen;
 		my $chunkcount = 0;
-		my $tar_num = int(($wholelen / $all_tar_bbl_len) + 0.5);
-		my $tar_len = $wholelen / $tar_num;
-		my $tar_oli_len = first {1} sort{ abs($a-$tar_len) <=> abs($b-$tar_len)} keys %bblen;
+		my $tar_num = int(($wholelen / ($all_tar_bbl_len-$bbl_lap_len)) + 0.5);
+		my $tar_len = int(($wholelen / $tar_num) + 0.5) - 1;
 		
 		my ($laststart, $cur) = (0, 0);
-		my $tar_cur_dif = length($wholeseq) - ($tar_num * $tar_len);
+		my $tar_cur_dif = length($wholeseq) - ($tar_num * ($all_tar_bbl_len) - $bbl_lap_len * ($tar_num - 1));
 		my $tar_bbl_len = $all_tar_bbl_len;
 		if (abs($tar_cur_dif) >= $tar_num)
 		{
@@ -218,7 +273,7 @@ elsif ($config{ALGORITHM} == 1)
 			push @BBlocks, $tno;
 			$chunkcount++;
 		}
-		print (scalar(@BBlocks) . " building blocks were generated.\n");
+		print (scalar(@BBlocks) . " building blocks were generated for $chunk_name.\n");
 		open (my $bbfh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB.FASTA") || die "can't create output file, $!";
 		foreach my $bb (@BBlocks)
 		{
@@ -228,6 +283,7 @@ elsif ($config{ALGORITHM} == 1)
 			print $bbfh wrap( "", "", $bb->ChunkSeq), "\n";
 		}
 		close $bbfh;
+		print "\t" . $chunk_name . "_gdBB.FASTA has been written.\n";	
 		open (my $ofh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB_oligos.FASTA") || die "can't create output file, $!";
 		foreach my $bb (@BBlocks)
 		{
@@ -248,7 +304,7 @@ elsif ($config{ALGORITHM} == 1)
 }
 elsif ($config{ALGORITHM} == 2)
 {
-	foreach my $seqid ( grep { length($$ORIG_SEQUENCE{$_}) >= 1000 } keys %$ORIG_SEQUENCE)
+	foreach my $seqid ( grep { length($$ORIG_SEQUENCE{$_}) >= 1.5 * $config{TARBBLEN} } keys %$ORIG_SEQUENCE)
 	{
 		my %pa;
 		my $chunk_name		= substr($seqid, 1);
@@ -413,7 +469,7 @@ elsif ($config{ALGORITHM} == 2)
 			oligocruncher($tno, \%pa);
 			push @BBlocks, $tno;
 		}
-		print (scalar(@Collection) . " building blocks were generated from $chunk_name\n");		
+		print (scalar(@Collection) . " building blocks were generated for $chunk_name\n");		
 
 		open (my $bbfh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB.FASTA") || die "can't create output file, $!";
 		foreach my $bb (@BBlocks)
@@ -424,7 +480,7 @@ elsif ($config{ALGORITHM} == 2)
 			print $bbfh wrap( "", "", $bb->ChunkSeq), "\n";
 		}
 		close $bbfh;
-		print $chunk_name . "_gdBB.FASTA has been written.\n";	
+		print "\t" . $chunk_name . "_gdBB.FASTA has been written.\n";	
 		open (my $ufh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB_users.FASTA") || die "can't create output file, $!";
 		foreach my $bb (@BBlocks)
 		{
