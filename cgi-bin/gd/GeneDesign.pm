@@ -692,16 +692,6 @@ sub rscu_parser
 	return $rscuhsh;
 }
 
-#### rscu_writer ####
-# takes the form AAA (K) 0.540
-#
-#
-sub rscu_writer
-{
-	my ($rscuhsh) = @_;
-	my $outstr = '';
-}
-
 #### print_alignment ####
 #
 # $swit = 1 for html, 0 for text

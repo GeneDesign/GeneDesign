@@ -6,7 +6,6 @@ use Getopt::Long;
 use File::Basename qw(fileparse);
 use File::Path qw(make_path);
 use Perl6::Slurp;
-use Text::Wrap qw($columns &wrap);
 use GeneDesign;
 
 
