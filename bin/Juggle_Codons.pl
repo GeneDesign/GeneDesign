@@ -181,6 +181,7 @@ foreach my $org (@ORGSDO)
 				|| die "can't create output file, $!";
 			print $fh print_alignment($ALIGNOUT, 120, 0, $aaseq);
 			close $fh;
+			print "\t" . $filename . "_gdCJ/Alignments/$alnname"."_gdCJ_$org.txt has been written.\n";
 		}
 	}
 	
@@ -198,19 +199,16 @@ foreach my $org (@ORGSDO)
 			my $CODON_PERCENTAGE_TABLE = define_codon_percentages($CODON_TABLE, $RSCU_VALUES);
 			
 			my ($origx, $origy) = index_codon_percentages($$ORIG_SEQUENCE{$seqkey}, $window, $CODON_PERCENTAGE_TABLE);
-			my @data = ($origx, $origy);
+			my $data = [$origx, $origy];
 			my @legend = ("1 orig");
 			my @gcolors = (shift @lcolors);
 			foreach my $newkey (sort grep {$_ =~ /$seqkey /} keys %$GRAPHS)
 			{
 				my ($tempx, $tempy) = index_codon_percentages($$OUTPUT{$$GRAPHS{$newkey}}, $window, $CODON_PERCENTAGE_TABLE) ;
-				push @data, $tempx, $tempy;
+				push @$data, $tempy;
 				push @legend, $1 if ($newkey =~ /$seqkey (\d \w+)/);
 				push @gcolors, shift @lcolors;
 			}
-			print "LEGEND: @legend\n";
-			print "\tDATA: @data\n";
-			print "\tCOLORS: @gcolors\n";
 			
 			my $graph = GD::Graph::lines->new(800, 600);
 			$graph->set( 
@@ -236,8 +234,9 @@ foreach my $org (@ORGSDO)
 			my $format = $graph->export_format;
 			open   (IMG, ">" . $filename . "_gdCJ/Graphs/" . $gifname."_$org.$format") or die $!;
 			binmode IMG;
-			print   IMG $graph->plot(\@data)->$format();
+			print   IMG $graph->plot($data)->$format();
 			close   IMG;
+			print "\t" . $filename . "_gdCJ/Graphs/$gifname"."_$org.$format has been written.\n";
 		}
 	}
 }
