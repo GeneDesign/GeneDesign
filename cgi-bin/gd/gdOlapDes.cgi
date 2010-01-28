@@ -98,8 +98,6 @@ elsif($query->param('WHOLESEQ'))
 		my @Olaps;
 		my $tar_num = int(($wholelen / ($all_tar_bbl_len-$bbl_lap_len)) + 0.5);
 		my $tar_len = int(($wholelen / $tar_num) + 0.5) - 1;
-		
-		print $tar_num, ", $tar_len, $tar_oli_len<br>";
 		my $laststart = 0;
 		my $cur = 0;
 		my $tar_cur_dif = length($wholeseq) - ($tar_num * ($all_tar_bbl_len) - $bbl_lap_len * ($tar_num - 1));
