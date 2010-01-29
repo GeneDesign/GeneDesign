@@ -32,8 +32,8 @@ if ($config{HELP})
 Reverse_Translation.pl
 	
     Given at least one protein sequence as input, the Reverse_Translation script
-    ynonymous nucleotide sequence using either a user-defined codon scheme or 
-    the most optimal codons for expression in a user-selected organism.
+    generates synonymous nucleotide sequences using either a user-defined codon
+    table or the most optimal codons for expression in a user-selected organism.
 	
     Output will be named according to the name of the FASTA input file, and will
     be tagged with the gdRT suffix and the number of the organism used (or 0 if
