@@ -33,7 +33,7 @@ struct Chunk => { map { $_ => '$' } qw(Parameters ChunkNumber NumberofOligos Chu
 
 struct USERsite => { map { $_ => '$' } qw(Start nNumber Sequence) };
 
-my $sock = IO::Socket::INET->new( PeerAddr=> "baderlab.bme.jhu.edu", PeerPort=> 80, Proto   => "tcp");
+my $sock = IO::Socket::INET->new( PeerAddr=> "localhost", PeerPort=> 80, Proto   => "tcp");
 my $LOCALIP = $sock->sockhost;
 
 our $docpath = "../../Documents/gd";
