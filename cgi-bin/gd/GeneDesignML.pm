@@ -121,7 +121,7 @@ sub offer_fasta
 {
 	my ($outstr, $indent) = @_;
 	my $offer = tab($indent) . "<div id=\"notes\" style=\"text-align:center\">\n";
-	$offer .= tab($indent + 1) . "<form METHOD=\"POST\" TARGET=\"_blank\" ACTION=\"printFASTA.cgi\" ID=\"form2\" NAME=\"form2\">";
+	$offer .= tab($indent + 1) . "<form METHOD=\"POST\" TARGET=\"_blank\" ACTION=\"./printFASTA.cgi\" NAME=\"form2\">";
 	$offer .= tab($indent + 2) . "<input type=\"hidden\" name=\"inseq\" value=\"$outstr\" />\n";
 	$offer .= tab($indent + 2) . "You can save this output as a <input type=\"submit\" value=\"FASTA file\">";
 	$offer .= tab($indent + 1) . "</form>\n";

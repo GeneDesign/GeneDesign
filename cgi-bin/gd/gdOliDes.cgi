@@ -52,6 +52,7 @@ print <<EOM;
 						<input type="hidden" name="skipall" value="yes">
 					</div>
 				</div>
+			</form>
 EOM
 	closer();
 }

@@ -151,6 +151,7 @@ EOM
 		}
 print <<EOM;
 					</table>
+				</form>
 EOM
 	}
 	closer();

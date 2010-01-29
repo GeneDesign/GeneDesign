@@ -337,6 +337,7 @@ print <<EOM;
 				FASTA format: <input type="submit" value="&nbsp;Assembly Oligos&nbsp;" onClick="FASTArizer(2)" /> <input type="submit" value="&nbsp;USER Oligos&nbsp;" onClick="FASTArizer(3)" /> <input type="submit" value="&nbsp;Building Blocks&nbsp;" onClick="FASTArizer(4)" /><br>
 				tabbed format: <input type="submit" value="&nbsp;Assembly Oligos&nbsp;" onClick="FASTArizer(5)" /> <input type="submit" value="&nbsp;USER Oligos&nbsp;" onClick="FASTArizer(6)" /><br>
 				$hiddenstring
+			</form>
 EOM
 	closer();
 }

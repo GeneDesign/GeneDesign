@@ -154,6 +154,8 @@ elsif ($query->param('swit') eq 'all' || $query->param('swit') eq 'some')
 	$results .= "Translation error! the translation of your sequence has been altered.<br>" if (translate($nucseq, 1, $CODON_TABLE) ne translate($newnuc, 1, $CODON_TABLE));
 	my $newal = compare_sequences($nucseq, $newnuc);
 	my $bcou = count($newnuc); 
+	my $newhsh = {">Your modified sequence" => $newnuc};
+	my $FASTAoff = offer_fasta(fasta_writer($newhsh));
 	my $hiddenstring = hidden_fielder({"MODORG" => $org});
 	
 print <<EOM;
@@ -169,7 +171,10 @@ print <<EOM;
 					$$newal{'I'} Identites, $$newal{'D'} Changes ($$newal{'T'} transitions $$newal{'V'} transversions), $$newal{'P'}% Identity<br><br><br>
 					$nextsteps
 				</div>
-				$hiddenstring	
+				$hiddenstring
+			</form>
+			<br><br><br>
+			$FASTAoff
 EOM
 	closer();
 }

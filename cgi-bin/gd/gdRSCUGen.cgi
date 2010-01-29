@@ -64,5 +64,6 @@ print <<EOM;
 EOM
 	print print_RSCU_table($RSCUVal, $CODON_TABLE, 5);
 	print "				</div>\n";
+	print "			</form>\n";
 	closer();
 }

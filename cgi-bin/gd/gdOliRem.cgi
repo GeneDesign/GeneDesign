@@ -114,7 +114,9 @@ EOM
 		$results .= "The translation has been changed!<br>\n";
 	}
 	my $newal = compare_sequences($oldnuc, $newnuc);
-	my $bcou = count($nucseq); 
+	my $bcou = count($newnuc); 
+	my $newhsh = {">Your modified sequence" => $newnuc};
+	my $FASTAoff = offer_fasta(fasta_writer($newhsh));
 	my $hiddenstring = hidden_fielder({"MODORG" => $org});
 print <<EOM;
 				<div id="notes">
@@ -130,6 +132,9 @@ print <<EOM;
 					$nextsteps
 				</div>
 				$hiddenstring
+			</form>
+			<br><br><br>
+			$FASTAoff
 EOM
 	closer();
 }

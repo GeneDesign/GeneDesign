@@ -219,6 +219,8 @@ EOM
 print <<EOM;
 				<br><br>&nbsp;
 				$hiddenstring
+			</form>
+			<br><br><br>
 EOM
 	closer();
 }

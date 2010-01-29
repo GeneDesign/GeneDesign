@@ -143,6 +143,7 @@ print <<EOM;
 				<div id="gridgroup1" align ="center" style="position:relative;">
 					$nextsteps
 				</div>
+			</form>
 EOM
 	closer();
 	}
@@ -183,6 +184,7 @@ print <<EOM;
 				<code>
 					@report
 				</code>
+			</form>
 EOM
 		closer();
 	}

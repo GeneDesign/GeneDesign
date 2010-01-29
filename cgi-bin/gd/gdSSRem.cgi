@@ -133,6 +133,8 @@ else
 	}
 	my $newal = compare_sequences($oldnuc, $newnuc);
 	my $bcou = count($newnuc); 
+	my $newhsh = {">Your edited sequence" => $newnuc};
+	my $FASTAoff = offer_fasta(fasta_writer($newhsh));
 	my $hiddenstring = hidden_fielder({"MODORG" => $org});
 print <<EOM;
 				<div id="notes">
@@ -149,6 +151,9 @@ print <<EOM;
 					$nextsteps
 				</div>
 				$hiddenstring
+			</form>
+			<br><br><br>
+			$FASTAoff
 EOM
 	closer();
 }

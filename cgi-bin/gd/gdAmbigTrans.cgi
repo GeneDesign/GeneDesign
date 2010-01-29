@@ -51,6 +51,7 @@ print <<EOM;
 				</div><br><br>
 				Oligo: <code>(NN)$nucseq(NN)</code><br><br>
 				Summary: <br><textarea name="list" rows="10" cols="120" readonly>@sortarr2</textarea><br><br>
+			</form>
 EOM
 	closer();
 }

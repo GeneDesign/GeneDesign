@@ -101,23 +101,27 @@ else
 	}
 	else
 	{
-		$seqhsh = {" " => cleanup($query->param('AASEQUENCE'), 2)};
+		$seqhsh = {">your reverse translated sequence" => cleanup($query->param('AASEQUENCE'), 2)};
 	}
 	my ($stats, $nucseq) = ("", "");
 	$columns = 81;
+	my $newhsh;
 	foreach my $id (keys %$seqhsh)
 	{
 		if ($fastaswit >= 0)
 		{
 			$nucseq .= $id . " (reverse translated)\n";
-			$nucseq .= wrap("","",	reverse_translate(cleanup($$seqhsh{$id}, 2), \%codon_scheme)) . "\n";
+			my $newseq = reverse_translate(cleanup($$seqhsh{$id}, 2), \%codon_scheme);
+			$nucseq .= wrap("","",	$newseq) . "\n";
 			$fastaswit++;
+			$$newhsh{$id . " (reverse translated)"} = $newseq;
 		}
 		else
 		{
 		####-PREERROR CHECKING - did they include everything in the codon table? If not same length, alarm and allow them to go back.
 			$$hiddenhash{"AASEQUENCE"} = $$seqhsh{$id};
 			$nucseq = reverse_translate($$seqhsh{$id}, \%codon_scheme);
+			$$newhsh{$id} = $nucseq;
 			if (length($$seqhsh{$id}) < length($nucseq)/3 || $$seqhsh{$id} ne translate($nucseq, 1, $CODON_TABLE))
 			{
 				my $errout = "<br>" . $$seqhsh{$id} . "<br>" . translate($nucseq, 1, $CODON_TABLE) . "<br>Codons:<br>";
@@ -134,6 +138,7 @@ else
 	
 	$nextsteps = "" if ($fastaswit > 1);
 	my $hiddenstring = hidden_fielder($hiddenhash);
+	my $FASTAoff = offer_fasta(fasta_writer($newhsh));
 print <<EOM;
 				<div id="notes" style="text-align:center;">
 					Your amino acid sequences have been successfully reverse translated to nucleotides.<br>
@@ -148,6 +153,9 @@ print <<EOM;
 					$nextsteps
 				</div>
 				$hiddenstring
+			</form>
+			<br><br><br>
+			$FASTAoff
 EOM
 		closer();
 }

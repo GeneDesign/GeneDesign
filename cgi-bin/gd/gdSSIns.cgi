@@ -463,11 +463,14 @@ if ($query->param('swit') eq 'wu')
 					introduction introduced a previously absent site.<br>\n";	}
 	if (scalar(@Error2) >= 1)	{	$errorstring .= tab(5) . "@Error2 recognition sites were banned from introduction, but are present in the sequence.<br>\n";	}
 	if (scalar(@Error3) >= 1)	{	$errorstring .= tab(5) . "I am sorry, but enzyme(s) @Error3 were not inserted - a 3&rsquo; introduction might have overwritten it.<br>\n";	}
+	my $newhsh = {">Your edited sequence" => $newnuc};	
+	my $FASTAoff = offer_fasta(fasta_writer($newhsh));
 print <<EOM;
 				<div id="notes">
 					Below is a summary of the sites that have been added to your sequence.<br>
 					$errorstring
 					The average distance between inserted sites is $avg nucleotides ($avp amino acids).
+					Scroll to the bottom to save this sequence as a FASTA file.
 				</div>
 				<div id="gridgroup0">
 					Your nucleotide sequence:<br>
@@ -488,6 +491,9 @@ EOM
 print <<EOM;
 				</div>
 				$hiddenstring
+			</form>
+			<br><br><br>
+			$FASTAoff
 EOM
 	closer();
 }

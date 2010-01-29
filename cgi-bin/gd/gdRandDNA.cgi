@@ -60,6 +60,7 @@ print <<EOM;
 				<div id="wrapper">
 					@temparr
 				</div>
+			</form>
 EOM
 	closer();
 }

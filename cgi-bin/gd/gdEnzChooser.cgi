@@ -83,5 +83,6 @@ print <<EOM;
 EOM
 	print_enzyme_table(\@finarr, $RE_DATA, 5);
 	print tab(4), "</div>\n";
+	print tab(3), "</form>\n";
 	closer();
 }
