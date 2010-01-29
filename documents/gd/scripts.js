@@ -72,4 +72,12 @@ function OlBB()
 	if (hal == 4)
 	{
 		document.form1.PASSNUCSEQUENCE.value = document.form1.lsdfnucseq.value;
-	}	if (loi == 0)	{		document.form1.action = './gdSSIns.cgi';	}	if (loi == 1)	{			document.form1.action   = './gdSSRem.cgi';	}	if (loi == 2)	{		document.form1.action = './gdOliDes.cgi';	}	if (loi == 3)	{		document.form1.action = './gdSeqAna.cgi';	}	}//-->
+	}	if (loi == 0)	{		document.form1.action = './gdSSIns.cgi';	}	if (loi == 1)	{			document.form1.action = './gdSSRem.cgi';	}	if (loi == 2)	{		document.form1.action = './gdSeqAna.cgi';	}	if (loi == 3)	{		document.form1.action = './gdOliDes.cgi';	}
+	if (loi == 4)
+	{
+		document.form1.action = './gdUserDes.cgi';
+	}
+	if (loi == 5)
+	{
+		document.form1.action = './gdOlapDes.cgi';
+	}	}//-->
