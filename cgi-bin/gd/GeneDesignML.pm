@@ -8,7 +8,8 @@ require Exporter;
 			gdheader closer take_exception take_note
 			hidden_fielder next_stepper next_codjug organism_selecter
 			annpsite friendly print_enzyme_table enzyme_chooser print_oligos_aligned
-			print_vector_table print_RSCU_table);
+			print_vector_table print_RSCU_table
+			offer_fasta);
 			
 ###### Functions for Making Life Easier
 ##-break			: makes the passed number of html line breaks.
@@ -98,7 +99,6 @@ EOM
 sub closer
 {
 print <<EOM;
-			</form>
 		</div>
 	</body>
 </html>
@@ -115,6 +115,18 @@ sub hidden_fielder
 	}
 	$hiddenstring .= tab(4) . "</div>";
 	return $hiddenstring;
+}
+
+sub offer_fasta
+{
+	my ($outstr, $indent) = @_;
+	my $offer = tab($indent) . "<div id=\"notes\" style=\"text-align:center\">\n";
+	$offer .= tab($indent + 1) . "<form METHOD=\"POST\" TARGET=\"_blank\" ACTION=\"printFASTA.cgi\" ID=\"form2\" NAME=\"form2\">";
+	$offer .= tab($indent + 2) . "<input type=\"hidden\" name=\"inseq\" value=\"$outstr\" />\n";
+	$offer .= tab($indent + 2) . "You can save this output as a <input type=\"submit\" value=\"FASTA file\">";
+	$offer .= tab($indent + 1) . "</form>\n";
+	$offer .= tab($indent) . "</div>";
+	return $offer;
 }
 
 sub next_stepper
