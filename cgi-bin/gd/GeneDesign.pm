@@ -5,6 +5,7 @@ package GeneDesign;
 use 5.006;
 require Exporter;
 use POSIX(log10);
+use IO::Socket::INET;
 use List::Util qw(shuffle min first);
 use List::MoreUtils qw(uniq);
 use Class::Struct;
@@ -32,8 +33,11 @@ struct Chunk => { map { $_ => '$' } qw(Parameters ChunkNumber NumberofOligos Chu
 
 struct USERsite => { map { $_ => '$' } qw(Start nNumber Sequence) };
 
+my $sock = IO::Socket::INET->new( PeerAddr=> "baderlab.bme.jhu.edu", PeerPort=> 80, Proto   => "tcp");
+my $LOCALIP = $sock->sockhost;
+
 our $docpath = "../../Documents/gd";
-our $linkpath = "http://localhost/gd";
+our $linkpath = "http://$LOCALIP/gd";
 our $enzfile = "bs_enzymes.txt";
 
 my %NTIDES = (A => "A", B => "[BCGKSTY]", C => "C", D => "[ADGKRTW]", G => "G", H => "[ACHMTWY]", K => "[GKT]", M => "[ACM]", 
