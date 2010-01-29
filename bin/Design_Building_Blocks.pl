@@ -161,7 +161,6 @@ warn "\n WARNING: $_ is too long to be processed by this algorithm.\n"
 		keys %$ORIG_SEQUENCE);
 
 print "\n";
-print "$_, $config{$_}\n" foreach (keys %config);
 
 foreach my $seqid ( grep {  length($$ORIG_SEQUENCE{$_}) < 1.5 * $config{TARBBLEN} 
 						 && length($$ORIG_SEQUENCE{$_}) >= 120} 
@@ -235,8 +234,72 @@ foreach my $seqid ( grep { length($$ORIG_SEQUENCE{$_}) >= 1.5 * $config{TARBBLEN
 		
 	if ($config{ALGORITHM} == 0)
 	{
+		my %chunk;
 		my $RE_DATA = define_sites("bs_enzymes.txt");
 		my $tar_chn_lap		= .5 * $config{TARBBLAP};
+		my $tar_chn_len	= $pa{per_chn_len};					#this is for the magic oligo end numbers
+		$tar_chn_len	= ($wholelen/2) if ($wholelen <= 500);	#($tar_chn_len+(.6*$tar_chn_len)));
+		$tar_chn_len	= $wholelen     if ($wholelen < 900);	#($tar_chn_len+(.2*$tar_chn_len)));
+		my $tarmult		= .96*$tar_chn_len;					#ditto
+		my $limit		= int ($wholelen/$tarmult)+1;
+	##-Figure out what the unique sites are, ignore blunts and one bp overhangs
+		my $SITE_STATUS = define_site_status($wholeseq, $$RE_DATA{REGEX});
+		my %borders;
+		foreach my $enzyme (grep {$$RE_DATA{TYPE}->{$_} !~ /b/ && $$SITE_STATUS{$_} == 1 && 
+								($$RE_DATA{TABLE}->{$_} =~ $IIP || $$RE_DATA{TABLE}->{$_} =~ $IIP2)} 
+							keys %{$$RE_DATA{CLEAN}})
+		{	
+			my $positions = siteseeker($wholeseq, $enzyme, $$RE_DATA{REGEX}->{$enzyme});
+			my @temparr = keys %$positions;
+			my $site = scalar(shift (@temparr)) + length($$RE_DATA{CLEAN}->{$enzyme}) + $tar_chn_lap;
+			$borders{$enzyme} = $site;
+		}		
+		die ("$chunk_name does not contain enough unique restriction enzyme recognition sites.\n")
+				if (scalar(keys %borders) < ($wholelen/$tarmult)+1);
+		my %chosen;
+		if ($wholelen > ($tar_chn_len+(.2*$tar_chn_len)))
+		{
+			my $target = $tar_chn_len;
+			my $tcv = 0;
+			while ($target < ($limit*$tarmult))
+			{
+				my @potents = sort {abs($borders{$a}-$target) <=> abs($borders{$b}-$target)} grep {$borders{$_} >= 0.5* $tar_chn_len} keys %borders;
+				$chosen{$potents[0]} = $borders{$potents[0]};
+				$target = $target - ((2*$tar_chn_lap) + length($$RE_DATA{CLEAN}->{$potents[0]})) + $tar_chn_len;
+				$tcv++;
+				last if ($tar_chn_len < $pa{per_chn_len} && $tcv == 1);
+				last if ($wholelen - $target <= ($tar_chn_len-(.5*$tar_chn_len)));
+			}
+		}
+		my ($y, $start) = (0, 0);
+	##-Actually make the chunks, including the left over chunk
+		foreach my $enz (sort {$chosen{$a} <=> $chosen{$b}}keys %chosen)
+		{
+			my $chunk = new Chunk;
+			$chunk->ChunkSeq(substr($wholeseq, $start, $chosen{$enz} - $start-1));
+			$chunk->ChunkLength(length($chunk->ChunkSeq));
+			$chunk->ChunkStart($chosen{$enz} - (2 * $tar_chn_lap) - 1 - length($$RE_DATA{CLEAN}->{$enz}));
+			$chunk->ThreePrimeEnz($enz);
+			$chunk->ChunkNumber($y+1);
+			$chunk->Parameters(\%pa);
+			$chunk->ChunkStop($chosen{$enz});
+			$start = $chosen{$enz} - 2 * $tar_chn_lap - 1 - length($$RE_DATA{CLEAN}->{$enz});
+			$chunk->ThreePrimeOlap($chunk->ChunkStop - $start - 1);
+			push @BBlocks, $chunk;
+			$y++;
+		}
+		{	
+			my $chunk = new Chunk;
+			$chunk->ChunkSeq(substr($wholeseq, $start));
+			$chunk->ChunkLength(length($chunk->ChunkSeq));
+			$chunk->ChunkStart($start);
+			$chunk->ChunkNumber($y+1);
+			$chunk->Parameters(\%pa);
+			$chunk->ChunkStop($wholelen + 1);
+			push @BBlocks, $chunk;
+			$y++;
+		}
+		oligocruncher($_, \%pa) foreach (@BBlocks);
 	}
 	elsif ($config{ALGORITHM} == 1)
 	{
@@ -427,12 +490,19 @@ foreach my $seqid ( grep { length($$ORIG_SEQUENCE{$_}) >= 1.5 * $config{TARBBLEN
 	##FASTA output
 	print (scalar(@BBlocks) . " building blocks were generated for $chunk_name.\n");	
 	open (my $bbfh, ">" . $filename . "_gdBB_$config{ALGORITHM}/" . $chunk_name . "_gdBB.FASTA") || die "can't create output file, $!";
+	my $lastenz = '';
 	foreach my $bb (@BBlocks)
 	{
 		my $te = $bb->ChunkNumber;
 		$te = '0' . $te while (length($te) < length(scalar(@BBlocks)) || length($te) < 2);
-		print $bbfh ">$chunk_name.$te (", $bb->ChunkLength, " bp)\n";
-		print $bbfh wrap( "", "", $bb->ChunkSeq), "\n";
+		print $bbfh ">$chunk_name.$te (", $bb->ChunkLength, " bp)";
+		if ($config{ALGORITHM} == 0)
+		{
+			print $bbfh " 5' enzyme is ", $lastenz if ($lastenz);
+			print $bbfh " 3' enzyme is ", $bb->ThreePrimeEnz if ($bb->ThreePrimeEnz);
+			$lastenz = $bb->ThreePrimeEnz;
+		}
+		print $bbfh "\n", wrap( "", "", $bb->ChunkSeq), "\n";
 	}
 	close $bbfh;
 	print "\t" . $chunk_name . "_gdBB.FASTA has been written.\n";	
