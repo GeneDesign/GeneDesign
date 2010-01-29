@@ -12,7 +12,7 @@ my $query = new CGI;
 print $query->header;
 
 my @styles = qw(re tm);
-my @nexts  = qw(SSIns SSRem OligoDesign toCodJug);
+my @nexts  = qw(SSIns SSRem toCodJug REBB UserBB OlBB);
 gdheader("Sequence Analysis", "gdSeqAna.cgi", \@styles);
 my $nextsteps = next_stepper(\@nexts, 5);
 

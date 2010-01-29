@@ -16,7 +16,7 @@ my $CODON_TABLE	 = define_codon_table(1);
 my $RE_DATA = define_sites($enzfile);
 
 my @styles = qw(re mg pd fn);
-my @nexts  = qw(SSIns SSRem SeqAna OligoDesign);
+my @nexts  = qw(SSIns SSRem SeqAna REBB UserBB OlBB);
 my $nextsteps = next_stepper(\@nexts, 5);
 
 gdheader("Silent Restriction Site Insertion", "gdSSIns.cgi", \@styles);
@@ -325,10 +325,7 @@ if ($query->param('swit') eq 'ih' || $query->param('nextrem'))
 	my $num		= $query->param('num') || $query->param('number');
 	my $aasize = length($aaseq);
 	my %used		= map {$_ => -3} @nonos;
-	print "NONOS @nonos<br>\n\n";
 	my @absents	= split(" ", $query->param('absentsites'));
-print "hello, the choosing<br>";
-print "@Nomogo<br>, ", scalar(@Nomogo), " ", scalar(@nonos), "<br>";
 	if (@Nomogo)
 	{
 		for (my $be = 0; $be < scalar(@absents); $be++)	
@@ -339,7 +336,6 @@ print "@Nomogo<br>, ", scalar(@Nomogo), " ", scalar(@nonos), "<br>";
 			}	
 		}
 	}
-print "@Nomogo<br>";
 	my %hitsite;
 	foreach my $tiv (split(" . ", $query->param('hits')))	
 	{	
@@ -370,9 +366,7 @@ print "@Nomogo<br>";
 		if ($picked)
 		{
 			$used{$picked} = 1;
-foreach (sort keys %used)	{print "\t\tUSED $_<br>";}
 			$picked = "$allhits{$picked}->[0]: $picked $allhits{$picked}->[1]";	
-print "I PICKED $picked<Br>";
 			push @selly, $picked;
 			%used = %{mutexclu(\%used, $$RE_DATA{CLEAN})};
 		}

@@ -27,7 +27,7 @@ print <<EOM;
 				</div>
 				<div id="gridgroup0">
 					Sequence:<br>
-					<textarea name="WHOLESEQ"  rows="6" cols="100"></textarea><br>
+					<textarea name="WHOLESEQ"  rows="6" cols="100">$nucseq</textarea><br>
 					Sequence Name: <input type="text" name="CHNNAM" value="" size="50" maxlength="50" /><br><br>
 					Begin numbering building blocks from: <input type="text" name="STARTNUM" value="1" size="3" maxlength="3" /><br><br>
 					Create overlaps of length: <input type="text" name="BBLAPLEN" value="40" size="3" maxlength="3" /><br>

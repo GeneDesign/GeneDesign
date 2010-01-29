@@ -13,7 +13,7 @@ my $CODON_TABLE	 = define_codon_table(1);
 my $REV_CODON_TABLE = define_reverse_codon_table($CODON_TABLE);
 
 my @styles		= qw(re mg);
-my @nexts		= qw(SSIns SSRem toCodJug SeqAna OligoDesign);
+my @nexts		= qw(SSIns SSRem toCodJug SeqAna REBB UserBB OlBB);
 
 gdheader("Reverse Translation", "gdRevTrans.cgi", \@styles);
 

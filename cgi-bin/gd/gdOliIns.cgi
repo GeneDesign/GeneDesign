@@ -12,7 +12,7 @@ print $query->header;
 my $CODON_TABLE	 = define_codon_table(1);
 
 my @styles = qw(re mg pd fn);
-my @nexts  = qw(SSIns SSRem SeqAna OligoDesign);
+my @nexts  = qw(SSIns SSRem SeqAna REBB UserBB OlBB);
 my $nextsteps = next_stepper(\@nexts, 5);
 
 gdheader("Silent Short Sequence Insertion", "gdOliIns.cgi", \@styles);

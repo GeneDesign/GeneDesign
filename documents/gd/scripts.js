@@ -60,7 +60,15 @@
 	document.form1.crStars[2].checked = false;
 	document.form1.crMeths[0].checked = true;
 	document.form1.crMeths[1].checked = false;
-	document.form1.crMeths[2].checked = false;	document.form1.crPrir[0].checked = true;	document.form1.crPrir[1].checked = false;}function VecMostPerm(){	document.form1.crSize[0].checked = true;	document.form1.crSize[1].checked = false;	document.form1.crNabs[0].checked = true;	document.form1.crNabs[1].checked = false;	document.form1.crResp[0].checked = true;	document.form1.crResp[1].checked = false;}<!-- used in renzymeinterface, all iterationsfunction SSISum(pre){	if (pre != 1)	{		document.form1.swit.value = 'wu';	}	else	{		document.form1.swit.value = 'ih';	}}function OliISum(pre){	if (pre == 1)	{		document.form1.swit.value = 'all';	}	else	{		document.form1.swit.value = 'some';	}}function OligoDesign(){	document.form1.action = './gdOliDes.cgi';}function SSRem(){	document.form1.action = './gdSSRem.cgi';}function SSIns(){	document.form1.action = './gdSSIns.cgi';}function toCodJug(){	document.form1.action = './gdCodJug.cgi';}function SeqAna(){	document.form1.action = './gdSeqAna.cgi';}function CodJug(hal, loi){		if (hal == 1)	{		document.form1.PASSNUCSEQUENCE.value = document.form1.optinucseq.value;	}	if (hal == 2)	{		document.form1.PASSNUCSEQUENCE.value = document.form1.lsopnucseq.value;	}	if (hal == 3)	{		document.form1.PASSNUCSEQUENCE.value = document.form1.msdfnucseq.value;	}	if (hal == 0)	{		document.form1.PASSNUCSEQUENCE.value = document.form1.randnucseq.value;	}
+	document.form1.crMeths[2].checked = false;	document.form1.crPrir[0].checked = true;	document.form1.crPrir[1].checked = false;}function VecMostPerm(){	document.form1.crSize[0].checked = true;	document.form1.crSize[1].checked = false;	document.form1.crNabs[0].checked = true;	document.form1.crNabs[1].checked = false;	document.form1.crResp[0].checked = true;	document.form1.crResp[1].checked = false;}<!-- used in renzymeinterface, all iterationsfunction SSISum(pre){	if (pre != 1)	{		document.form1.swit.value = 'wu';	}	else	{		document.form1.swit.value = 'ih';	}}function OliISum(pre){	if (pre == 1)	{		document.form1.swit.value = 'all';	}	else	{		document.form1.swit.value = 'some';	}}function REBB(){	document.form1.action = './gdOliDes.cgi';}
+function UserBB()
+{
+	document.form1.action = './gdUserDes.cgi';
+}
+function OlBB()
+{
+	document.form1.action = './gdOlapDes.cgi';
+}function SSRem(){	document.form1.action = './gdSSRem.cgi';}function SSIns(){	document.form1.action = './gdSSIns.cgi';}function toCodJug(){	document.form1.action = './gdCodJug.cgi';}function SeqAna(){	document.form1.action = './gdSeqAna.cgi';}function CodJug(hal, loi){		if (hal == 1)	{		document.form1.PASSNUCSEQUENCE.value = document.form1.optinucseq.value;	}	if (hal == 2)	{		document.form1.PASSNUCSEQUENCE.value = document.form1.lsopnucseq.value;	}	if (hal == 3)	{		document.form1.PASSNUCSEQUENCE.value = document.form1.msdfnucseq.value;	}	if (hal == 0)	{		document.form1.PASSNUCSEQUENCE.value = document.form1.randnucseq.value;	}
 	if (hal == 4)
 	{
 		document.form1.PASSNUCSEQUENCE.value = document.form1.lsdfnucseq.value;

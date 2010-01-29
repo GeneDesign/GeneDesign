@@ -12,7 +12,7 @@ my $CODON_TABLE	 = define_codon_table(1);
 my $RE_DATA = define_sites($enzfile);
 
 my @styles = qw(re);
-my @nexts  = qw(SSIns SSRem SeqAna OligoDesign);
+my @nexts  = qw(SSIns SSRem SeqAna REBB UserBB OlBB);
 my $nextsteps = next_stepper(\@nexts, 5);
 my $iter = 3;
 

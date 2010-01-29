@@ -29,8 +29,13 @@ require Exporter;
 ##
 ##-organism_selecter		: prints the organism radio buttons
 
-my %dests = ('SSIns' => "RE Site Addition", 'SSRem' => "RE Site Subtraction", 'SeqAna' => "Sequence Analysis", 
-			'OligoDesign' => "Building Block Design", 'toCodJug' => "Codon Juggling");
+my %dests = (	'SSIns'		=> "RE Site Addition", 
+				'SSRem'		=> "RE Site Subtraction", 
+				'SeqAna'	=> "Sequence Analysis", 
+				'REBB'		=> "BB Design (RE Overlap)", 
+				'UserBB'	=> "BB Design (USER Overlap)", 
+				'OlBB'		=> "BB Design (Sequence Overlap)", 
+				'toCodJug'	=> "Codon Juggling");
 
 sub break
 {
@@ -118,10 +123,15 @@ sub next_stepper
 	my $taketo = "<div id=\"notes\" style=\"text-align:center\">\n";
 	$taketo .= tab($indent + 1) . "You can take this sequence to another module now.<br>\n";
 	$taketo .= tab($indent + 1) . "<strong>Take this sequence to:</strong>\n";
-	foreach my $tiv (@$arrref)
+	foreach my $tiv (grep {$_ !~ /BB/} @$arrref)
 	{
 		$taketo .= tab($indent + 1) . "<input type=\"submit\" name=\".submit\" value=\"$dests{$tiv}\" onclick=\"$tiv();\" />\n";
 	}
+	$taketo .= "<br>";
+	foreach my $tiv (grep {$_ =~ /BB/} @$arrref)
+	{
+		$taketo .= tab($indent + 1) . "<input type=\"submit\" name=\".submit\" value=\"$dests{$tiv}\" onclick=\"$tiv();\" />\n";
+	}	
 	$taketo .= tab($indent) . "</div><br>";
 	return $taketo;
 }
@@ -131,7 +141,13 @@ sub next_codjug
 	my ($arrref, $indent, $swit) = @_;
 	my $count = 0;
 	my $taketo = "Go to:";
-	foreach my $tiv (@$arrref)
+	foreach my $tiv (grep {$_ !~ /BB/} @$arrref)
+	{
+		$taketo .= "\n" . tab($indent) . "<input type=\"submit\" name=\".submit\" value=\"$dests{$tiv}\" onclick=\"CodJug($swit, $count);\" />";
+		$count++;
+	}
+	$taketo .= "<br>";
+	foreach my $tiv (grep {$_ =~ /BB/} @$arrref)
 	{
 		$taketo .= "\n" . tab($indent) . "<input type=\"submit\" name=\".submit\" value=\"$dests{$tiv}\" onclick=\"CodJug($swit, $count);\" />";
 		$count++;

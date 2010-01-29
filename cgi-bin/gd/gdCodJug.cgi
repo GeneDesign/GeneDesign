@@ -13,7 +13,7 @@ print $query->header;
 my $CODON_TABLE = define_codon_table(1);
 
 my @styles = qw(re fn);
-my @nexts  = qw(SSIns SSRem OligoDesign SeqAna);
+my @nexts  = qw(SSIns SSRem SeqAna REBB UserBB OlBB);
 gdheader("Codon Juggling", "gdCodJug.cgi", \@styles);
 
 if (! $query->param('nseq') && ! $query->param('PASSNUCSEQUENCE'))

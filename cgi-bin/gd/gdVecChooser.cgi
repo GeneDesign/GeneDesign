@@ -20,7 +20,7 @@ closedir(VECTORFOLDER);
 my $vecnum = scalar(@vec);
 
 my @styles = qw(re mg fn);
-my @nexts  = qw(SSIns SSRem SeqAna OligoDesign);
+my @nexts  = qw(SSIns SSRem SeqAna REBB UserBB OlBB);
 my $nextsteps = next_stepper(\@nexts, 5);
 
 gdheader("Vector Chooser", "gdVecChooser.cgi", \@styles);

@@ -16,7 +16,7 @@ my %ungapperlen = (40 => 700, 50 => 700, 60 => 750, 70 => 735, 80 => 760, 90 => 
 					
 if (! $query->param('TARBBLLEN'))
 {
-	my $nucseq = $query->param('PASSNUCSEQ')	?	$query->param('PASSNUCSEQ')	:	cleanup($query->param('nucseq'), 1);	
+	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	cleanup($query->param('nucseq'), 1);	
 print <<EOM;
 				<div id="notes">
 					<strong>To use this module you need a nucleotide sequence at least 5kb long, a target melting temperature, and a target oligo length.</strong><br>
@@ -27,7 +27,7 @@ print <<EOM;
 				</div>
 				<div id="gridgroup0">
 					Chunk sequence:<br>
-					<textarea name="WHOLESEQ"  rows="6" cols="100"></textarea><br>
+					<textarea name="WHOLESEQ"  rows="6" cols="100">$nucseq</textarea><br>
 					Sequence name: <input type="text" name="CHNNAM" value="" size="50" maxlength="50" /><br><br>
 					Begin numbering building blocks from: <input type="text" name="STARTNUM" value="1" size="3" maxlength="3" /><br><br>
 					Return USER primers of Tm: <input type="text" name="USRMEL" value="56" size="2" maxlength="2" />&deg;<br>
