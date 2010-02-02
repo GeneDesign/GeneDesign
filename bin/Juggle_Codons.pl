@@ -20,7 +20,6 @@ my %ALGSHORT = (r => "6 rand", o => "2 opti", p => "3 lopt",
 my @COLORS = qw(black green gray red orange yellow);
 my %ORGNAME = %ORGANISMS;
 my $CODON_TABLE = define_codon_table(1);
-$columns = 81;
 
 ##Get Arguments
 my %config = ();
