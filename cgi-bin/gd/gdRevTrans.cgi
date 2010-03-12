@@ -142,7 +142,7 @@ else
 print <<EOM;
 				<div id="notes" style="text-align:center;">
 					Your amino acid sequences have been successfully reverse translated to nucleotides.<br>
-					See the <a href="$docpath/Guide/revtrans.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/revtrans.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0"><br>
 					Your reverse translated nucleotide sequences:

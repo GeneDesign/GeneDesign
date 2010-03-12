@@ -68,7 +68,7 @@ print <<EOM;
 				<div id="notes">
 					Below are your nucleotide sequence and all of the restriction sites that I recognized. Your current organism is $ORGANISMS{$organism}.<br>
 					Check as many as you like for removal.<br>
-					See the <a href="$docpath/Guide/ssr.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/ssr.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					This is your nucleotide sequence:<br>

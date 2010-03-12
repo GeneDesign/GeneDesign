@@ -106,7 +106,7 @@ print <<EOM;
 					The <strong>Less Optimized</strong> sequence uses the first optimal codon that is not the original codon. This algorithm will not be applied if organism is undefined.<br>
 					The <strong>Random</strong> sequence uses a random codon that is not the original codon. No optimization is applied.<br><br>
 					You can take any one of these sequences to another module by clicking the appropriate button.<br>
-					See the <a href="$docpath/Guide/codjug.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/codjug.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					<textarea name="oldnucseq" rows="6" cols="150" readonly="true">$nucseq</textarea><br>

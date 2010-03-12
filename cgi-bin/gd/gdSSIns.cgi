@@ -210,7 +210,7 @@ print <<EOM;
 					The program will select enzymes on that interval using the criteria you defined on the last screen.  You will be given an opportunity to review and edit the 
 					selections choices before modifications are made.<br><br> When you are satisfied with your selections, hit &quot;Continue&quot;. Your sequence will be modified 
 					and you will be given a summary of changes.<br>
-					See the <a href="$docpath/Guide/ssi.html" target="blank">manual</a> for more information.<br>
+					See the <a href="$linkpath/Guide/ssi.html" target="blank">manual</a> for more information.<br>
 					&nbsp;&nbsp;&bull;Please wait for the page to load completely before hitting "Continue" or "Pick Sites For Me"!
 				</div>
 EOM

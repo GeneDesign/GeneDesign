@@ -75,7 +75,7 @@ else
 print <<EOM;
 				<div id="notes">
 					There are $num enzymes that fit your criteria.<br>
-					See the <a href="$docpath/Guide/enzcho.html">manual</a> for more information.\n
+					See the <a href="$linkpath/Guide/enzcho.html">manual</a> for more information.\n
 				</div>
 				<div id="gridgroup0">
 					Ranked Summary: <br>
