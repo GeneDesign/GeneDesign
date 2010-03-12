@@ -13,7 +13,6 @@ $| = 1;
 
 my %ORGNAME = %ORGANISMS;
 my $CODON_TABLE = define_codon_table(1);
-$columns = 81;
 
 ##Get Arguments
 my %config = ();
