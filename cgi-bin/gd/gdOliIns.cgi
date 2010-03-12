@@ -26,7 +26,7 @@ print <<EOM;
 					<strong>To use this module you need two nucleotide sequences, large and small.  An organism name is optional.</strong><br>
 					Your nucleotide sequence will be searched for the short sequence you provide and as many iterations as possible will be inserted by changing whole codons 
 					without changing the amino acid sequence.<br><br>
-					See the <a href="$docpath/Guide/shortr.html">manual</a> for more information.
+					See the <a href="$linkpath/Guide/shortr.html">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Your nucleotide sequence:<br>

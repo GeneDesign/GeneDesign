@@ -19,7 +19,7 @@ print <<EOM;
 				<div id="notes">
 					<strong>To use this module you need at least one in-frame coding portion of an ORF.</strong><br>
 					This module will calculate the relative synonymous codon usage values for every codon in all ORFs you provide.<br>
-					See the <a href="$docpath/Guide/index.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/index.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Your nucleotide sequence(s):<br>

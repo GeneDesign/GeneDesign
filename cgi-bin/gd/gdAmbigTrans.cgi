@@ -20,7 +20,7 @@ print <<EOM;
 				<div id="notes">
 					<strong>To use this module you need a nucleotide sequence.</strong><br>
 					This module is for the translation of DNA sequences that may include ambiguous bases.<br>
-					See the <a href="$docpath/Guide/AmbTrans.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/AmbTrans.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Your nucleotide sequence:<br>

@@ -30,7 +30,7 @@ print <<EOM;
 					be removed by changing whole codons without changing the amino acid sequence.<br><em>Please Note:</em><br>
 					&nbsp;&nbsp;&bull;If you select an organism, targeted codons will be replaced with the codon that has the closest RSCU value in that organism.<br>
 					&nbsp;&nbsp;&bull;If you select no optimization, targeted codons will be replaced with a random codon.<br>
-					See the <a href="$docpath/Guide/shortr.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/shortr.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Your nucleotide sequence:<br>

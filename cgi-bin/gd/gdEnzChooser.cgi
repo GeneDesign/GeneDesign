@@ -21,7 +21,7 @@ print <<EOM;
 					This module is for the selection of restriction enzymes. The next screen will present a sorted 
 					and annotated list of enzymes that match the criteria you specify.<br>
 					&nbsp;&nbsp;&bull;Price is measured in 2009 US dollars from the catalogs available in December, 2009.<br>
-					See the <a href="$docpath/Guide/enzcho.html">manual</a> for more information.
+					See the <a href="$linkpath/Guide/enzcho.html">manual</a> for more information.
 				</div>
 				<div id="gridgroup0"> 
 					What are you looking for in a restriction enzyme?

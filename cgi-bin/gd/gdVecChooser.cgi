@@ -31,7 +31,7 @@ print <<EOM;
 				<div id="notes">
 					This module allows you to select a vector by restriction characteristics or size.  This search is limited to the $vecnum vectors that GeneDesign knows.<br>
 					&nbsp;&nbsp;&bull;GeneDesign uses a non-redundant list of restriction enzymes (one isoschizomer per site).<br>
-					See the <a href="$docpath/Guide/veccho.html">manual</a> for more information.
+					See the <a href="$linkpath/Guide/veccho.html">manual</a> for more information.
 				</div>
 				<div id="gridgroup0"> What sort of thing do you want to see in a vector?
 					<div id="critbox">

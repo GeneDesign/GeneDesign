@@ -27,7 +27,7 @@ print <<EOM;
 					<em>Please Note:</em><br>
 					&nbsp;&nbsp;&bull;The only frame that is considered inviolable is frame 1, which will be determined by the first three nucleotides of your sequence.<br>
 					&nbsp;&nbsp;&bull;Ambiguous nucleotides and non-nucleotide characters will be removed.<br>
-					See the <a href="$docpath/Guide/codjug.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/codjug.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Your nucleotide sequence:<br>

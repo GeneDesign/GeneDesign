@@ -23,7 +23,7 @@ print <<EOM;
 					Your nucleotide sequence will be searched for the sequence AN{x}T, which will be used to divide the sequence into overlapping building blocks of approximately 750bp.<br>
 					If your sequence is less than 1000 bp, there will only be one building block.<br>
 					Remember to make the maximum assembly oligo length bigger than your assembly oligos.<br><br>
-					See the <a href="$docpath/Guide/Userdes.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/Userdes.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Chunk sequence:<br>

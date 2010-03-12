@@ -23,7 +23,7 @@ print <<EOM;
 					<strong>To use this module you need a nucleotide sequence at least 5kb long, a target melting temperature, and a target oligo length.</strong><br>
 					If your sequence is less than 100 bp, there will only be one building block.<br>
 					Remember to make the maximum assembly oligo length bigger than your assembly oligos.<br><br>
-					See the <a href="$docpath/Guide/" target=\"blank\">manual</a> for more information.
+					See the <a href="$linkpath/Guide/" target=\"blank\">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Sequence:<br>

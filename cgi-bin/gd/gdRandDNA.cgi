@@ -19,7 +19,7 @@ print <<EOM;
 					<strong>This module is for the generation of random sequences of DNA.</strong>
 					You can specify A+T content, length, and the number of sequences you wish to have returned.<br>
 					&nbsp;&nbsp;&bull;If you give me ridiculous numbers it will take forever and may crash your browser.<br>
-					See the <a href="$docpath/Guide/randna.html">manual</a> for more information.
+					See the <a href="$linkpath/Guide/randna.html">manual</a> for more information.
 				</div><br><br><br>
 				<div id="gridgroup0">
 					A+T content:

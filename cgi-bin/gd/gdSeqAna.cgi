@@ -25,7 +25,7 @@ print <<EOM;
 					Tm, the presence of restriction sites, and open reading frames.<br>
 					<em>Please Note:</em><br>
 					&nbsp;&nbsp;&bull;If you wish to compare a list of sequences, make sure they are all on separate lines and check 'oligo list'.<br>
-					See the <a href="$docpath/Guide/seqana.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/seqana.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Enter your nucleotide sequence(s):<br>

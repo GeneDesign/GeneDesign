@@ -57,7 +57,7 @@ print <<EOM;
 					If you will be picking manually you can ignore this section.<br>
 					&nbsp;&nbsp;&bull;The looser the enzyme criteria you provide, the better the results.  If you are getting poor return in automated selection,
 					try allowing a broader spectrum of enzymes.<br>
-					See the <a href="$docpath/Guide/ssi.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/ssi.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0"  style="align:center;">
 					<div id = "gridgroup1">

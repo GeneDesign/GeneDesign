@@ -37,7 +37,7 @@ print <<EOM;
 					&nbsp;&nbsp;&bull;The default codon in each pulldown menu is the most optimal codon for expression in the organism you select.<br>
 					&nbsp;&nbsp;&bull;If you input a codon table the pulldowns will be ignored.<br>
 					&nbsp;&nbsp;&bull;Please use T instead of U in the codon table.<br>
-					See the <a href="$docpath/Guide/revtrans.html" target="blank">manual</a> for more information.
+					See the <a href="$linkpath/Guide/revtrans.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
 					Enter your  amino acid sequence:<br>
