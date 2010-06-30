@@ -47,7 +47,7 @@ EOM
 
 elsif ($query->param('MODORG') && ! $query->param('removeme'))
 {
-	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	cleanup($query->param('nuseq'));
+	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	cleanup($query->param('nucseq'));
 	my $organism = $query->param('MODORG');
 	my $SITE_STATUS = define_site_status($nucseq, $$RE_DATA{REGEX});
 	my @presents = grep {$$SITE_STATUS{$_} > 0}	sort keys %{$$RE_DATA{CLEAN}};

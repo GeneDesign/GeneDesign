@@ -19,7 +19,7 @@ my %config = ();
 GetOptions (
 			'input=s'		=> \$config{INPUT},
 			'rscu=s'		=> \$config{RSCU_FILE},
-			'organism=i'	=> \$config{ORGANISM},
+			'organism=i'		=> \$config{ORGANISM},
 			'help'			=> \$config{HELP}
 		   );
 
