@@ -18,10 +18,11 @@ my %config = ();
 GetOptions (
   	'input=s'		=> \$config{INPUT},
 	'organism=i'    	=> \$config{ORGANISM},
+        'rscu=s'                => \$config{RSCU_FILE},
 	'sites=s'		=> \$config{RESTRICTION_SITES},
-	'help'			=> \$config{HELP},
-        'repeat=i'              => \$config{ITERATIONS},
-    );
+        'times=i'               => \$config{ITERATIONS},
+ 	'help'			=> \$config{HELP},
+   );
 
 ##Respond to cries for help
 if ($config{HELP}) {
@@ -38,31 +39,43 @@ Restriction_Site_Subtraction.pl
 }
 
 ##Check the consistency of arguments
-die "\n ERROR: $config{INPUT} does not exist!\n"
+die "\n ERROR: Your input file does not exist!\n"
     if (! -e $config{INPUT});
-die "\n ERROR: $config{RESTRICTION_SITES} does not exist!\n"
+die "\n ERROR: Your restriction sites file does not exist!\n"
     if (! -e $config{RESTRICTION_SITES});
-die "\n ERROR: An organism was not supplied\n"
-    if (! $config{ORGANISM});
-warn "\n ERROR: Number of iterations was not supplied\n"
+    
+warn "\n ERROR: Your RSCU table file does not exist! Your target codons will be replaced by random codons.\n"
+    if (! $config{RSCU_FILE});
+warn "\n ERROR: Neither an organism nor an RSCU table were supplied. Your target codons will be replaced by random codons.\n"
+    if (! $config{ORGANISM} && ! $config{RSCU_FILE});
+warn "\n ERROR: Number of iterations was not supplied. The default number of 3 will be used.\n"
     if (! $config{ITERATIONS});
 warn "\n WARNING: $_ is not a recognized organism and will be ignored.\n"
     foreach (grep {! exists($ORGANISMS{$_})} split ("", $config{ORGANISM}) );
 
 
 ##Fetch input nucleotide sequences, organisms, iterations, and restriction site file
+
 my $filename  	  	= fileparse( $config{INPUT}, qr/\.[^.]*/);
 make_path($filename . "_gdRSS");
 
 my $input    	  	= slurp( $config{INPUT} );
 my $nucseq 	        = fasta_parser( $input );
 
+my $rscu                = $config{RSCU_FILE}    ?   $config{RSCU_FILE}      : 0;
+my $RSCU_DEFN           = $rscu                 ?   rscu_parser( $rscu )    : {};
+
 my @ORGSDO		= grep { exists $ORGANISMS{$_} } split( "", $config{ORGANISM} );
+if ($rscu)
+{
+    push @ORGSDO, 0;
+    $ORGNAME{0}         = fileparse ( $config{RSCU_FILE} , qr/\.[^.]*/);
+}
 
 my @remove_RE           = slurp( $config{RESTRICTION_SITES} ) ;
 chomp (@remove_RE);
 
-my $iter                = $config{ITERATIONS} ? $config{ITERATIONS} : 3;
+my $iter                = $config{ITERATIONS}   ?   $config{ITERATIONS}     : 3;
 
 print "\n";
 
@@ -72,16 +85,21 @@ print "\n";
 foreach my $org (@ORGSDO)
 {
     my $OUTPUT = {};
-    my ($Error4, $Error0) = ("", "");
+    my ($Error4, $Error0, $Error5) = ("", "", "");
     
     foreach my $seqkey (sort {$a cmp $b} keys %$nucseq)
     {
         my $newnuc = $$nucseq{$seqkey};
+        my @none_enz = ();
     	for (1..$iter) ##Where the magic happens
 	{
             foreach my $enz (@remove_RE)
             {	
                 my $temphash = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
+                if (scalar (keys %$temphash == 0))
+                {
+                    
+                }
                 foreach my $grabbedpos (keys %$temphash)
                 {
                     my $grabbedseq = $$temphash{$grabbedpos};
@@ -107,13 +125,14 @@ foreach my $org (@ORGSDO)
         
 	foreach my $enz (@remove_RE) #Stores successfully and unsuccessfully removed enzymes in respective arrays
 	{
-            my $checkpres = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
-            push @fail_enz, $enz if (scalar(keys %$checkpres) != 0);
-            push @success_enz, $enz if (scalar (keys %$checkpres) == 0);
+            my $oldcheckpres = siteseeker($$nucseq{$seqkey}, $enz, $$RE_DATA{REGEX}->{$enz});
+            my $newcheckpres = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
+            push @fail_enz, $enz if (scalar(keys %$newcheckpres) != 0);
+            push @success_enz, $enz if (scalar (keys %$newcheckpres) == 0 && scalar (keys %$oldcheckpres) != 0);
 	}
         
         $Error4 = "I was unable to remove @fail_enz after $iter iterations." if @fail_enz;
-        $Error0 = "I successfully removed @success_enz from your sequence.";
+        $Error0 = "I successfully removed @success_enz from your sequence." if @success_enz;
         
         my $newal = compare_sequences($$nucseq{$seqkey}, $newnuc);
 	my $bcou = count($newnuc);
