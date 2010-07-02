@@ -29,7 +29,20 @@ if ($config{HELP}) {
     print "
 Restriction_Site_Subtraction.pl
     
+    Given at least one nucleotide sequence as input, the
+    Restriction_Site_Subtraction script searches through the sequence for
+    targeted restriction enzymes and attempts to remove the sites from the
+    sequence without changing the amino acid sequence by changing whole codons.
     
+    The targeted codons may be replaced with random codons, using a user-defined
+    codon table, or using the default codon table for a user-selected organism.
+    
+    Output will be named according to the name of the FASTA input file and will
+    be tagged with the gdRSS suffix and the number of the organism used (or 0 if
+    a custom RSCU table was provided or 7 if codons were replaced randomly).
+    
+  Usage examples:
+   perl Restriction_Site_Subtraction.pl -i Test_YAR000W_p.FASTA 
     
     
     
@@ -72,6 +85,12 @@ if ($rscu)
     $ORGNAME{0}         = fileparse ( $config{RSCU_FILE} , qr/\.[^.]*/);
 }
 
+if (! $config{ORGANISM} && ! $config{RSCU_FILE})
+{
+    push @ORGSDO, 7;
+    $ORGNAME{7}         = 'random';
+}
+
 my @remove_RE           = slurp( $config{RESTRICTION_SITES} ) ;
 chomp (@remove_RE);
 
@@ -101,23 +120,25 @@ foreach my $org (@ORGSDO)
             foreach my $enz (@remove_RE)
             {	
                 my $temphash = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
-                if (scalar (keys %$temphash == 0))
-                {
-                    
-                }
                 foreach my $grabbedpos (keys %$temphash)
                 {
                     my $grabbedseq = $$temphash{$grabbedpos};
                     my $framestart = ($grabbedpos) % 3;
                     my $critseg = substr($newnuc, $grabbedpos - $framestart, ((int(length($grabbedseq)/3 + 2))*3));
-                    my $newcritseg = pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE, $RSCU_VALUES);
-                        print "removing $enz: crit: $critseg, newcrit: $newcritseg\n";
-                        for (my $x = 0; $x < length($critseg); $x += 3)
-                        {
-                                my $codon = substr($critseg, $x, 3), " ";
-                                print "$codon: $$CODON_TABLE{$codon}\n";
-                        }
-                        print "\n";
+                    my $newcritseg;
+                    if (%$RSCU_VALUES) {
+                        $newcritseg = pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE, $RSCU_VALUES);
+                    }
+                    elsif (!%$RSCU_VALUES) {
+                        $newcritseg = random_codon_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE);
+                    }
+                        #print "removing $enz: crit: $critseg, newcrit: $newcritseg\n";
+                        #for (my $x = 0; $x < length($critseg); $x += 3)
+                        #{
+                        #        my $codon = substr($critseg, $x, 3), " ";
+                        #        print "$codon: $$CODON_TABLE{$codon}\n";
+                        #}
+                        #print "\n";
                     substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $enz, $$RE_DATA{REGEX}->{$enz})}) == 0);
                 }
             }
@@ -136,7 +157,7 @@ foreach my $org (@ORGSDO)
         
         $Error4 = "I was unable to remove @fail_enz after $iter iterations." if @fail_enz;
         $Error0 = "I successfully removed @success_enz from your sequence." if @success_enz;
-        $Error5 = "The enzyme @none_enz was not present in your sequence." if @none_enz;
+        $Error5 = "The enzyme(s) @none_enz was not present in your sequence." if @none_enz;
         
         my $newal = compare_sequences($$nucseq{$seqkey}, $newnuc);
 	my $bcou = count($newnuc);
@@ -158,9 +179,29 @@ For the sequence $new_key:
         open (my $fh, ">" . $filename . "_gdRSS/" . $filename . "_gdRSS_$org.FASTA") || die "Cannot create output file, $!";
         print $fh fasta_writer($OUTPUT);
         close $fh;
-        print $filename . "_gdRSS_$org.FASTA has been written.\n" 
+        print $filename . "_gdRSS_$org.FASTA has been written.\n"
 }
 
 print "\n";
+
+sub random_codon_remover {
+    	my ($critseg, $pattern, $CODON_TABLE) = @_;
+	my $REV_CODON_TABLE = define_reverse_codon_table($CODON_TABLE);
+        my $copy = $critseg;
+        for (my $offset = 0; $offset < (length($critseg)); $offset+=3)	# for each codon position, get array of synonymous codons
+        {
+            my @codonarr = @{$$REV_CODON_TABLE{$$CODON_TABLE{substr($critseg, $offset, 3)}}};
+            for (my $othercodons = 0; $othercodons < (scalar(@codonarr)); $othercodons++)       ##generates a random codons as many times as the length of the array until the pattern is gone
+            {
+                my $random = int(rand(scalar(@codonarr)));
+                
+                substr($copy, $offset, 3) = $codonarr[$random];
+                if (siteseeker($copy, $pattern, $$RE_DATA{REGEX}->{$pattern}) == 0){
+                    return $copy;
+                }
+            }
+        }
+        return $copy;
+}
 
 exit;
