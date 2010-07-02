@@ -85,13 +85,13 @@ print "\n";
 foreach my $org (@ORGSDO)
 {
     my $OUTPUT = {};
-    my ($Error4, $Error0, $Error5) = ("", "", "");
     my $RSCU_VALUES = $org  ?   define_RSCU_values( $org )  :   $RSCU_DEFN;
     
     foreach my $seqkey (sort {$a cmp $b} keys %$nucseq)
     {
-        my $newnuc = $$nucseq{$seqkey};
         
+        my $newnuc = $$nucseq{$seqkey};
+        my ($Error4, $Error0, $Error5) = ("", "", "");
         my @success_enz = ();
         my @fail_enz = ();
         my @none_enz = ();
@@ -111,13 +111,13 @@ foreach my $org (@ORGSDO)
                     my $framestart = ($grabbedpos) % 3;
                     my $critseg = substr($newnuc, $grabbedpos - $framestart, ((int(length($grabbedseq)/3 + 2))*3));
                     my $newcritseg = pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE, $RSCU_VALUES);
-                        #print "removing $enz: crit: $critseg, newcrit: $newcritseg\n";
-                        #for (my $x = 0; $x < length($critseg); $x += 3)
-                        #{
-                        #        my $codon = substr($critseg, $x, 3), " ";
-                        #        print "$codon: $$CODON_TABLE{$codon}\n";
-                        #}
-                        #print "\n";
+                        print "removing $enz: crit: $critseg, newcrit: $newcritseg\n";
+                        for (my $x = 0; $x < length($critseg); $x += 3)
+                        {
+                                my $codon = substr($critseg, $x, 3), " ";
+                                print "$codon: $$CODON_TABLE{$codon}\n";
+                        }
+                        print "\n";
                     substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $enz, $$RE_DATA{REGEX}->{$enz})}) == 0);
                 }
             }
@@ -147,10 +147,9 @@ For the sequence $new_key:
     $Error5
     $Error4
     $Error0
-
-    Base Count: $$bcou{length} bp ($$bcou{A} A, $$bcou{T} T, $$bcou{C} C, $$bcou{G} G)
-    Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT
-    $$newal{'I'} Identities, $$newal{'D'} Changes ($$newal{'T'} transitions, $$newal{'V'} transversions), $$newal{'P'}% Identity
+        Base Count: $$bcou{length} bp ($$bcou{A} A, $$bcou{T} T, $$bcou{C} C, $$bcou{G} G)
+        Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT
+        $$newal{'I'} Identities, $$newal{'D'} Changes ($$newal{'T'} transitions, $$newal{'V'} transversions), $$newal{'P'}% Identity
         
         
 "
