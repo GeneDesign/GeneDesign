@@ -86,11 +86,16 @@ foreach my $org (@ORGSDO)
 {
     my $OUTPUT = {};
     my ($Error4, $Error0, $Error5) = ("", "", "");
+    my $RSCU_VALUES = $org  ?   define_RSCU_values( $org )  :   $RSCU_DEFN;
     
     foreach my $seqkey (sort {$a cmp $b} keys %$nucseq)
     {
         my $newnuc = $$nucseq{$seqkey};
+        
+        my @success_enz = ();
+        my @fail_enz = ();
         my @none_enz = ();
+      
     	for (1..$iter) ##Where the magic happens
 	{
             foreach my $enz (@remove_RE)
@@ -105,14 +110,14 @@ foreach my $org (@ORGSDO)
                     my $grabbedseq = $$temphash{$grabbedpos};
                     my $framestart = ($grabbedpos) % 3;
                     my $critseg = substr($newnuc, $grabbedpos - $framestart, ((int(length($grabbedseq)/3 + 2))*3));
-                    my $newcritseg = pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE, define_RSCU_values($org));
-					print "removing $enz: crit: $critseg, newcrit: $newcritseg\n";
-					for (my $x = 0; $x < length($critseg); $x += 3)
-					{
-						my $codon = substr($critseg, $x, 3), " ";
-						print "$codon: $$CODON_TABLE{$codon}\n";
-					}
-					print "\n";
+                    my $newcritseg = pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE, $RSCU_VALUES);
+                        #print "removing $enz: crit: $critseg, newcrit: $newcritseg\n";
+                        #for (my $x = 0; $x < length($critseg); $x += 3)
+                        #{
+                        #        my $codon = substr($critseg, $x, 3), " ";
+                        #        print "$codon: $$CODON_TABLE{$codon}\n";
+                        #}
+                        #print "\n";
                     substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $enz, $$RE_DATA{REGEX}->{$enz})}) == 0);
                 }
             }
@@ -120,19 +125,18 @@ foreach my $org (@ORGSDO)
         my $new_key = $seqkey . " after the restriction site subtraction algorithm for $ORGNAME{$org}";
         $$OUTPUT{$new_key} = $newnuc;
         
-        my @success_enz = ();
-        my @fail_enz = ();
-        
 	foreach my $enz (@remove_RE) #Stores successfully and unsuccessfully removed enzymes in respective arrays
 	{
             my $oldcheckpres = siteseeker($$nucseq{$seqkey}, $enz, $$RE_DATA{REGEX}->{$enz});
             my $newcheckpres = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
+            push @none_enz, $enz if scalar(keys %$oldcheckpres == 0);
             push @fail_enz, $enz if (scalar(keys %$newcheckpres) != 0);
-            push @success_enz, $enz if (scalar (keys %$newcheckpres) == 0 && scalar (keys %$oldcheckpres) != 0);
+            push @success_enz, $enz if (scalar (keys %$newcheckpres) == 0 && scalar (keys %$oldcheckpres != 0));
 	}
         
         $Error4 = "I was unable to remove @fail_enz after $iter iterations." if @fail_enz;
         $Error0 = "I successfully removed @success_enz from your sequence." if @success_enz;
+        $Error5 = "The enzyme @none_enz was not present in your sequence." if @none_enz;
         
         my $newal = compare_sequences($$nucseq{$seqkey}, $newnuc);
 	my $bcou = count($newnuc);
@@ -140,6 +144,7 @@ foreach my $org (@ORGSDO)
         print "
 For the sequence $new_key:
     I was asked to remove: @remove_RE.
+    $Error5
     $Error4
     $Error0
 
