@@ -42,9 +42,9 @@ Restriction_Site_Subtraction.pl
     a custom RSCU table was provided or 7 if codons were replaced randomly).
     
   Usage examples:
-   perl Restriction_Site_Subtraction.pl -i Test_YAR000W_p.FASTA -o 13 -t 5
-    ./ Restriction_Site_Subtraction.pl --input Test_YAR000W_p.FASTA --rscu Test_
-TY1_RSCU.txt
+   perl Restriction_Site_Subtraction.pl -i Test_YAR000W.FASTA -o 13 -s sites.txt
+    ./ Restriction_Site_Subtraction.pl --input Test_YAR000W.FASTA --rscu Test_
+TY1_RSCU.txt --times 6 --sites sites.txt
 
  Required arguments:
     -i,   --input : a FASTA file containing protein sequences.
@@ -69,13 +69,13 @@ TY1_RSCU.txt
 }
 
 ##Check the consistency of arguments
-die "\n ERROR: You did not provide an input file!\n"
+die "\n ERROR: The input file does not exist!\n"
     if (! -e $config{INPUT});
 die "\n ERROR: You did not provide a restriction sites file!\n"
     if (! -e $config{RESTRICTION_SITES});
-    
-warn "\n ERROR: Your RSCU table file does not exist! Your target codons will be replaced by random codons.\n"
-    if (! $config{RSCU_FILE});
+
+warn "\n ERROR: Your RSCU file does not exist! Your target codons will be replaced by random codons.\n"
+    if ($config{RSCU_FILE} && ! -e $config{RSCU_FILE});
 warn "\n ERROR: Neither an organism nor an RSCU table were supplied. Your target codons will be replaced by random codons.\n"
     if (! $config{ORGANISM} && ! $config{RSCU_FILE});
 warn "\n ERROR: Number of iterations was not supplied. The default number of 3 will be used.\n"
@@ -96,16 +96,13 @@ my $rscu                = $config{RSCU_FILE}    ?   $config{RSCU_FILE}      : 0;
 my $RSCU_DEFN           = $rscu                 ?   rscu_parser( $rscu )    : {};
 
 my @ORGSDO		= grep { exists $ORGANISMS{$_} } split( "", $config{ORGANISM} );
-if ($rscu)
-{
-    push @ORGSDO, 0;
-    $ORGNAME{0}         = fileparse ( $config{RSCU_FILE} , qr/\.[^.]*/);
-}
 
-if (! $config{ORGANISM} && ! $config{RSCU_FILE})
-{
+push @ORGSDO, 0     if ($rscu);
+$ORGNAME{0}         = fileparse ( $config{RSCU_FILE} , qr/\.[^.]*/)     if ($rscu);
+
+if (! $config{ORGANISM} && ! $config{RSCU_FILE}) {
     push @ORGSDO, 7;
-    $ORGNAME{7}         = 'random';
+    $ORGNAME{7}         = 'random codons';
 }
 
 my @remove_RE           = slurp( $config{RESTRICTION_SITES} ) ;
@@ -147,15 +144,8 @@ foreach my $org (@ORGSDO)
                         $newcritseg = pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE, $RSCU_VALUES);
                     }
                     elsif (!%$RSCU_VALUES) {
-                        $newcritseg = random_codon_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE);
+                        $newcritseg = random_pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE);
                     }
-                        #print "removing $enz: crit: $critseg, newcrit: $newcritseg\n";
-                        #for (my $x = 0; $x < length($critseg); $x += 3)
-                        #{
-                        #        my $codon = substr($critseg, $x, 3), " ";
-                        #        print "$codon: $$CODON_TABLE{$codon}\n";
-                        #}
-                        #print "\n";
                     substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $enz, $$RE_DATA{REGEX}->{$enz})}) == 0);
                 }
             }
@@ -189,36 +179,15 @@ For the sequence $new_key:
         Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT
         $$newal{'I'} Identities, $$newal{'D'} Changes ($$newal{'T'} transitions, $$newal{'V'} transversions), $$newal{'P'}% Identity
         
-        
 "
     }
             
-        open (my $fh, ">" . $filename . "_gdRSS/" . $filename . "_gdRSS_$org.FASTA") || die "Cannot create output file, $!";
-        print $fh fasta_writer($OUTPUT);
-        close $fh;
-        print $filename . "_gdRSS_$org.FASTA has been written.\n"
+    open (my $fh, ">" . $filename . "_gdRSS/" . $filename . "_gdRSS_$org.FASTA") || die "Cannot create output file, $!";
+    print $fh fasta_writer($OUTPUT);
+    close $fh;
+    print $filename . "_gdRSS_$org.FASTA has been written.\n"
 }
 
 print "\n";
-
-sub random_codon_remover {
-    	my ($critseg, $pattern, $CODON_TABLE) = @_;
-	my $REV_CODON_TABLE = define_reverse_codon_table($CODON_TABLE);
-        my $copy = $critseg;
-        for (my $offset = 0; $offset < (length($critseg)); $offset+=3)	# for each codon position, get array of synonymous codons
-        {
-            my @codonarr = @{$$REV_CODON_TABLE{$$CODON_TABLE{substr($critseg, $offset, 3)}}};
-            for (my $othercodons = 0; $othercodons < (scalar(@codonarr)); $othercodons++)       ##generates random codons to replace the original until the pattern is gone or as many times as the length of the array
-            {
-                my $random = int(rand(scalar(@codonarr)));
-                
-                substr($copy, $offset, 3) = $codonarr[$random];
-                if (siteseeker($copy, $pattern, $$RE_DATA{REGEX}->{$pattern}) == 0){
-                    return $copy;
-                }
-            }
-        }
-        return $copy;
-}
 
 exit;
