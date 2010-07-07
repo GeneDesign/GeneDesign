@@ -30,5 +30,6 @@ $flag += test_translate();
 $flag += test_orf_finder();
 $flag += test_codon_count();
 $flag += test_generate_RSCU_values();
+$flag += test_random_pattern_remover();
 
-print "\npassed $flag out of 25 tests\n\n";
+print "\npassed $flag out of 26 tests\n\n";

@@ -16,7 +16,7 @@ use Text::Wrap qw($columns &wrap);
 @EXPORT = qw(define_sites overhang define_site_status siteseeker filter_sites mutexclu first_base report_RE
 			define_aa_names define_aa_defaults  define_codon_table define_reverse_codon_table define_RSCU_values 
 			define_codon_percentages index_codon_percentages
-			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA
+			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA random_pattern_remover
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
 			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
 			codon_count generate_RSCU_values rscu_parser fasta_writer
@@ -1558,6 +1558,26 @@ sub mutexclu
 	return $used_ref;
 }
 
+sub random_pattern_remover {
+	my $RE_DATA = define_sites($enzfile);
+    	my ($critseg, $pattern, $CODON_TABLE) = @_;
+	my $REV_CODON_TABLE = define_reverse_codon_table($CODON_TABLE);
+        my $copy = $critseg;
+        for (my $offset = 0; $offset < (length($critseg)); $offset+=3)	# for each codon position, get array of synonymous codons
+        {
+            my @codonarr = @{$$REV_CODON_TABLE{$$CODON_TABLE{substr($critseg, $offset, 3)}}};
+            for (my $repeat = 0; $repeat < 10; $repeat++)       ##generates random codons to replace the original until the pattern is gone or for 10 iterations
+            {
+                my $random = int(rand(scalar(@codonarr)));
+                
+                substr($copy, $offset, 3) = $codonarr[$random];
+                if (siteseeker($copy, $pattern, $$RE_DATA{REGEX}->{$pattern}) == 0){
+                    return $copy;
+                }
+            }
+        }
+        return $copy;
+}
 
 1;
 __END__

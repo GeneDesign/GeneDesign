@@ -1566,7 +1566,7 @@ sub random_pattern_remover {
         for (my $offset = 0; $offset < (length($critseg)); $offset+=3)	# for each codon position, get array of synonymous codons
         {
             my @codonarr = @{$$REV_CODON_TABLE{$$CODON_TABLE{substr($critseg, $offset, 3)}}};
-            for (my $othercodons = 0; $othercodons < (scalar(@codonarr)); $othercodons++)       ##generates random codons to replace the original until the pattern is gone or as many times as the length of the array
+            for (my $repeat = 0; $repeat < 10; $repeat++)       ##generates random codons to replace the original until the pattern is gone or for 10 iterations
             {
                 my $random = int(rand(scalar(@codonarr)));
                 
