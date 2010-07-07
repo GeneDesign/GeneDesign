@@ -42,9 +42,26 @@ Restriction_Site_Subtraction.pl
     a custom RSCU table was provided or 7 if codons were replaced randomly).
     
   Usage examples:
-   perl Restriction_Site_Subtraction.pl -i Test_YAR000W_p.FASTA 
-    
-    
+   perl Restriction_Site_Subtraction.pl -i Test_YAR000W_p.FASTA -o 13 -t 5
+    ./ Restriction_Site_Subtraction.pl --input Test_YAR000W_p.FASTA --rscu Test_
+TY1_RSCU.txt
+
+ Required arguments:
+    -i,   --input : a FASTA file containing protein sequences.
+    -s,   --sites : the restriction enzymes sites that will be silently removed
+
+  Optional arguments:
+    -h,   --help : Display this message
+    -t,   --times : the number of iterations you want the algorithm to run
+    -r,   --rscu : a txt file containing an RSCU table from gen_RSCU.pl
+    -o,   --organism : at least one organism number.
+        Each organism given represents another iteration the algorithm must run.
+        (1 = S.cerevisiae,  2 = E.coli,         3 = H.sapiens,
+         4 = C.elegans,     5 = D.melanogaster, 6 = B.subtilis)
+    Note:
+    -r and/or -o may be provided. If both are given the table will be treated as
+    another organism, named after the table's filename. If neither are given,
+    then the script will replace the sites with random codons.
     
     
 ";
@@ -52,9 +69,9 @@ Restriction_Site_Subtraction.pl
 }
 
 ##Check the consistency of arguments
-die "\n ERROR: Your input file does not exist!\n"
+die "\n ERROR: You did not provide an input file!\n"
     if (! -e $config{INPUT});
-die "\n ERROR: Your restriction sites file does not exist!\n"
+die "\n ERROR: You did not provide a restriction sites file!\n"
     if (! -e $config{RESTRICTION_SITES});
     
 warn "\n ERROR: Your RSCU table file does not exist! Your target codons will be replaced by random codons.\n"
@@ -67,7 +84,7 @@ warn "\n WARNING: $_ is not a recognized organism and will be ignored.\n"
     foreach (grep {! exists($ORGANISMS{$_})} split ("", $config{ORGANISM}) );
 
 
-##Fetch input nucleotide sequences, organisms, iterations, and restriction site file
+##Fetch input nucleotide sequences, organisms, RSCU file, iterations, and restriction site file
 
 my $filename  	  	= fileparse( $config{INPUT}, qr/\.[^.]*/);
 make_path($filename . "_gdRSS");
@@ -157,7 +174,7 @@ foreach my $org (@ORGSDO)
         
         $Error4 = "I was unable to remove @fail_enz after $iter iterations." if @fail_enz;
         $Error0 = "I successfully removed @success_enz from your sequence." if @success_enz;
-        $Error5 = "The enzyme(s) @none_enz was not present in your sequence." if @none_enz;
+        $Error5 = "There were no instances of @none_enz present in your sequence." if @none_enz;
         
         my $newal = compare_sequences($$nucseq{$seqkey}, $newnuc);
 	my $bcou = count($newnuc);
@@ -191,7 +208,7 @@ sub random_codon_remover {
         for (my $offset = 0; $offset < (length($critseg)); $offset+=3)	# for each codon position, get array of synonymous codons
         {
             my @codonarr = @{$$REV_CODON_TABLE{$$CODON_TABLE{substr($critseg, $offset, 3)}}};
-            for (my $othercodons = 0; $othercodons < (scalar(@codonarr)); $othercodons++)       ##generates a random codons as many times as the length of the array until the pattern is gone
+            for (my $othercodons = 0; $othercodons < (scalar(@codonarr)); $othercodons++)       ##generates random codons to replace the original until the pattern is gone or as many times as the length of the array
             {
                 my $random = int(rand(scalar(@codonarr)));
                 
