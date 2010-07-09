@@ -1579,5 +1579,26 @@ sub random_pattern_remover {
         return $copy;
 }
 
+sub make_mask {
+	my ($length, $lockseq) = @_;
+	my @MASK = (0) x $length;
+	foreach my $seq (@{$lockseq})
+	{
+		my @coordinates = split(/-/, $seq);
+		my $start = shift(@coordinates);
+		my $end = shift(@coordinates);
+		for (my $x = $start; $x <= $end; $x++)
+		{
+			$MASK[$x] = $MASK[$x]++;
+			last if ($x == $length - 1);
+		}
+	}
+	return join("", @MASK);
+}
+
+sub check_lock {
+	my ($mask, $newnuc, $CODON_TABLE) = @_;
+}
+
 1;
 __END__
