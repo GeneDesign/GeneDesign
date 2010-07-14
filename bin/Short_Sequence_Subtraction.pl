@@ -19,6 +19,7 @@ GetOptions (
         'rscu=s'                => \$config{RSCU_FILE},
 	'sequences=s'		=> \$config{SHORT_SEQUENCE},
         'times=i'               => \$config{ITERATIONS},
+	'lock=s'		=> \$config{LOCK},
  	'help'			=> \$config{HELP},
    );
 
@@ -54,6 +55,10 @@ TY1_RSCU.txt --times 6 --sites short_sequences.txt
     -t,   --times : the number of iterations you want the algorithm to run
     -r,   --rscu : a txt file containing an RSCU table from gen_RSCU.pl
     -o,   --organism : at least one organism number.
+    -l,   --lock : lock codons in the nucleotide sequence by their positions.
+		   You may choose to do so by providing a file in a similar
+		   format to the sample file or using the format
+		   'num-num,num-num' when using this argument
         Each organism given represents another iteration the algorithm must run.
         (1 = S.cerevisiae,  2 = E.coli,         3 = H.sapiens,
          4 = C.elegans,     5 = D.melanogaster, 6 = B.subtilis)
@@ -108,7 +113,20 @@ chomp (@shortseq);
 
 my $iter                = $config{ITERATIONS}   ?   $config{ITERATIONS}     : 3;
 
+my $lock 		= $config{LOCK}		?   $config{LOCK}	    : 0;
+my $lockseq;
+if (my $ext = ($lock =~ m/([^.]+)$/)[0] eq 'txt') {
+    $input = slurp( $config{LOCK} );
+    $lockseq = fasta_parser( $input );
+    
+}
+else {
+    
+}
+
 ## More consistency checking
+die "\n ERROR: You did not provide a sequence to lock in the right format"
+    if ($config{LOCK});
 foreach my $seq (@shortseq) {
     die "\n ERROR: You need a short sequence to be removed (at least 2 bp).\n" 
         if (length($seq) < 2);

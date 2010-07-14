@@ -37,6 +37,12 @@ Restriction_Site_Subtraction.pl
     The targeted codons may be replaced with random codons, using a user-defined
     codon table, or using the default codon table for a user-selected organism.
     
+    Sites can be provided one of two ways, following the formats of the
+    provided sample files sites.txt and sites2.txt. The format of sites.txt
+    removes the same restriction sites from all of nucleotide sequences, while
+    the format of sites2.txt allows for the removal of different restriction
+    sites from different sequences.
+    
     Output will be named according to the name of the FASTA input file and will
     be tagged with the gdRSS suffix and the number of the organism used (or 0 if
     a custom RSCU table was provided or 7 if codons were replaced randomly).
@@ -44,7 +50,7 @@ Restriction_Site_Subtraction.pl
   Usage examples:
    perl Restriction_Site_Subtraction.pl -i Test_YAR000W.FASTA -o 13 -s sites.txt
     ./ Restriction_Site_Subtraction.pl --input Test_YAR000W.FASTA --rscu Test_
-TY1_RSCU.txt --times 6 --sites sites.txt
+TY1_RSCU.txt --times 6 --sites sites2.txt
 
  Required arguments:
     -i,   --input : a FASTA file containing nucleotide sequences.
@@ -105,8 +111,19 @@ if (! $config{ORGANISM} && ! $config{RSCU_FILE}) {
     $ORGNAME{7}         = 'random codons';
 }
 
-my @remove_RE           = slurp( $config{RESTRICTION_SITES} ) ;
-chomp (@remove_RE);
+$input                 = slurp( $config{RESTRICTION_SITES} ) ;
+my %remove_RE;
+my @temp_RE;
+if (substr($input, 0, 1) eq '>'){
+    %remove_RE      = input_parser($input);
+}
+else {
+    %remove_RE = [];
+    @temp_RE = split(/\n/, $input);
+    foreach my $seqkey (keys %$nucseq) {
+        $remove_RE{$seqkey} = \@temp_RE;
+    }
+}
 
 my $iter                = $config{ITERATIONS}   ?   $config{ITERATIONS}     : 3;
 
@@ -118,6 +135,7 @@ print "\n";
 foreach my $org (@ORGSDO)
 {
     my $OUTPUT = {};
+    my %RE_OUTPUT;
     my $RSCU_VALUES = $org  ?   define_RSCU_values( $org )  :   $RSCU_DEFN;
     
     foreach my $seqkey (sort {$a cmp $b} keys %$nucseq)
@@ -130,13 +148,12 @@ foreach my $org (@ORGSDO)
       
     	for (1..$iter) ##Where the magic happens
 	{
-            foreach my $enz (@remove_RE)
-            {	
+            foreach my $enz (@{$remove_RE{$seqkey}})
+            {
                 my $temphash = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
                 foreach my $grabbedpos (keys %$temphash)
                 {
                     my $grabbedseq = $$temphash{$grabbedpos};
-                    print $grabbedseq;
                     my $framestart = ($grabbedpos) % 3;
                     my $critseg = substr($newnuc, $grabbedpos - $framestart, ((int(length($grabbedseq)/3 + 2))*3));
                     my $newcritseg;
@@ -152,8 +169,9 @@ foreach my $org (@ORGSDO)
 	}
         my $new_key = $seqkey . " after the restriction site subtraction algorithm for $ORGNAME{$org}";
         $$OUTPUT{$new_key} = $newnuc;
+        $RE_OUTPUT{$new_key} = \@{$remove_RE{$seqkey}};
         
-	foreach my $enz (@remove_RE) #Stores successfully and unsuccessfully removed enzymes in respective arrays
+	foreach my $enz (@{$remove_RE{$seqkey}}) #Stores successfully and unsuccessfully removed enzymes in respective arrays
 	{
             my $oldcheckpres = siteseeker($$nucseq{$seqkey}, $enz, $$RE_DATA{REGEX}->{$enz});
             my $newcheckpres = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
@@ -171,7 +189,7 @@ foreach my $org (@ORGSDO)
         
         print "
 For the sequence $new_key:
-    I was asked to remove: @remove_RE.
+    I was asked to remove: @{$RE_OUTPUT{$new_key}}.
     $Error5
     $Error4
     $Error0
