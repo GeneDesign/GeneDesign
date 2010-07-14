@@ -168,7 +168,6 @@ foreach my $org (@ORGSDO)
 	}
         my $new_key = $seqkey . " after the restriction site subtraction algorithm for $ORGNAME{$org}";
         $$OUTPUT{$new_key} = $newnuc;
-        $RE_OUTPUT{$new_key} = \@{$remove_RE{$seqkey}};
         
 	foreach my $enz (@{$remove_RE{$seqkey}}) #Stores successfully and unsuccessfully removed enzymes in respective arrays
 	{
@@ -188,7 +187,7 @@ foreach my $org (@ORGSDO)
         
         print "
 For the sequence $new_key:
-    I was asked to remove: @{$RE_OUTPUT{$new_key}}.
+    I was asked to remove: @{$remove_RE{$seqkey}}.
     $Error5
     $Error4
     $Error0

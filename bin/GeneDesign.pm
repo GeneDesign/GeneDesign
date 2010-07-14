@@ -19,7 +19,7 @@ use Text::Wrap qw($columns &wrap);
 			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA random_pattern_remover
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
 			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
-			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser
+			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser check_lock
 			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath $enzfile
 			);
 			
@@ -1580,24 +1580,6 @@ sub random_pattern_remover {
         return $copy;
 }
 
-sub make_mask {
-	my ($length, $lockseq) = @_;
-	my @MASK = (0) x $length;
-	foreach my $seq (@{$lockseq})
-	{
-		my @coordinates = split(/-/, $seq);
-		my $start = shift(@coordinates);
-		my $end = shift(@coordinates);
-		for (my $x = $start; $x <= $end; $x++)
-		{
-			$MASK[$x] = $MASK[$x]++;
-			last if ($x == $length - 1);
-		}
-	}
-	return join("", @MASK);
-}
-
-
 sub input_parser
 {
 	my ($input) = @_;
@@ -1616,8 +1598,8 @@ sub input_parser
 }
 
 sub check_lock {
-	my ($lockseq, $oldnuc, $newnuc, $CODON_TABLE) = @_;
-	foreach my $seq (@{$lockseq})
+	my (@lockseq, $oldnuc, $newnuc, $CODON_TABLE) = @_;
+	foreach my $seq (@lockseq)
 	{
 		my @coordinates = split(/-/, $seq);
 		my $start = shift(@coordinates) - 1;
@@ -1658,8 +1640,8 @@ sub check_lock {
 		}
 		my $length = $start - $end + 1;
 		substr($newnuc, $start, $length, substr($oldnuc, $start, $length));
-		
 	}
+	return $newnuc;
 
 }
 

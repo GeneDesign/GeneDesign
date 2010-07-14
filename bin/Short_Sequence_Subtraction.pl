@@ -36,6 +36,12 @@ Short_Sequence_Subtraction.pl
     The targeted codons may be replaced with random codons, using a user-defined
     codon table, or using the default codon table for a user-selected organism.
     
+    Sites to remove can be provided one of two ways, following the formats of
+    the provided sample files short_sequences.txt and short_sequences2.txt. The
+    format of short_sequences.txt removes the same short sequences from all of
+    nucleotide sequences, while the format of short_sequences2.txt allows for
+    the removal of different short sequences from different sequences.
+    
     Output will be named according to the name of the FASTA input file and will
     be tagged with the gdSSS suffix and the number of the organism used (or 0 if
     a custom RSCU table was provided or 7 if codons were replaced randomly).
@@ -44,7 +50,7 @@ Short_Sequence_Subtraction.pl
    perl Short_Sequence_Subtraction.pl -i Test_YAR000W.FASTA -o 13 -s
 short_sequences.txt
     ./ Short_Sequence_Subtraction.pl --input Test_YAR000W.FASTA --rscu Test_
-TY1_RSCU.txt --times 6 --sites short_sequences.txt
+TY1_RSCU.txt --times 6 --sites short_sequences2.txt
 
  Required arguments:
     -i,   --input : a FASTA file containing nucleotide sequences.
@@ -108,28 +114,42 @@ if (! $config{ORGANISM} && ! $config{RSCU_FILE}) {
     $ORGNAME{7}         = 'random codons';
 }
 
-my @shortseq           = slurp( $config{SHORT_SEQUENCE} ) ;
-chomp (@shortseq);
+$input           = slurp( $config{SHORT_SEQUENCE} ) ;
+my %shortseq;
+if (substr($input, 0, 1) eq '>'){
+    %shortseq      = input_parser( $input );
+}
+else {
+    %shortseq = [];
+    my @temp_seq = split(/\n/, $input);
+    foreach my $seqkey (keys %$nucseq) {
+        $shortseq{$seqkey} = \@temp_seq;
+    }
+}
 
 my $iter                = $config{ITERATIONS}   ?   $config{ITERATIONS}     : 3;
 
 my $lock 		= $config{LOCK}		?   $config{LOCK}	    : 0;
-my $lockseq;
-if (my $ext = ($lock =~ m/([^.]+)$/)[0] eq 'txt') {
-    $input = slurp( $config{LOCK} );
-    $lockseq = fasta_parser( $input );
-    
-}
-else {
-    
+my %lockseq;
+if ($config{LOCK}) {
+    if (my $ext = ($lock =~ m/([^.]+)$/)[0] eq 'txt') {
+	$input = slurp( $config{LOCK} );
+	%lockseq = input_parser( $input );
+    }
+    else {
+	my @lockarr = split(/,/, $lock);
+	foreach my $seqkey (keys %$nucseq) {
+	    $lockseq{$seqkey} = \@lockarr;
+	}  
+    }
 }
 
 ## More consistency checking
-die "\n ERROR: You did not provide a sequence to lock in the right format"
-    if ($config{LOCK});
-foreach my $seq (@shortseq) {
-    die "\n ERROR: You need a short sequence to be removed (at least 2 bp).\n" 
-        if (length($seq) < 2);
+foreach my $seqkey (keys %$nucseq) {
+    foreach my $seq (@{$shortseq{$seqkey}}) {
+	die "\n ERROR: You need a short sequence to be removed (at least 2 bp).\n" 
+	    if (length($seq) < 2);
+    }
 }
 
 print "\n";
@@ -145,7 +165,7 @@ foreach my $org (@ORGSDO)
         
         my $oldnuc = $$nucseq{$seqkey};
         my $newnuc = $oldnuc;
-        my ($Error4, $Error0, $Error5, $Error6) = ("", "", "", "");
+        my ($Error4, $Error0, $Error5, $Error6, $Error7) = ("", "", "", "", "");
         my @success_seq = ();
         my @fail_seq = ();
         my @none_seq = ();
@@ -153,7 +173,7 @@ foreach my $org (@ORGSDO)
     	for (1..$iter) ##Where the magic happens
 	{
 	    my $warncount = 0;
-            foreach my $remseq (@shortseq)
+            foreach my $remseq (@{$shortseq{$seqkey}})
             {
 		if (length($remseq) >= length($newnuc)) { ## And yet more consistency checking
 		    warn "\n ERROR: Your short sequence should be shorter than your nucleotide sequence!\n" if ($warncount == 0);
@@ -178,11 +198,14 @@ foreach my $org (@ORGSDO)
                     substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $remseq, $arr)}) == 0);
                 }
             }
+	    if ($config{LOCK}) {
+		$newnuc = check_lock(@{$lockseq{$seqkey}}, $oldnuc, $newnuc, $CODON_TABLE);
+	    }
 	}
         my $new_key = $seqkey . " after the short sequence subtraction algorithm for $ORGNAME{$org}";
         $$OUTPUT{$new_key} = $newnuc;
         
-	foreach my $remseq (@shortseq) #Stores successfully and unsuccessfully removed sequences in respective arrays
+	foreach my $remseq (@{$shortseq{$seqkey}}) #Stores successfully and unsuccessfully removed sequences in respective arrays
 	{
             my $arr = [ regres($remseq, 1) ];
             my $oldcheckpres = siteseeker($$nucseq{$seqkey}, $remseq, $arr);
@@ -202,7 +225,7 @@ foreach my $org (@ORGSDO)
         
         print "
 For the sequence $new_key:
-    I was asked to remove: @shortseq.
+    I was asked to remove: @{$shortseq{$seqkey}}.
     $Error5
     $Error4
     $Error0
