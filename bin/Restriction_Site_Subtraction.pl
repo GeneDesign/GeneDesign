@@ -111,15 +111,14 @@ if (! $config{ORGANISM} && ! $config{RSCU_FILE}) {
     $ORGNAME{7}         = 'random codons';
 }
 
-$input                 = slurp( $config{RESTRICTION_SITES} ) ;
+$input                 = slurp( $config{RESTRICTION_SITES} ) ; ##Now there are two ways to give restriction site input!
 my %remove_RE;
-my @temp_RE;
 if (substr($input, 0, 1) eq '>'){
-    %remove_RE      = input_parser($input);
+    %remove_RE      = input_parser( $input );
 }
 else {
     %remove_RE = [];
-    @temp_RE = split(/\n/, $input);
+    my @temp_RE = split(/\n/, $input);
     foreach my $seqkey (keys %$nucseq) {
         $remove_RE{$seqkey} = \@temp_RE;
     }
