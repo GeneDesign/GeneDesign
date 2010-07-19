@@ -1597,55 +1597,79 @@ sub input_parser
 	return %inputhsh;
 }
 
-sub check_lock {
+sub replace_lock {
 	my ($oldnuc, $newnuc, $CODON_TABLE, @lockseq) = @_;
-	print $oldnuc . "\n\n" . $newnuc . "\n\n";
 	foreach my $seq (@lockseq)
 	{
 		my @coordinates = split(/-/, $seq);
 		my $start = shift(@coordinates) - 1;
 		my $end = shift(@coordinates) - 1;
+		if ($end > length($newnuc)) {
+			warn "\n ERROR: Your locked sequence of " . ($start+1) . "-" . ($end+1) . " is not within the scope of your nucleotide sequence!\n";
+			my( $index )= grep { $lockseq[$_] eq $seq } 0..$#lockseq;
+			splice(@lockseq, $index);
+			next;
+		}
 		my $framestart = $start % 3;
 		my $frameend = $end % 3;
-		if ($framestart == 1) { 
-			substr($newnuc, $start, 2, substr($oldnuc, $start, 2));
+		if ($framestart == 1) {
+			substr($newnuc, $start, 2) = substr($oldnuc, $start, 2);
 			if (translate(substr($newnuc, $start-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-1, 3), 1, $CODON_TABLE)) {
-				substr($newnuc, $start-1, 1, substr($oldnuc, $start-1, 1));
+				substr($newnuc, $start-1, 1) = substr($oldnuc, $start-1, 1);
 				
 			}
 			$start += 2;
 		}
 		elsif ($framestart == 2) {
-
-			substr($newnuc, $start, 1, substr($oldnuc, $start, 1));
+			
+			substr($newnuc, $start, 1) = substr($oldnuc, $start, 1);
 			for (my $i = 1; $i < 3; $i++){
 				if (translate(substr($newnuc, $start-2, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-2, 3), 1, $CODON_TABLE)){
-					substr($newnuc, $start-$i, 1, substr($oldnuc, $start-$i, 1));
+					substr($newnuc, $start-$i, 1) = substr($oldnuc, $start-$i, 1);
 				}
 			}
 			$start += 1;
+			print $newnuc . "\n\n" . $oldnuc . "\n\n";
 		}
 		if ($frameend == 0) {
-			substr($newnuc, $end, 1, substr($oldnuc, $end, 1));
+			substr($newnuc, $end, 1) = substr($oldnuc, $end, 1);
 			for (my $i = 1; $i < 3; $i++){
 				if (translate(substr($newnuc, $end, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end, 3), 1, $CODON_TABLE)) {
-					substr($newnuc, $end+$i, 1, substr($oldnuc, $end+$i, 1));
+					substr($newnuc, $end+$i, 1) = substr($oldnuc, $end+$i, 1);
 				}
 			}
 			$end -= 1;
 		}
 		elsif ($frameend == 1) {
-			substr($newnuc, $end-1, 2, substr($oldnuc, $end-1, 2));
+			substr($newnuc, $end-1, 2) = substr($oldnuc, $end-1, 2);
 			if (translate(substr($newnuc, $end-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end-1, 3), 1, $CODON_TABLE)){
-				substr($newnuc, $end+1, 1, substr($oldnuc, $end+1, 1));
+				substr($newnuc, $end+1, 1) = substr($oldnuc, $end+1, 1);
 			}
 			$end -= 2;
 		}
-		my $length = $start - $end + 1;
-		substr($newnuc, $start, $length, substr($oldnuc, $start, $length));
+		my $length = $end - $start + 1;
+		substr($newnuc, $start, $length) = substr($oldnuc, $start, $length);
 	}
-	return $newnuc;
+	return ($newnuc, @lockseq); ##Just in case @lockseq was changed
 
+}
+
+sub check_lock {
+	my ($oldcheckpres, $newcheckpres, $shortseq, @lockseq) = @_;
+	my @locked_seq = ();
+	foreach my $seq (@lockseq)
+	    {
+		my @coordinates = split(/-/, $seq);
+		my $start = shift(@coordinates) - 1;
+		my $end = shift(@coordinates) - 1;
+		foreach my $pos (keys %$oldcheckpres) {
+		    my $pos_end = $pos + length($$oldcheckpres{$pos});
+		    if (($pos >= $start) || ($pos <= $end) || ($pos_end >= $start) || ($pos_end <= $end)) {
+			push @locked_seq, $shortseq;
+			last;
+		    }
+		}
+	    }
 }
 
 1;

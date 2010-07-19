@@ -138,7 +138,6 @@ if ($config{LOCK}) {
 	my @lockarr = split(/,/, $lock);
 	foreach my $seqkey (keys %$nucseq) {
 	    $lockseq{$seqkey} = \@lockarr;
-	    print @{$lockseq{$seqkey}};
 	}  
     }
 }
@@ -168,6 +167,8 @@ foreach my $org (@ORGSDO)
         my @success_seq = ();
         my @fail_seq = ();
         my @none_seq = ();
+	my @semifail_seq = ();
+	my @lock_seq = ();
       
     	for (1..$iter) ##Where the magic happens
 	{
@@ -198,7 +199,7 @@ foreach my $org (@ORGSDO)
                 }
             }
 	    if ($config{LOCK}) {
-		$newnuc = check_lock($oldnuc, $newnuc, $CODON_TABLE, @{$lockseq{$seqkey}});
+		($newnuc, @{$lockseq{$seqkey}}) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @{$lockseq{$seqkey}});
 	    }
 	}
         my $new_key = $seqkey . " after the short sequence subtraction algorithm for $ORGNAME{$org}";
@@ -210,25 +211,25 @@ foreach my $org (@ORGSDO)
             my $oldcheckpres = siteseeker($$nucseq{$seqkey}, $remseq, $arr);
             my $newcheckpres = siteseeker($newnuc, $remseq, $arr);
             push @none_seq, $remseq if scalar(keys %$oldcheckpres == 0);
-            push @fail_seq, $remseq if (scalar(keys %$newcheckpres) != 0);
-            push @success_seq, $remseq if (scalar (keys %$newcheckpres) == 0 && scalar (keys %$oldcheckpres != 0));
+	    if ($config{LOCK}) {
+	    }	
+            push @semifail_seq, $remseq if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) != scalar(keys %$newcheckpres)));
+            push @fail_seq, $remseq if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) == scalar(keys %$newcheckpres)));
+            push @success_seq, $remseq if ((scalar (keys %$newcheckpres) == 0) && (scalar (keys %$oldcheckpres != 0)));
 	}
         
-        $Error6 = "The translation has changed!" if (translate($oldnuc, 1, $CODON_TABLE) ne translate($newnuc, 1, $CODON_TABLE));        
-        $Error4 = "I was unable to remove @fail_seq after $iter iterations." if @fail_seq;
-        $Error0 = "I successfully removed @success_seq from your sequence." if @success_seq;
-        $Error5 = "There were no instances of @none_seq present in your sequence." if @none_seq;
+        $Error6 = "\n\tThe translation has changed!" if (translate($oldnuc, 1, $CODON_TABLE) ne translate($newnuc, 1, $CODON_TABLE));        
+        $Error4 = "\n\tI was unable to remove any instances of @fail_seq after $iter iterations." if @fail_seq;
+        $Error0 = "\n\tI successfully removed @success_seq from your sequence." if @success_seq;
+        $Error5 = "\n\tThere were no instances of @none_seq present in your sequence." if @none_seq;
+	$Error7 = "\n\tI was unable to remove some instances of @semifail_seq after $iter iterations." if @semifail_seq;
         
         my $newal = compare_sequences($$nucseq{$seqkey}, $newnuc);
 	my $bcou = count($newnuc);
         
         print "
 For the sequence $new_key:
-    I was asked to remove: @{$shortseq{$seqkey}}.
-    $Error5
-    $Error4
-    $Error0
-    $Error6
+    I was asked to remove: @{$shortseq{$seqkey}}. $Error5 $Error4 $Error0 $Error6
         Base Count: $$bcou{length} bp ($$bcou{A} A, $$bcou{T} T, $$bcou{C} C, $$bcou{G} G)
         Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT
         $$newal{'I'} Identities, $$newal{'D'} Changes ($$newal{'T'} transitions, $$newal{'V'} transversions), $$newal{'P'}% Identity
