@@ -47,8 +47,7 @@ Short_Sequence_Subtraction.pl
     a custom RSCU table was provided or 7 if codons were replaced randomly).
     
   Usage examples:
-   perl Short_Sequence_Subtraction.pl -i Test_YAR000W.FASTA -o 13 -s
-short_sequences.txt
+   perl Short_Sequence_Subtraction.pl -i Test_YAR000W.FASTA -o 13 -s short_sequences.txt
     ./ Short_Sequence_Subtraction.pl --input Test_YAR000W.FASTA --rscu Test_
 TY1_RSCU.txt --times 6 --sites short_sequences2.txt
 
@@ -120,7 +119,6 @@ if (substr($input, 0, 1) eq '>'){
     %shortseq      = input_parser( $input );
 }
 else {
-    %shortseq = [];
     my @temp_seq = split(/\n/, $input);
     foreach my $seqkey (keys %$nucseq) {
         $shortseq{$seqkey} = \@temp_seq;
@@ -140,6 +138,7 @@ if ($config{LOCK}) {
 	my @lockarr = split(/,/, $lock);
 	foreach my $seqkey (keys %$nucseq) {
 	    $lockseq{$seqkey} = \@lockarr;
+	    print @{$lockseq{$seqkey}};
 	}  
     }
 }
@@ -199,7 +198,7 @@ foreach my $org (@ORGSDO)
                 }
             }
 	    if ($config{LOCK}) {
-		$newnuc = check_lock(@{$lockseq{$seqkey}}, $oldnuc, $newnuc, $CODON_TABLE);
+		$newnuc = check_lock($oldnuc, $newnuc, $CODON_TABLE, @{$lockseq{$seqkey}});
 	    }
 	}
         my $new_key = $seqkey . " after the short sequence subtraction algorithm for $ORGNAME{$org}";

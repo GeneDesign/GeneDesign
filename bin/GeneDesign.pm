@@ -1598,7 +1598,8 @@ sub input_parser
 }
 
 sub check_lock {
-	my (@lockseq, $oldnuc, $newnuc, $CODON_TABLE) = @_;
+	my ($oldnuc, $newnuc, $CODON_TABLE, @lockseq) = @_;
+	print $oldnuc . "\n\n" . $newnuc . "\n\n";
 	foreach my $seq (@lockseq)
 	{
 		my @coordinates = split(/-/, $seq);
@@ -1609,11 +1610,13 @@ sub check_lock {
 		if ($framestart == 1) { 
 			substr($newnuc, $start, 2, substr($oldnuc, $start, 2));
 			if (translate(substr($newnuc, $start-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-1, 3), 1, $CODON_TABLE)) {
-				substr($newnuc, $start-1, 1, substr($oldnuc, $start-1, 1))
+				substr($newnuc, $start-1, 1, substr($oldnuc, $start-1, 1));
+				
 			}
 			$start += 2;
 		}
 		elsif ($framestart == 2) {
+
 			substr($newnuc, $start, 1, substr($oldnuc, $start, 1));
 			for (my $i = 1; $i < 3; $i++){
 				if (translate(substr($newnuc, $start-2, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-2, 3), 1, $CODON_TABLE)){

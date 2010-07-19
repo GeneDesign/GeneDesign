@@ -117,7 +117,6 @@ if (substr($input, 0, 1) eq '>'){
     %remove_RE      = input_parser( $input );
 }
 else {
-    %remove_RE = [];
     my @temp_RE = split(/\n/, $input);
     foreach my $seqkey (keys %$nucseq) {
         $remove_RE{$seqkey} = \@temp_RE;
