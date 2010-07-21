@@ -163,12 +163,12 @@ foreach my $org (@ORGSDO)
         
         my $oldnuc = $$nucseq{$seqkey};
         my $newnuc = $oldnuc;
-        my ($Error4, $Error0, $Error5, $Error6, $Error7) = ("", "", "", "", "");
+        my ($Error4, $Error0, $Error5, $Error6, $Error7, $Error8) = ("", "", "", "", "", "");
         my @success_seq = ();
         my @fail_seq = ();
         my @none_seq = ();
 	my @semifail_seq = ();
-	my @lock_seq = ();
+	my %lock_seq = ();
       
     	for (1..$iter) ##Where the magic happens
 	{
@@ -208,28 +208,35 @@ foreach my $org (@ORGSDO)
 	foreach my $remseq (@{$shortseq{$seqkey}}) #Stores successfully and unsuccessfully removed sequences in respective arrays
 	{
             my $arr = [ regres($remseq, 1) ];
-            my $oldcheckpres = siteseeker($$nucseq{$seqkey}, $remseq, $arr);
+            my $oldcheckpres = siteseeker($oldnuc, $remseq, $arr);
             my $newcheckpres = siteseeker($newnuc, $remseq, $arr);
             push @none_seq, $remseq if scalar(keys %$oldcheckpres == 0);
-	    if ($config{LOCK}) {
+	    push @success_seq, $remseq if ((scalar (keys %$newcheckpres) == 0) && (scalar (keys %$oldcheckpres != 0)));
+	    if ($config{LOCK} && (scalar(keys %$newcheckpres) != 0)) {
+		$lock_seq{$remseq} = 0;
+		%lock_seq = check_lock($newcheckpres, $oldnuc, $newnuc, $remseq, \@{$lockseq{$seqkey}}, %lock_seq);
 	    }	
-            push @semifail_seq, $remseq if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) != scalar(keys %$newcheckpres)));
-            push @fail_seq, $remseq if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) == scalar(keys %$newcheckpres)));
-            push @success_seq, $remseq if ((scalar (keys %$newcheckpres) == 0) && (scalar (keys %$oldcheckpres != 0)));
+            push @semifail_seq, $remseq if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) < scalar(keys %$oldcheckpres)) && ($lock_seq{$remseq} < scalar(keys %$oldcheckpres)));
+            push @fail_seq, $remseq if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) == scalar(keys %$oldcheckpres)) );
 	}
         
         $Error6 = "\n\tThe translation has changed!" if (translate($oldnuc, 1, $CODON_TABLE) ne translate($newnuc, 1, $CODON_TABLE));        
         $Error4 = "\n\tI was unable to remove any instances of @fail_seq after $iter iterations." if @fail_seq;
         $Error0 = "\n\tI successfully removed @success_seq from your sequence." if @success_seq;
         $Error5 = "\n\tThere were no instances of @none_seq present in your sequence." if @none_seq;
-	$Error7 = "\n\tI was unable to remove some instances of @semifail_seq after $iter iterations." if @semifail_seq;
+	$Error7 = "\n\tI was only able to remove some instances of @semifail_seq after $iter iterations." if @semifail_seq;
+	if ($config{LOCK} && %lock_seq) {
+	    while ( my ( $k,$v ) = each %lock_seq ) {
+	    $Error8 .= "\n\tI was unable to remove $v instance(s) of $k, as all or part of $k was locked." if ($v != 0);
+	    }
+	}
         
         my $newal = compare_sequences($$nucseq{$seqkey}, $newnuc);
 	my $bcou = count($newnuc);
         
         print "
 For the sequence $new_key:
-    I was asked to remove: @{$shortseq{$seqkey}}. $Error5 $Error4 $Error0 $Error6
+    I was asked to remove: @{$shortseq{$seqkey}}. $Error5 $Error4 $Error0 $Error6 $Error7 $Error8
         Base Count: $$bcou{length} bp ($$bcou{A} A, $$bcou{T} T, $$bcou{C} C, $$bcou{G} G)
         Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT
         $$newal{'I'} Identities, $$newal{'D'} Changes ($$newal{'T'} transitions, $$newal{'V'} transversions), $$newal{'P'}% Identity

@@ -19,7 +19,7 @@ use Text::Wrap qw($columns &wrap);
 			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA random_pattern_remover
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
 			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
-			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser check_lock
+			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser replace_lock check_lock
 			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath $enzfile
 			);
 			
@@ -1605,9 +1605,9 @@ sub replace_lock {
 		my $start = shift(@coordinates) - 1;
 		my $end = shift(@coordinates) - 1;
 		if ($end > length($newnuc)) {
-			warn "\n ERROR: Your locked sequence of " . ($start+1) . "-" . ($end+1) . " is not within the scope of your nucleotide sequence!\n";
+			warn "\n ERROR: Your locked sequence of " . ($start+1) . "-" . ($end+1) . " is not within the scope of your nucleotide sequence! It will not be processed by the algorithm.\n";
 			my( $index )= grep { $lockseq[$_] eq $seq } 0..$#lockseq;
-			splice(@lockseq, $index);
+			splice(@lockseq, $index); ## If the locked sequence is not within the scope, it is removed from the array
 			next;
 		}
 		my $framestart = $start % 3;
@@ -1629,7 +1629,6 @@ sub replace_lock {
 				}
 			}
 			$start += 1;
-			print $newnuc . "\n\n" . $oldnuc . "\n\n";
 		}
 		if ($frameend == 0) {
 			substr($newnuc, $end, 1) = substr($oldnuc, $end, 1);
@@ -1655,21 +1654,27 @@ sub replace_lock {
 }
 
 sub check_lock {
-	my ($oldcheckpres, $newcheckpres, $shortseq, @lockseq) = @_;
-	my @locked_seq = ();
-	foreach my $seq (@lockseq)
-	    {
-		my @coordinates = split(/-/, $seq);
-		my $start = shift(@coordinates) - 1;
-		my $end = shift(@coordinates) - 1;
-		foreach my $pos (keys %$oldcheckpres) {
-		    my $pos_end = $pos + length($$oldcheckpres{$pos});
-		    if (($pos >= $start) || ($pos <= $end) || ($pos_end >= $start) || ($pos_end <= $end)) {
-			push @locked_seq, $shortseq;
-			last;
-		    }
+	my ($newcheckpres, $oldnuc, $newnuc, $shortseq, $lockseq, %lock_seq) = @_;
+	foreach my $seq (@{$lockseq})
+	{
+	    my @coordinates = split(/-/, $seq);
+	    my $start = shift(@coordinates) - 1;
+	    my $framestart = $start % 3;
+	    my $adj_start = $start - $framestart;
+	    my $end = shift(@coordinates) - 1;
+	    my $adj_end = $end;
+	    $adj_end++ until ($adj_end % 3 == 2);
+	    foreach my $pos (keys %$newcheckpres) {
+		my $pos_end = $pos + length($$newcheckpres{$pos});
+		if ( (($pos >= $start) && ($pos_end <= $end)) || (($start >= $pos) && ($end <= $pos_end))
+			|| (($pos >= $start) && ($pos <= $end)) || (($pos_end >= $start) && ($pos_end <= $end)) ){
+			($lock_seq{$shortseq})++;
+			next;
 		}
 	    }
+	}
+	return %lock_seq;
+    
 }
 
 1;

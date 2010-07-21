@@ -21,6 +21,7 @@ GetOptions (
         'rscu=s'                => \$config{RSCU_FILE},
 	'sites=s'		=> \$config{RESTRICTION_SITES},
         'times=i'               => \$config{ITERATIONS},
+	'lock=s'		=> \$config{LOCK},
  	'help'			=> \$config{HELP},
    );
 
@@ -125,6 +126,21 @@ else {
 
 my $iter                = $config{ITERATIONS}   ?   $config{ITERATIONS}     : 3;
 
+my $lock 		= $config{LOCK}		?   $config{LOCK}	    : 0;
+my %lockseq;
+if ($config{LOCK}) {
+    if (my $ext = ($lock =~ m/([^.]+)$/)[0] eq 'txt') {
+	$input = slurp( $config{LOCK} );
+	%lockseq = input_parser( $input );
+    }
+    else {
+	my @lockarr = split(/,/, $lock);
+	foreach my $seqkey (keys %$nucseq) {
+	    $lockseq{$seqkey} = \@lockarr;
+	}  
+    }
+}
+
 print "\n";
 
 
@@ -138,11 +154,14 @@ foreach my $org (@ORGSDO)
     
     foreach my $seqkey (sort {$a cmp $b} keys %$nucseq)
     {
-        my $newnuc = $$nucseq{$seqkey};
-        my ($Error4, $Error0, $Error5) = ("", "", "");
+        my $oldnuc = $$nucseq{$seqkey};
+        my $newnuc = $oldnuc;
+        my ($Error4, $Error0, $Error5, $Error6, $Error7, $Error8) = ("", "", "", "", "", "");
         my @success_enz = ();
         my @fail_enz = ();
         my @none_enz = ();
+	my @semifail_enz = ();
+	my %lock_enz = ();
       
     	for (1..$iter) ##Where the magic happens
 	{
@@ -164,6 +183,9 @@ foreach my $org (@ORGSDO)
                     substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $enz, $$RE_DATA{REGEX}->{$enz})}) == 0);
                 }
             }
+	    if ($config{LOCK}) {
+		($newnuc, @{$remove_RE{$seqkey}}) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @{$remove_RE{$seqkey}});
+	    }
 	}
         my $new_key = $seqkey . " after the restriction site subtraction algorithm for $ORGNAME{$org}";
         $$OUTPUT{$new_key} = $newnuc;
@@ -173,23 +195,30 @@ foreach my $org (@ORGSDO)
             my $oldcheckpres = siteseeker($$nucseq{$seqkey}, $enz, $$RE_DATA{REGEX}->{$enz});
             my $newcheckpres = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
             push @none_enz, $enz if scalar(keys %$oldcheckpres == 0);
-            push @fail_enz, $enz if (scalar(keys %$newcheckpres) != 0);
-            push @success_enz, $enz if (scalar (keys %$newcheckpres) == 0 && scalar (keys %$oldcheckpres != 0));
+	    push @success_enz, $enz if ((scalar (keys %$newcheckpres) == 0) && (scalar (keys %$oldcheckpres != 0)));
+	    if ($config{LOCK} && (scalar(keys %$newcheckpres) != 0)) {
+		%lock_enz = check_lock($oldcheckpres, $newcheckpres, $oldnuc, $newnuc, $enz, @{$remove_RE{$seqkey}});
+	    }	
+            push @semifail_enz, $enz if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) != scalar(keys %$newcheckpres)) && !exists($lock_enz{$enz}));
+            push @fail_enz, $enz if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) == scalar(keys %$newcheckpres)) && !exists($lock_enz{$enz}));
 	}
         
-        $Error4 = "I was unable to remove @fail_enz after $iter iterations." if @fail_enz;
-        $Error0 = "I successfully removed @success_enz from your sequence." if @success_enz;
-        $Error5 = "There were no instances of @none_enz present in your sequence." if @none_enz;
+        $Error4 = "\n\tI was unable to remove @fail_enz after $iter iterations." if @fail_enz;
+        $Error0 = "\n\tI successfully removed @success_enz from your sequence." if @success_enz;
+        $Error5 = "\n\tThere were no instances of @none_enz present in your sequence." if @none_enz;
+        $Error7 = "\n\tI was unable to remove some instances of @semifail_enz after $iter iterations." if @semifail_enz;
+	if ($config{LOCK} && %lock_enz) {
+	    while ( my ( $k,$v ) = each %lock_enz ) {
+	    $Error8 = "\n\tI was unable to remove $v instance(s) of $k, as all or part of $k was locked.";
+	    }
+	}
         
         my $newal = compare_sequences($$nucseq{$seqkey}, $newnuc);
 	my $bcou = count($newnuc);
         
         print "
 For the sequence $new_key:
-    I was asked to remove: @{$remove_RE{$seqkey}}.
-    $Error5
-    $Error4
-    $Error0
+    I was asked to remove: @{$remove_RE{$seqkey}}. $Error5 $Error4 $Error0 $Error7 $Error8
         Base Count: $$bcou{length} bp ($$bcou{A} A, $$bcou{T} T, $$bcou{C} C, $$bcou{G} G)
         Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT
         $$newal{'I'} Identities, $$newal{'D'} Changes ($$newal{'T'} transitions, $$newal{'V'} transversions), $$newal{'P'}% Identity
