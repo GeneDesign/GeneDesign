@@ -51,11 +51,13 @@ Restriction_Site_Subtraction.pl
   Usage examples:
    perl Restriction_Site_Subtraction.pl -i Test_YAR000W.FASTA -o 13 -s sites.txt
     ./ Restriction_Site_Subtraction.pl --input Test_YAR000W.FASTA --rscu Test_
-TY1_RSCU.txt --times 6 --sites sites2.txt
+TY1_RSCU.txt --times 6 --sites sites2.txt --lock lock.txt
 
  Required arguments:
     -i,   --input : a FASTA file containing nucleotide sequences.
     -s,   --sites : the restriction enzymes sites that will be silently removed
+                    You	may choose to format the input in one of two ways, as
+		    shown in the sample files.
 
   Optional arguments:
     -h,   --help : Display this message
@@ -65,6 +67,10 @@ TY1_RSCU.txt --times 6 --sites sites2.txt
         Each organism given represents another iteration the algorithm must run.
         (1 = S.cerevisiae,  2 = E.coli,         3 = H.sapiens,
          4 = C.elegans,     5 = D.melanogaster, 6 = B.subtilis)
+    -l,   --lock : lock codons in the nucleotide sequence by their positions.
+               You may choose to do so by providing a file in a similar
+               format to the sample file or using the format
+               'num-num,num-num' when using this argument
     Note:
     -r and/or -o may be provided. If both are given the table will be treated as
     another organism, named after the table's filename. If neither are given,
@@ -107,7 +113,7 @@ my @ORGSDO		= grep { exists $ORGANISMS{$_} } split( "", $config{ORGANISM} );
 push @ORGSDO, 0     if ($rscu);
 $ORGNAME{0}         = fileparse ( $config{RSCU_FILE} , qr/\.[^.]*/)     if ($rscu);
 
-if (! $config{ORGANISM} && ! $config{RSCU_FILE}) {
+if ( !$config{ORGANISM} && ! $config{RSCU_FILE} ) {
     push @ORGSDO, 7;
     $ORGNAME{7}         = 'random codons';
 }
@@ -119,7 +125,7 @@ if (substr($input, 0, 1) eq '>'){
 }
 else {
     my @temp_RE = split(/\n/, $input);
-    foreach my $seqkey (keys %$nucseq) {
+    foreach my $seqkey ( keys %$nucseq ) {
         $remove_RE{$seqkey} = \@temp_RE;
     }
 }
@@ -128,14 +134,14 @@ my $iter                = $config{ITERATIONS}   ?   $config{ITERATIONS}     : 3;
 
 my $lock 		= $config{LOCK}		?   $config{LOCK}	    : 0;
 my %lockseq;
-if ($config{LOCK}) {
-    if (my $ext = ($lock =~ m/([^.]+)$/)[0] eq 'txt') {
+if ( $config{LOCK} ) {
+    if ( my $ext = ( $lock =~ m/([^.]+)$/ )[0] eq 'txt' ) {
 	$input = slurp( $config{LOCK} );
 	%lockseq = input_parser( $input );
     }
     else {
 	my @lockarr = split(/,/, $lock);
-	foreach my $seqkey (keys %$nucseq) {
+	foreach my $seqkey ( keys %$nucseq ) {
 	    $lockseq{$seqkey} = \@lockarr;
 	}  
     }
@@ -163,51 +169,56 @@ foreach my $org (@ORGSDO)
 	my @semifail_enz = ();
 	my %lock_enz = ();
       
-    	for (1..$iter) ##Where the magic happens
+    	for ( 1..$iter ) ##Where the magic happens
 	{
-            foreach my $enz (@{$remove_RE{$seqkey}})
+            foreach my $enz ( @{ $remove_RE{$seqkey} } )
             {
                 my $temphash = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
-                foreach my $grabbedpos (keys %$temphash)
+                foreach my $grabbedpos ( keys %$temphash )
                 {
                     my $grabbedseq = $$temphash{$grabbedpos};
                     my $framestart = ($grabbedpos) % 3;
                     my $critseg = substr($newnuc, $grabbedpos - $framestart, ((int(length($grabbedseq)/3 + 2))*3));
                     my $newcritseg;
-                    if (%$RSCU_VALUES) {
+                    if ( %$RSCU_VALUES )
+                    {
                         $newcritseg = pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE, $RSCU_VALUES);
                     }
-                    elsif (!%$RSCU_VALUES) {
+                    elsif ( !%$RSCU_VALUES )
+                    {
                         $newcritseg = random_pattern_remover($critseg, $$RE_DATA{CLEAN}->{$enz}, $CODON_TABLE);
                     }
                     substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $enz, $$RE_DATA{REGEX}->{$enz})}) == 0);
                 }
             }
-	    if ($config{LOCK}) {
-		($newnuc, @{$remove_RE{$seqkey}}) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @{$remove_RE{$seqkey}});
+	    if ( $config{LOCK} ) {
+		($newnuc, @{ $lockseq{$seqkey} }) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @{ $lockseq{$seqkey} });
 	    }
 	}
         my $new_key = $seqkey . " after the restriction site subtraction algorithm for $ORGNAME{$org}";
         $$OUTPUT{$new_key} = $newnuc;
         
-	foreach my $enz (@{$remove_RE{$seqkey}}) #Stores successfully and unsuccessfully removed enzymes in respective arrays
+	foreach my $enz (@{ $remove_RE{$seqkey} }) #Stores successfully and unsuccessfully removed enzymes in respective arrays
 	{
             my $oldcheckpres = siteseeker($$nucseq{$seqkey}, $enz, $$RE_DATA{REGEX}->{$enz});
             my $newcheckpres = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
-            push @none_enz, $enz if scalar(keys %$oldcheckpres == 0);
-	    push @success_enz, $enz if ((scalar (keys %$newcheckpres) == 0) && (scalar (keys %$oldcheckpres != 0)));
-	    if ($config{LOCK} && (scalar(keys %$newcheckpres) != 0)) {
-		%lock_enz = check_lock($oldcheckpres, $newcheckpres, $oldnuc, $newnuc, $enz, @{$remove_RE{$seqkey}});
+            push @none_enz, $enz if ( scalar( keys %$oldcheckpres ) == 0 );
+	    push @success_enz, $enz if (( scalar ( keys %$newcheckpres ) == 0) && (scalar ( keys %$oldcheckpres ) != 0 ));
+            push @fail_enz, $enz if ((scalar( keys %$newcheckpres ) != 0) && (scalar( keys %$newcheckpres ) == scalar( keys %$oldcheckpres )));
+	    if ( $config{LOCK} && ( scalar ( keys %$newcheckpres ) != 0 ))
+	    {
+		$lock_enz{$enz} = 0;
+		%lock_enz = check_lock($newcheckpres, $oldnuc, $newnuc, $enz, \@{ $lockseq{$seqkey} }, %lock_enz);
 	    }	
-            push @semifail_enz, $enz if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) != scalar(keys %$newcheckpres)) && !exists($lock_enz{$enz}));
-            push @fail_enz, $enz if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) == scalar(keys %$newcheckpres)) && !exists($lock_enz{$enz}));
+            push @semifail_enz, $enz if ((scalar( keys %$newcheckpres ) != 0) && ((exists( $lock_enz{$enz} ) && ( $lock_enz{$enz} < scalar( keys %$oldcheckpres ))) 
+					    || (scalar( keys %$newcheckpres ) < scalar( keys %$oldcheckpres ))) && ( !grep { $_ eq $enz} @fail_enz ));
 	}
         
         $Error4 = "\n\tI was unable to remove @fail_enz after $iter iterations." if @fail_enz;
         $Error0 = "\n\tI successfully removed @success_enz from your sequence." if @success_enz;
         $Error5 = "\n\tThere were no instances of @none_enz present in your sequence." if @none_enz;
         $Error7 = "\n\tI was unable to remove some instances of @semifail_enz after $iter iterations." if @semifail_enz;
-	if ($config{LOCK} && %lock_enz) {
+	if ( $config{LOCK} && %lock_enz ) {
 	    while ( my ( $k,$v ) = each %lock_enz ) {
 	    $Error8 = "\n\tI was unable to remove $v instance(s) of $k, as all or part of $k was locked.";
 	    }
@@ -218,7 +229,7 @@ foreach my $org (@ORGSDO)
         
         print "
 For the sequence $new_key:
-    I was asked to remove: @{$remove_RE{$seqkey}}. $Error5 $Error4 $Error0 $Error7 $Error8
+    I was asked to remove: @{ $remove_RE{$seqkey} }. $Error5 $Error4 $Error0 $Error7 $Error8
         Base Count: $$bcou{length} bp ($$bcou{A} A, $$bcou{T} T, $$bcou{C} C, $$bcou{G} G)
         Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT
         $$newal{'I'} Identities, $$newal{'D'} Changes ($$newal{'T'} transitions, $$newal{'V'} transversions), $$newal{'P'}% Identity

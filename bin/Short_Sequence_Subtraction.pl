@@ -47,13 +47,16 @@ Short_Sequence_Subtraction.pl
     a custom RSCU table was provided or 7 if codons were replaced randomly).
     
   Usage examples:
-   perl Short_Sequence_Subtraction.pl -i Test_YAR000W.FASTA -o 13 -s short_sequences.txt
+   perl Short_Sequence_Subtraction.pl -i Test_YAR000W.FASTA -o 13 -s
+short_sequences.txt
     ./ Short_Sequence_Subtraction.pl --input Test_YAR000W.FASTA --rscu Test_
-TY1_RSCU.txt --times 6 --sites short_sequences2.txt
+TY1_RSCU.txt --times 6 --sites short_sequences2.txt --lock lock.txt
 
  Required arguments:
     -i,   --input : a FASTA file containing nucleotide sequences.
-    -s,   --sequences : the short sequences that will be silently removed
+    -s,   --sequences : the short sequences that will be silently removed. You
+			may choose to format the input in one of two ways, as
+			shown in the sample files.
 
   Optional arguments:
     -h,   --help : Display this message
@@ -115,12 +118,12 @@ if (! $config{ORGANISM} && ! $config{RSCU_FILE}) {
 
 $input           = slurp( $config{SHORT_SEQUENCE} ) ;
 my %shortseq;
-if (substr($input, 0, 1) eq '>'){
+if ( substr($input, 0, 1 ) eq '>'){
     %shortseq      = input_parser( $input );
 }
 else {
     my @temp_seq = split(/\n/, $input);
-    foreach my $seqkey (keys %$nucseq) {
+    foreach my $seqkey ( keys %$nucseq ) {
         $shortseq{$seqkey} = \@temp_seq;
     }
 }
@@ -129,36 +132,36 @@ my $iter                = $config{ITERATIONS}   ?   $config{ITERATIONS}     : 3;
 
 my $lock 		= $config{LOCK}		?   $config{LOCK}	    : 0;
 my %lockseq;
-if ($config{LOCK}) {
-    if (my $ext = ($lock =~ m/([^.]+)$/)[0] eq 'txt') {
+if ( $config{LOCK} ) {
+    if ( my $ext = ( $lock =~ m/([^.]+)$/ )[0] eq 'txt' ) {
 	$input = slurp( $config{LOCK} );
 	%lockseq = input_parser( $input );
     }
     else {
 	my @lockarr = split(/,/, $lock);
-	foreach my $seqkey (keys %$nucseq) {
+	foreach my $seqkey ( keys %$nucseq ) {
 	    $lockseq{$seqkey} = \@lockarr;
 	}  
     }
 }
 
 ## More consistency checking
-foreach my $seqkey (keys %$nucseq) {
-    foreach my $seq (@{$shortseq{$seqkey}}) {
+foreach my $seqkey ( keys %$nucseq ) {
+    foreach my $seq ( @{ $shortseq{$seqkey} } ) {
 	die "\n ERROR: You need a short sequence to be removed (at least 2 bp).\n" 
-	    if (length($seq) < 2);
+	    if ( length($seq) < 2 );
     }
 }
 
 print "\n";
 
 #Finally removes short sequences
-foreach my $org (@ORGSDO)
+foreach my $org ( @ORGSDO )
 {
     my $OUTPUT = {};
     my $RSCU_VALUES = $org  ?   define_RSCU_values( $org )  :   $RSCU_DEFN;
     
-    foreach my $seqkey (sort {$a cmp $b} keys %$nucseq)
+    foreach my $seqkey ( sort {$a cmp $b} keys %$nucseq )
     {
         
         my $oldnuc = $$nucseq{$seqkey};
@@ -170,12 +173,13 @@ foreach my $org (@ORGSDO)
 	my @semifail_seq = ();
 	my %lock_seq = ();
       
-    	for (1..$iter) ##Where the magic happens
+    	for ( 1..$iter ) ##Where the magic happens
 	{
 	    my $warncount = 0;
-            foreach my $remseq (@{$shortseq{$seqkey}})
+            foreach my $remseq ( @{ $shortseq{$seqkey} } )
             {
-		if (length($remseq) >= length($newnuc)) { ## And yet more consistency checking
+		if ( length($remseq) >= length($newnuc) ) ## And yet more consistency checking
+		{
 		    warn "\n ERROR: Your short sequence should be shorter than your nucleotide sequence!\n" if ($warncount == 0);
 		    $warncount++;
 		    last;
@@ -183,49 +187,54 @@ foreach my $org (@ORGSDO)
 		$remseq = cleanup($remseq, 0);
                 my $arr = [ regres($remseq, 1) ];
                 my $temphash = siteseeker($newnuc, $remseq, $arr);
-                foreach my $grabbedpos (keys %$temphash)
+                foreach my $grabbedpos ( keys %$temphash )
                 {
                     my $grabbedseq = $$temphash{$grabbedpos};
                     my $framestart = ($grabbedpos) % 3;
-                    my $critseg = substr($newnuc, $grabbedpos - $framestart, ((int(length($grabbedseq)/3 + 2))*3));
+                    my $critseg = substr($newnuc, $grabbedpos - $framestart, ( ( int(length($grabbedseq) / 3 + 2 )) * 3) );
                     my $newcritseg;
-                    if (%$RSCU_VALUES) {
+                    if ( %$RSCU_VALUES )
+		    {
                         $newcritseg = pattern_remover($critseg, $arr, $CODON_TABLE, $RSCU_VALUES);
                     }
-                    elsif (!%$RSCU_VALUES) {
+                    elsif ( !%$RSCU_VALUES )
+		    {
                         $newcritseg = random_pattern_remover($critseg, $arr, $CODON_TABLE);
                     }
-                    substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $remseq, $arr)}) == 0);
+                    substr($newnuc, $grabbedpos - $framestart, length($newcritseg)) = $newcritseg if (scalar( keys %{siteseeker($newcritseg, $remseq, $arr)} ) == 0);
                 }
             }
-	    if ($config{LOCK}) {
-		($newnuc, @{$lockseq{$seqkey}}) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @{$lockseq{$seqkey}});
+	    if ( $config{LOCK} )
+	    {
+		( $newnuc, @{ $lockseq{$seqkey} } ) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @{ $lockseq{$seqkey} });
 	    }
 	}
         my $new_key = $seqkey . " after the short sequence subtraction algorithm for $ORGNAME{$org}";
         $$OUTPUT{$new_key} = $newnuc;
         
-	foreach my $remseq (@{$shortseq{$seqkey}}) #Stores successfully and unsuccessfully removed sequences in respective arrays
+	foreach my $remseq ( @{ $shortseq{$seqkey} } ) #Stores successfully and unsuccessfully removed sequences in respective arrays
 	{
             my $arr = [ regres($remseq, 1) ];
             my $oldcheckpres = siteseeker($oldnuc, $remseq, $arr);
             my $newcheckpres = siteseeker($newnuc, $remseq, $arr);
-            push @none_seq, $remseq if scalar(keys %$oldcheckpres == 0);
-	    push @success_seq, $remseq if ((scalar (keys %$newcheckpres) == 0) && (scalar (keys %$oldcheckpres != 0)));
-	    if ($config{LOCK} && (scalar(keys %$newcheckpres) != 0)) {
+            push @none_seq, $remseq if ( scalar( keys %$oldcheckpres ) == 0 );
+	    push @success_seq, $remseq if (( scalar ( keys %$newcheckpres ) == 0) && (scalar ( keys %$oldcheckpres ) != 0 ));
+	    push @fail_seq, $remseq if ((scalar( keys %$newcheckpres ) != 0) && (scalar( keys %$newcheckpres ) == scalar( keys %$oldcheckpres )));
+	    if ( $config{LOCK} && ( scalar ( keys %$newcheckpres ) != 0 ))
+	    {
 		$lock_seq{$remseq} = 0;
-		%lock_seq = check_lock($newcheckpres, $oldnuc, $newnuc, $remseq, \@{$lockseq{$seqkey}}, %lock_seq);
+		%lock_seq = check_lock($newcheckpres, $oldnuc, $newnuc, $remseq, \@{ $lockseq{$seqkey} }, %lock_seq);
 	    }	
-            push @semifail_seq, $remseq if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) < scalar(keys %$oldcheckpres)) && ($lock_seq{$remseq} < scalar(keys %$oldcheckpres)));
-            push @fail_seq, $remseq if ((scalar(keys %$newcheckpres) != 0) && (scalar(keys %$newcheckpres) == scalar(keys %$oldcheckpres)) );
+            push @semifail_seq, $remseq if ((scalar( keys %$newcheckpres ) != 0) && ((exists( $lock_seq{$remseq} ) && ( $lock_seq{$remseq} < scalar( keys %$oldcheckpres ))) 
+					    || (scalar( keys %$newcheckpres ) < scalar( keys %$oldcheckpres ))) && ( !grep { $_ eq $remseq} @fail_seq ));
 	}
         
-        $Error6 = "\n\tThe translation has changed!" if (translate($oldnuc, 1, $CODON_TABLE) ne translate($newnuc, 1, $CODON_TABLE));        
+        $Error6 = "\n\tThe translation has changed!" if ( translate($oldnuc, 1, $CODON_TABLE) ne translate($newnuc, 1, $CODON_TABLE) );        
         $Error4 = "\n\tI was unable to remove any instances of @fail_seq after $iter iterations." if @fail_seq;
         $Error0 = "\n\tI successfully removed @success_seq from your sequence." if @success_seq;
         $Error5 = "\n\tThere were no instances of @none_seq present in your sequence." if @none_seq;
 	$Error7 = "\n\tI was only able to remove some instances of @semifail_seq after $iter iterations." if @semifail_seq;
-	if ($config{LOCK} && %lock_seq) {
+	if ( $config{LOCK} && %lock_seq ) {
 	    while ( my ( $k,$v ) = each %lock_seq ) {
 	    $Error8 .= "\n\tI was unable to remove $v instance(s) of $k, as all or part of $k was locked." if ($v != 0);
 	    }
@@ -236,7 +245,7 @@ foreach my $org (@ORGSDO)
         
         print "
 For the sequence $new_key:
-    I was asked to remove: @{$shortseq{$seqkey}}. $Error5 $Error4 $Error0 $Error6 $Error7 $Error8
+    I was asked to remove: @{ $shortseq{$seqkey} }. $Error5 $Error4 $Error0 $Error6 $Error7 $Error8
         Base Count: $$bcou{length} bp ($$bcou{A} A, $$bcou{T} T, $$bcou{C} C, $$bcou{G} G)
         Composition : $$bcou{GCp}% GC, $$bcou{ATp}% AT
         $$newal{'I'} Identities, $$newal{'D'} Changes ($$newal{'T'} transitions, $$newal{'V'} transversions), $$newal{'P'}% Identity

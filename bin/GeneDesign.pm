@@ -1583,7 +1583,7 @@ sub random_pattern_remover {
 sub input_parser
 {
 	my ($input) = @_;
-	my %inputhsh = {};
+	my %inputhsh = ();
 	my @arr;
 	my @pre = split(">", $input);
 	shift @pre;
@@ -1597,14 +1597,16 @@ sub input_parser
 	return %inputhsh;
 }
 
-sub replace_lock {
+sub replace_lock
+{
 	my ($oldnuc, $newnuc, $CODON_TABLE, @lockseq) = @_;
 	foreach my $seq (@lockseq)
 	{
 		my @coordinates = split(/-/, $seq);
 		my $start = shift(@coordinates) - 1;
 		my $end = shift(@coordinates) - 1;
-		if ($end > length($newnuc)) {
+		if ($end > length($newnuc))
+		{
 			warn "\n ERROR: Your locked sequence of " . ($start+1) . "-" . ($end+1) . " is not within the scope of your nucleotide sequence! It will not be processed by the algorithm.\n";
 			my( $index )= grep { $lockseq[$_] eq $seq } 0..$#lockseq;
 			splice(@lockseq, $index); ## If the locked sequence is not within the scope, it is removed from the array
@@ -1612,36 +1614,42 @@ sub replace_lock {
 		}
 		my $framestart = $start % 3;
 		my $frameend = $end % 3;
-		if ($framestart == 1) {
+		if ($framestart == 1)
+		{
 			substr($newnuc, $start, 2) = substr($oldnuc, $start, 2);
-			if (translate(substr($newnuc, $start-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-1, 3), 1, $CODON_TABLE)) {
+			if (translate(substr($newnuc, $start-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-1, 3), 1, $CODON_TABLE))
+			{
 				substr($newnuc, $start-1, 1) = substr($oldnuc, $start-1, 1);
-				
 			}
 			$start += 2;
 		}
-		elsif ($framestart == 2) {
-			
+		elsif ($framestart == 2)
+		{
 			substr($newnuc, $start, 1) = substr($oldnuc, $start, 1);
 			for (my $i = 1; $i < 3; $i++){
-				if (translate(substr($newnuc, $start-2, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-2, 3), 1, $CODON_TABLE)){
+				if (translate(substr($newnuc, $start-2, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-2, 3), 1, $CODON_TABLE))
+				{
 					substr($newnuc, $start-$i, 1) = substr($oldnuc, $start-$i, 1);
 				}
 			}
 			$start += 1;
 		}
-		if ($frameend == 0) {
+		if ($frameend == 0)
+		{
 			substr($newnuc, $end, 1) = substr($oldnuc, $end, 1);
 			for (my $i = 1; $i < 3; $i++){
-				if (translate(substr($newnuc, $end, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end, 3), 1, $CODON_TABLE)) {
+				if (translate(substr($newnuc, $end, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end, 3), 1, $CODON_TABLE))
+				{
 					substr($newnuc, $end+$i, 1) = substr($oldnuc, $end+$i, 1);
 				}
 			}
 			$end -= 1;
 		}
-		elsif ($frameend == 1) {
+		elsif ($frameend == 1)
+		{
 			substr($newnuc, $end-1, 2) = substr($oldnuc, $end-1, 2);
-			if (translate(substr($newnuc, $end-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end-1, 3), 1, $CODON_TABLE)){
+			if (translate(substr($newnuc, $end-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end-1, 3), 1, $CODON_TABLE))
+			{
 				substr($newnuc, $end+1, 1) = substr($oldnuc, $end+1, 1);
 			}
 			$end -= 2;
@@ -1655,7 +1663,7 @@ sub replace_lock {
 
 sub check_lock {
 	my ($newcheckpres, $oldnuc, $newnuc, $shortseq, $lockseq, %lock_seq) = @_;
-	foreach my $seq (@{$lockseq})
+	foreach my $seq (@{ $lockseq })
 	{
 	    my @coordinates = split(/-/, $seq);
 	    my $start = shift(@coordinates) - 1;
@@ -1663,12 +1671,13 @@ sub check_lock {
 	    my $adj_start = $start - $framestart;
 	    my $end = shift(@coordinates) - 1;
 	    my $adj_end = $end;
-	    $adj_end++ until ($adj_end % 3 == 2);
-	    foreach my $pos (keys %$newcheckpres) {
-		my $pos_end = $pos + length($$newcheckpres{$pos});
-		if ( (($pos >= $start) && ($pos_end <= $end)) || (($start >= $pos) && ($end <= $pos_end))
-			|| (($pos >= $start) && ($pos <= $end)) || (($pos_end >= $start) && ($pos_end <= $end)) ){
-			($lock_seq{$shortseq})++;
+	    $adj_end++ until ( $adj_end % 3 == 2 );
+	    foreach my $pos ( keys %$newcheckpres )
+	    {
+		my $pos_end = $pos + length( $$newcheckpres{$pos} );
+		if (( ($pos >= $start) && ($pos_end <= $end) ) || ( ($start >= $pos) && ($end <= $pos_end) )
+			|| ( ($pos >= $start) && ($pos <= $end) ) || ( ($pos_end >= $start) && ($pos_end <= $end) )){
+			( $lock_seq{$shortseq} )++;
 			next;
 		}
 	    }
