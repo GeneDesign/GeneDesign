@@ -95,8 +95,17 @@ sub count
 	$$BC{'U'} = ($strand =~ s/U//ig || 0);
 	my $split = .5*$$BC{'R'}    + .5*$$BC{'Y'}    + .5*$$BC{'K'}    + .5*$$BC{'M'}    + .5*$$BC{'N'};
 	my $trip  = (2/3)*$$BC{'B'} + (2/3)*$$BC{'V'} + (1/3)*$$BC{'D'} + (1/3)*$$BC{'H'};
-	$$BC{'GCp'} = int(((($$BC{'S'}+$$BC{'G'}+$$BC{'C'}+$split + $trip)/$$BC{'length'})*100)+.5);
-	$$BC{'ATp'} = int(((($$BC{'W'}+$$BC{'A'}+$$BC{'T'}+$split + (.9-$trip))/$$BC{'length'})*100)+.5);
+	if ($trip || $split)
+	{
+		$$BC{'GCp'} = int(((($$BC{'S'}+$$BC{'G'}+$$BC{'C'}+$split + $trip)/$$BC{'length'})*100)+.5);
+		$$BC{'ATp'} = int(((($$BC{'W'}+$$BC{'A'}+$$BC{'T'}+$split + (.9-$trip))/$$BC{'length'})*100)+.5);
+	}
+	elsif (!$trip && !$split)
+	{
+		$$BC{'GCp'} = int(((($$BC{'S'}+$$BC{'G'}+$$BC{'C'})/$$BC{'length'})*100)+.5);
+		$$BC{'ATp'} = int(((($$BC{'W'}+$$BC{'A'}+$$BC{'T'})/$$BC{'length'})*100)+.5);
+	
+	}
 	return $BC;
 }
 
