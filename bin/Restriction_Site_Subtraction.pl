@@ -140,10 +140,7 @@ if ( $config{LOCK} ) {
 	%lockseq = input_parser( $input );
     }
     else {
-	my @lockarr = split(/,/, $lock);
-	foreach my $seqkey ( keys %$nucseq ) {
-	    $lockseq{$seqkey} = \@lockarr;
-	}  
+	%lockseq = lock_parser( $lock, $nucseq );
     }
 }
 

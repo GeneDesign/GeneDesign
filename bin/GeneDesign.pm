@@ -19,7 +19,7 @@ use Text::Wrap qw($columns &wrap);
 			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA random_pattern_remover
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
 			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
-			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser replace_lock check_lock
+			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser replace_lock check_lock lock_parser
 			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath $enzfile
 			);
 			
@@ -1635,7 +1635,8 @@ sub replace_lock
 		elsif ($framestart == 2)
 		{
 			substr($newnuc, $start, 1) = substr($oldnuc, $start, 1);
-			for (my $i = 1; $i < 3; $i++){
+			for (my $i = 1; $i < 3; $i++)
+			{
 				if (translate(substr($newnuc, $start-2, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-2, 3), 1, $CODON_TABLE))
 				{
 					substr($newnuc, $start-$i, 1) = substr($oldnuc, $start-$i, 1);
@@ -1646,10 +1647,11 @@ sub replace_lock
 		if ($frameend == 0)
 		{
 			substr($newnuc, $end, 1) = substr($oldnuc, $end, 1);
-			for (my $i = 1; $i < 3; $i++){
+			for (my $i = 1; $i < 3; $i++)
+			{
 				if (translate(substr($newnuc, $end, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end, 3), 1, $CODON_TABLE))
 				{
-					substr($newnuc, $end+$i, 1) = substr($oldnuc, $end+$i, 1);
+				    substr($newnuc, $end+$i, 1) = substr($oldnuc, $end+$i, 1);
 				}
 			}
 			$end -= 1;
@@ -1670,7 +1672,8 @@ sub replace_lock
 
 }
 
-sub check_lock {
+sub check_lock
+{
 	my ($newcheckpres, $shortseq, $lockseq, %lock_seq) = @_;
 	foreach my $seq (@{ $lockseq })
 	{
@@ -1685,13 +1688,26 @@ sub check_lock {
 	    {
 		my $pos_end = $pos + length( $$newcheckpres{$pos} );
 		if (( ($pos >= $start) && ($pos_end <= $end) ) || ( ($start >= $pos) && ($end <= $pos_end) )
-			|| ( ($pos >= $start) && ($pos <= $end) ) || ( ($pos_end >= $start) && ($pos_end <= $end) )){
+			|| ( ($pos >= $start) && ($pos <= $end) ) || ( ($pos_end >= $start) && ($pos_end <= $end) ))
+		{
 			( $lock_seq{$shortseq} )++;
 			next;
 		}
 	    }
 	}
 	return %lock_seq;
+}
+
+sub lock_parser
+{
+	my ($lock, $nucseq) = @_;
+	my %lockseq;
+	my @lockarr = split(/,/, $lock);
+	foreach my $seqkey ( keys %$nucseq )
+	{
+	    $lockseq{$seqkey} = \@lockarr;
+	}
+	return %lockseq;
 }
 
 1;

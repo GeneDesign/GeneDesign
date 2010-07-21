@@ -111,19 +111,22 @@ my @ORGSDO		= grep { exists $ORGANISMS{$_} } split( "", $config{ORGANISM} );
 push @ORGSDO, 0     if ($rscu);
 $ORGNAME{0}         = fileparse ( $config{RSCU_FILE} , qr/\.[^.]*/)     if ($rscu);
 
-if (! $config{ORGANISM} && ! $config{RSCU_FILE}) {
+if (! $config{ORGANISM} && ! $config{RSCU_FILE})
+{
     push @ORGSDO, 7;
     $ORGNAME{7}         = 'random codons';
 }
 
 $input           = slurp( $config{SHORT_SEQUENCE} ) ;
 my %shortseq;
-if ( substr($input, 0, 1 ) eq '>'){
+if ( substr($input, 0, 1 ) eq '>')
+{
     %shortseq      = input_parser( $input );
 }
 else {
     my @temp_seq = split(/\n/, $input);
-    foreach my $seqkey ( keys %$nucseq ) {
+    foreach my $seqkey ( keys %$nucseq )
+    {
         $shortseq{$seqkey} = \@temp_seq;
     }
 }
@@ -133,21 +136,22 @@ my $iter                = $config{ITERATIONS}   ?   $config{ITERATIONS}     : 3;
 my $lock 		= $config{LOCK}		?   $config{LOCK}	    : 0;
 my %lockseq;
 if ( $config{LOCK} ) {
-    if ( my $ext = ( $lock =~ m/([^.]+)$/ )[0] eq 'txt' ) {
+    if ( my $ext = ( $lock =~ m/([^.]+)$/ )[0] eq 'txt' )
+    {
 	$input = slurp( $config{LOCK} );
 	%lockseq = input_parser( $input );
     }
-    else {
-	my @lockarr = split(/,/, $lock);
-	foreach my $seqkey ( keys %$nucseq ) {
-	    $lockseq{$seqkey} = \@lockarr;
-	}  
+    else
+    {
+	%lockseq = lock_parser( $lock, $nucseq );
     }
 }
 
 ## More consistency checking
-foreach my $seqkey ( keys %$nucseq ) {
-    foreach my $seq ( @{ $shortseq{$seqkey} } ) {
+foreach my $seqkey ( keys %$nucseq )
+{
+    foreach my $seq ( @{ $shortseq{$seqkey} } )
+    {
 	die "\n ERROR: You need a short sequence to be removed (at least 2 bp).\n" 
 	    if ( length($seq) < 2 );
     }
@@ -234,8 +238,10 @@ foreach my $org ( @ORGSDO )
         $Error0 = "\n\tI successfully removed @success_seq from your sequence." if @success_seq;
         $Error5 = "\n\tThere were no instances of @none_seq present in your sequence." if @none_seq;
 	$Error7 = "\n\tI was only able to remove some instances of @semifail_seq after $iter iterations." if @semifail_seq;
-	if ( $config{LOCK} && %lock_seq ) {
-	    while ( my ( $k,$v ) = each %lock_seq ) {
+	if ( $config{LOCK} && %lock_seq )
+	{
+	    while ( my ( $k,$v ) = each %lock_seq )
+	    {
 	    $Error8 .= "\n\tI was unable to remove $v instance(s) of $k, as all or part of $k was locked." if ($v != 0);
 	    }
 	}
