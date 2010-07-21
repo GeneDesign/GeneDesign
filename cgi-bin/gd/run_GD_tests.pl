@@ -31,5 +31,6 @@ $flag += test_orf_finder();
 $flag += test_codon_count();
 $flag += test_generate_RSCU_values();
 $flag += test_random_pattern_remover();
-
+$flag += test_replace_lock();
+$flag += test_check_lock();
 print "\npassed $flag out of 26 tests\n\n";

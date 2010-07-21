@@ -1662,7 +1662,7 @@ sub replace_lock
 }
 
 sub check_lock {
-	my ($newcheckpres, $oldnuc, $newnuc, $shortseq, $lockseq, %lock_seq) = @_;
+	my ($newcheckpres, $shortseq, $lockseq, %lock_seq) = @_;
 	foreach my $seq (@{ $lockseq })
 	{
 	    my @coordinates = split(/-/, $seq);
@@ -1683,7 +1683,6 @@ sub check_lock {
 	    }
 	}
 	return %lock_seq;
-    
 }
 
 1;

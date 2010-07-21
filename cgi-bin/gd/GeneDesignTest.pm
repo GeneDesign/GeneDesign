@@ -8,7 +8,7 @@ use GeneDesignSufTree;
 @EXPORT = qw(test_amb_transcription test_amb_translation test_change_codons test_cleanup test_compareseqs test_complement test_count test_define_site_status 
 			test_define_aa_defaults test_define_codon_percentages test_define_reverse_codon_table test_degcodon_to_aas test_melt test_orf_finder
 			test_pattern_adder test_pattern_aligner test_pattern_finder test_pattern_remover test_randDNA test_regres test_reverse_translate test_siteseeker test_translate
-			test_codon_count test_generate_RSCU_values test_random_pattern_remover);
+			test_codon_count test_generate_RSCU_values test_random_pattern_remover test_replace_lock test_check_lock);
 
 my $CODON_TABLE = define_codon_table(1);	
 my $RSCU_VALUES = define_RSCU_values(1);
@@ -540,4 +540,47 @@ sub test_random_pattern_remover()
 	
 	print "random_pattern_remover()\t failed $flags subtests\n";
 	return $flags == 0	?	1	:	0;
+}
+
+sub test_replace_lock()
+{
+	my $flags = 0;
+	my $oldnuc = $shortorf;
+	my $newnuc = "ATGGACCGATCTTGGAAGCAAAAACTGAATCGC";
+	my @lockseq = ("15-24", "27-29");
+	
+	($newnuc, @lockseq) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @lockseq);
+	
+	$flags++ if (!$newnuc eq "ATGGACCGATCTTGGAAGCAGAAGCTGAATCGC");
+	
+	print "test_replace_lock()\t\t failed $flags subtests\n";
+	return $flags ==0	?	1	:	0;
+}
+
+sub test_check_lock()
+{
+	my $flags = 0;
+	my $newnuc = "ATGGACCGATCTTGGAAGCAGAAGCTGAATCGC";
+	my @remove_RE = ("AciI", "AluI", "AlwNI", "BglII");
+	my @lockseq = ("15-24", "27-29");
+	my %lock_enz = ();
+	foreach my $enz (@remove_RE)
+	{
+		my $newcheckpres = siteseeker($newnuc, $enz, $$RE_DATA{REGEX}->{$enz});
+		if ( scalar ( keys %$newcheckpres ) != 0 )
+		{
+			$lock_enz{$enz} = 0;
+			%lock_enz = check_lock($newcheckpres, $enz, \@lockseq, %lock_enz);
+		}
+	}
+	$flags++ if ($lock_enz{"AluI"} != 2);
+	
+	$flags++ if ($lock_enz{"AlwNI"} != 1);
+	
+	$flags++ if ($lock_enz{"AciI"} != 0);
+	
+	$flags++ if ($lock_enz{"BglII"} != 0);
+	
+	print "test_check_lock()\t\t failed $flags subtests\n";
+	return $flags ==0	?	1	:	0;
 }

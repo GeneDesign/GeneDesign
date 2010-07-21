@@ -223,7 +223,7 @@ foreach my $org ( @ORGSDO )
 	    if ( $config{LOCK} && ( scalar ( keys %$newcheckpres ) != 0 ))
 	    {
 		$lock_seq{$remseq} = 0;
-		%lock_seq = check_lock($newcheckpres, $oldnuc, $newnuc, $remseq, \@{ $lockseq{$seqkey} }, %lock_seq);
+		%lock_seq = check_lock($newcheckpres, $remseq, \@{ $lockseq{$seqkey} }, %lock_seq);
 	    }	
             push @semifail_seq, $remseq if ((scalar( keys %$newcheckpres ) != 0) && ((exists( $lock_seq{$remseq} ) && ( $lock_seq{$remseq} < scalar( keys %$oldcheckpres ))) 
 					    || (scalar( keys %$newcheckpres ) < scalar( keys %$oldcheckpres ))) && ( !grep { $_ eq $remseq} @fail_seq ));
@@ -240,9 +240,9 @@ foreach my $org ( @ORGSDO )
 	    }
 	}
         
-        my $newal = compare_sequences($$nucseq{$seqkey}, $newnuc);
+        my $newal = compare_sequences($oldnuc, $newnuc);
 	my $bcou = count($newnuc);
-        
+	
         print "
 For the sequence $new_key:
     I was asked to remove: @{ $shortseq{$seqkey} }. $Error5 $Error4 $Error0 $Error6 $Error7 $Error8

@@ -19,7 +19,7 @@ use Text::Wrap qw($columns &wrap);
 			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA random_pattern_remover
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
 			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
-			codon_count generate_RSCU_values rscu_parser fasta_writer
+			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser replace_lock check_lock
 			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath $enzfile
 			);
 			
@@ -660,6 +660,7 @@ sub fasta_parser
 	}
 	return $seqhsh;
 }
+
 
 #### fasta_writer ####
 #
@@ -1577,6 +1578,111 @@ sub random_pattern_remover {
             }
         }
         return $copy;
+}
+
+sub input_parser
+{
+	my ($input) = @_;
+	my %inputhsh = ();
+	my @arr;
+	my @pre = split(">", $input);
+	shift @pre;
+	foreach my $preinput (@pre)
+	{
+		my @pair = split(/[\n]/g, $preinput);
+		my $id = shift @pair;
+		@arr = split(/ /, join(" ", @pair));
+		$inputhsh{">" . $id} = \@arr; 	
+	}
+	return %inputhsh;
+}
+
+sub replace_lock
+{
+	my ($oldnuc, $newnuc, $CODON_TABLE, @lockseq) = @_;
+	foreach my $seq (@lockseq)
+	{
+		my @coordinates = split(/-/, $seq);
+		my $start = shift(@coordinates) - 1;
+		my $end = shift(@coordinates) - 1;
+		if ($end > length($newnuc))
+		{
+			warn "\n ERROR: Your locked sequence of " . ($start+1) . "-" . ($end+1) . " is not within the scope of your nucleotide sequence! It will not be processed by the algorithm.\n";
+			my( $index )= grep { $lockseq[$_] eq $seq } 0..$#lockseq;
+			splice(@lockseq, $index); ## If the locked sequence is not within the scope, it is removed from the array
+			next;
+		}
+		my $framestart = $start % 3;
+		my $frameend = $end % 3;
+		if ($framestart == 1)
+		{
+			substr($newnuc, $start, 2) = substr($oldnuc, $start, 2);
+			if (translate(substr($newnuc, $start-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-1, 3), 1, $CODON_TABLE))
+			{
+				substr($newnuc, $start-1, 1) = substr($oldnuc, $start-1, 1);
+			}
+			$start += 2;
+		}
+		elsif ($framestart == 2)
+		{
+			substr($newnuc, $start, 1) = substr($oldnuc, $start, 1);
+			for (my $i = 1; $i < 3; $i++){
+				if (translate(substr($newnuc, $start-2, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-2, 3), 1, $CODON_TABLE))
+				{
+					substr($newnuc, $start-$i, 1) = substr($oldnuc, $start-$i, 1);
+				}
+			}
+			$start += 1;
+		}
+		if ($frameend == 0)
+		{
+			substr($newnuc, $end, 1) = substr($oldnuc, $end, 1);
+			for (my $i = 1; $i < 3; $i++){
+				if (translate(substr($newnuc, $end, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end, 3), 1, $CODON_TABLE))
+				{
+					substr($newnuc, $end+$i, 1) = substr($oldnuc, $end+$i, 1);
+				}
+			}
+			$end -= 1;
+		}
+		elsif ($frameend == 1)
+		{
+			substr($newnuc, $end-1, 2) = substr($oldnuc, $end-1, 2);
+			if (translate(substr($newnuc, $end-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end-1, 3), 1, $CODON_TABLE))
+			{
+				substr($newnuc, $end+1, 1) = substr($oldnuc, $end+1, 1);
+			}
+			$end -= 2;
+		}
+		my $length = $end - $start + 1;
+		substr($newnuc, $start, $length) = substr($oldnuc, $start, $length);
+	}
+	return ($newnuc, @lockseq); ##Just in case @lockseq was changed
+
+}
+
+sub check_lock {
+	my ($newcheckpres, $shortseq, $lockseq, %lock_seq) = @_;
+	foreach my $seq (@{ $lockseq })
+	{
+	    my @coordinates = split(/-/, $seq);
+	    my $start = shift(@coordinates) - 1;
+	    my $framestart = $start % 3;
+	    my $adj_start = $start - $framestart;
+	    my $end = shift(@coordinates) - 1;
+	    my $adj_end = $end;
+	    $adj_end++ until ( $adj_end % 3 == 2 );
+	    foreach my $pos ( keys %$newcheckpres )
+	    {
+		my $pos_end = $pos + length( $$newcheckpres{$pos} );
+		if (( ($pos >= $start) && ($pos_end <= $end) ) || ( ($start >= $pos) && ($end <= $pos_end) )
+			|| ( ($pos >= $start) && ($pos <= $end) ) || ( ($pos_end >= $start) && ($pos_end <= $end) )){
+			( $lock_seq{$shortseq} )++;
+			next;
+		}
+	    }
+	}
+	return %lock_seq;
 }
 
 1;

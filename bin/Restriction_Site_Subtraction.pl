@@ -208,7 +208,8 @@ foreach my $org (@ORGSDO)
 	    if ( $config{LOCK} && ( scalar ( keys %$newcheckpres ) != 0 ))
 	    {
 		$lock_enz{$enz} = 0;
-		%lock_enz = check_lock($newcheckpres, $oldnuc, $newnuc, $enz, \@{ $lockseq{$seqkey} }, %lock_enz);
+		%lock_enz = check_lock($newcheckpres, $enz, \@{ $lockseq{$seqkey} }, %lock_enz);
+                print $lock_enz{$enz};
 	    }	
             push @semifail_enz, $enz if ((scalar( keys %$newcheckpres ) != 0) && ((exists( $lock_enz{$enz} ) && ( $lock_enz{$enz} < scalar( keys %$oldcheckpres ))) 
 					    || (scalar( keys %$newcheckpres ) < scalar( keys %$oldcheckpres ))) && ( !grep { $_ eq $enz} @fail_enz ));
@@ -220,11 +221,11 @@ foreach my $org (@ORGSDO)
         $Error7 = "\n\tI was unable to remove some instances of @semifail_enz after $iter iterations." if @semifail_enz;
 	if ( $config{LOCK} && %lock_enz ) {
 	    while ( my ( $k,$v ) = each %lock_enz ) {
-	    $Error8 = "\n\tI was unable to remove $v instance(s) of $k, as all or part of $k was locked.";
+	    $Error8 .= "\n\tI was unable to remove $v instance(s) of $k, as all or part of $k was locked." if ($v != 0);
 	    }
 	}
         
-        my $newal = compare_sequences($$nucseq{$seqkey}, $newnuc);
+        my $newal = compare_sequences($oldnuc, $newnuc);
 	my $bcou = count($newnuc);
         
         print "
