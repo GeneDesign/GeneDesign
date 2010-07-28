@@ -21,7 +21,8 @@ GetOptions (
 			'rscu=s'		=> \$config{RSCU_FILE},
 			'organism=i'		=> \$config{ORGANISM},
 			'help'			=> \$config{HELP},
-			'table'			=> \$config{TABLE},
+			'table=s'		=> \$config{TABLE},
+			'write=s'		=> \$config{WRITE},
 		   );
 
 
@@ -47,16 +48,17 @@ Reverse_Translation.pl
     -i,   --input : a FASTA file containing protein sequences.
     -r,   --rscu : a txt file containing an RSCU table from gen_RSCU.pl
     -o,   --organism : at least one organism number.
-    -t,   --table : a table of codons
         Each organism given represents another iteration the algorithm must run.
         (1 = S.cerevisiae,  2 = E.coli,         3 = H.sapiens,
          4 = C.elegans,     5 = D.melanogaster, 6 = B.subtilis)
+    -t,   --table : a table of codons
     -r, -t, OR -o must be provided. If any combinations of these are given,the
 	codon table and/or rscu table will be treated as another organism, named
 	after the filename(s).
 
   Optional arguments:
     -h,   --help : Display this message
+    -w,   --write : Write to another path
 
 
 ";
@@ -78,7 +80,8 @@ warn "\n WARNING: $_ is not a recognized organism and will be ignored.\n"
 
 
 ##Fetch input sequences, RSCU table, organisms
-my $filename	  = fileparse( $config{INPUT}, qr/\.[^.]*/);
+my ($name, $path) = fileparse($config{INPUT}, qr/\.[^.]*/);
+my $filename	  = $path . "/" . $name;
 make_path($filename . "_gdRT");
 my $input	  = slurp( $config{INPUT} );
 my $ORIG_SEQUENCE = fasta_parser( $input );
@@ -86,7 +89,7 @@ my $ORIG_SEQUENCE = fasta_parser( $input );
 my $rscu	  = $config{RSCU_FILE}	?	slurp( $config{RSCU_FILE} )	:	0;
 my $RSCU_DEFN	  = $rscu		?	rscu_parser( $rscu )		:	{};
 
-my $table	  = $config{TABLE}	?	slurp( $config{RSCU_FILE} )	:	0;
+my $table	  = $config{TABLE}	?	slurp( $config{TABLE} )	:	0;
 my %codon_scheme;
 if ($table)
 {
@@ -115,8 +118,9 @@ foreach my $org (@ORGSDO)
 	my $OUTPUT = {};
 	my $RSCU_VALUES = $org	?	define_RSCU_values( $org )	:	$RSCU_DEFN;
 	%codon_scheme = $table 	? 	%codon_scheme 			:       define_aa_defaults($CODON_TABLE, $RSCU_VALUES);
-	print "$_, $codon_scheme{$_}\n" foreach (sort keys %codon_scheme);
+	
 	my $ERROR1 = "";
+	open (my $eh, ">" . $filename . "_gdRT/error.txt");
 	foreach my $seqkey (keys %$ORIG_SEQUENCE)
 	{
 		my $new_seq = reverse_translate( $$ORIG_SEQUENCE{$seqkey}, \%codon_scheme );
@@ -126,12 +130,13 @@ foreach my $org (@ORGSDO)
 		{
 			my $errout = "\n" . $$ORIG_SEQUENCE{$seqkey} . "\n" . translate($new_seq, 1, $CODON_TABLE) . "\nCodons:\n";
 			$errout .= " $_, $codon_scheme{$_}\n" foreach (sort keys %codon_scheme);
-			warn "\nI was unable to reverse translate your sequence.  Perhaps you left something out of your codon table?\n$errout\n\n";
+			print $eh "\nI was unable to reverse translate your sequence.  Perhaps you left something out of your codon table?\n$errout\n\n";
 		}
 	}
-	open (my $fh, ">" . $filename . "_gdRT/" . $filename. "_gdRT_$org.FASTA") || die "can't create output file, $!";
+	open (my $fh, ">" . $filename . "_gdRT/" . $name. "_gdRT_$org.FASTA") || die "can't create output file, $!";
 	print $fh fasta_writer($OUTPUT);
 	close $fh;
+	close $eh;
 	print $filename . "_gdRT_$org.FASTA has been written.\n";
 }
 
