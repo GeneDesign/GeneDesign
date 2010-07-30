@@ -93,10 +93,11 @@ my $table	  = $config{TABLE}	?	slurp( $config{TABLE} )	:	0;
 my %codon_scheme;
 if ($table)
 {
-	my @pair = split(/[\n]/g, $table);
-	foreach my $entry (@pair) {
-		my $id = shift @pair;
-		$codon_scheme{$id} = shift @pair;
+	my @pair = split(/\n/, $table);
+	for (my $entry = 0; $entry < scalar(@pair); $entry += 2)
+	{
+		my $id = $pair[$entry];
+		$codon_scheme{$id} = $pair[$entry + 1];
 	}
 }
 else

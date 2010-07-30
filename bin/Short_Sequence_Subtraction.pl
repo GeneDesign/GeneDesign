@@ -50,7 +50,7 @@ Short_Sequence_Subtraction.pl
    perl Short_Sequence_Subtraction.pl -i Test_YAR000W.FASTA -o 13 -s
 short_sequences.txt
     ./ Short_Sequence_Subtraction.pl --input Test_YAR000W.FASTA --rscu Test_
-TY1_RSCU.txt --times 6 --sites short_sequences2.txt --lock lock.txt
+TY1_RSCU.txt --times 6 --sequences short_sequences2.txt --lock lock.txt
 
  Required arguments:
     -i,   --input : a FASTA file containing nucleotide sequences.
@@ -210,7 +210,7 @@ foreach my $org ( @ORGSDO )
             }
 	    if ( $config{LOCK} )
 	    {
-		( $newnuc, @{ $lockseq{$seqkey} } ) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @{ $lockseq{$seqkey} });
+		( $newnuc, @{ $lockseq{$seqkey} } ) = replace_lock($oldnuc, $newnuc, \@{ $lockseq{$seqkey} });
 	    }
 	}
         my $new_key = $seqkey . " after the short sequence subtraction algorithm for $ORGNAME{$org}";

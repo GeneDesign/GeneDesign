@@ -551,7 +551,7 @@ sub test_replace_lock()
 	
 	($newnuc, @lockseq) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @lockseq);
 	
-	$flags++ if (!$newnuc eq "ATGGACCGATCTTGGAAGCAGAAGCTGAATCGC");
+	$flags++ if ($newnuc ne "ATGGACCGATCTTGGAAGCAGAAGCTGAATCGC");
 	
 	print "test_replace_lock()\t\t failed $flags subtests\n";
 	return $flags ==0	?	1	:	0;

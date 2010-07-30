@@ -189,7 +189,7 @@ foreach my $org (@ORGSDO)
                 }
             }
 	    if ( $config{LOCK} ) {
-		($newnuc, @{ $lockseq{$seqkey} }) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @{ $lockseq{$seqkey} });
+		($newnuc, @{ $lockseq{$seqkey} }) = replace_lock($oldnuc, $newnuc, \@{ $lockseq{$seqkey} });
 	    }
 	}
         my $new_key = $seqkey . " after the restriction site subtraction algorithm for $ORGNAME{$org}";

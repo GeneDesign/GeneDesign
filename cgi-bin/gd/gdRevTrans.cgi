@@ -4,6 +4,7 @@ use warnings;
 use CGI qw(:standard);
 use GeneDesign;
 use GeneDesignML;
+use Perl6::Slurp;
 use Text::Wrap qw($columns &wrap);
 use File::Path qw(make_path);
 
@@ -80,7 +81,7 @@ else
 	my $inputseq = $query->param('AASEQUENCE');
 	if (! $table)
 	{
-		%codon_scheme = map { $_ => $query->param($_) } keys %$REV_CODON_TABLE;
+		%codon_scheme = map { $_ => $query->param($_) } (keys %$REV_CODON_TABLE);
  	}
 	else
 	{
@@ -113,18 +114,13 @@ else
 	open (my $fh_ct, ">../../documents/gd/tmp/codon_table.txt") || die "can't create output file, $!";
 	print $fh_ct fasta_writer( \%codon_scheme );
 	close $fh_ct;
-	
-	print "Testing";
-	
+		
 	open (my $fh_seq, ">../../documents/gd/tmp/sequence.FASTA") || print "can't create output file, $!";
 	print $fh_seq fasta_writer( $seqhsh );
 	close $fh_seq;
 	
-	print "Testing";
-	
-	system("../../bin/Reverse_Translate.pl -i ../../documents/gd/tmp/sequence.FASTA -t ../../documents/gd/tmp/codon_table.txt") || print "Cannot call Reverse_Translate.pl!";
-	
-	open (my $trans_file, "<../../documents/gd/tmp/sequence_gdRT/sequence_gdRT_8.FASTA") || print "cannot open output file, $!";
+	system("../../bin/Reverse_Translate.pl -i ../../documents/gd/tmp/sequence.FASTA -t ../../documents/gd/tmp/codon_table.txt");
+	open (my $trans_file, "<../../documents/gd/tmp/sequence_gdRT/sequence_gdRT_8.FASTA");
 	my $trans = slurp ( $trans_file );
 	my $newhsh = fasta_parser( $trans );
 	

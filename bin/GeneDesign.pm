@@ -1608,68 +1608,54 @@ sub input_parser
 
 sub replace_lock
 {
-	my ($oldnuc, $newnuc, $CODON_TABLE, @lockseq) = @_;
-	foreach my $seq (@lockseq)
+	my ($oldnuc, $newnuc, $lockseq) = @_;
+	valid_lock($oldnuc, $lockseq);
+	my $lockmask  = make_lock_mask($lockseq, length($oldnuc));
+	my $deltamask = make_delta_mask($oldnuc, $newnuc);
+	for (my $offset = 0; $offset < length($oldnuc); $offset += 3)
 	{
-		my @coordinates = split(/-/, $seq);
-		my $start = shift(@coordinates) - 1;
-		my $end = shift(@coordinates) - 1;
-		if ($end > length($newnuc))
+		my $lockcodon  = "0b" . substr( $lockmask, $offset, 3);
+		my $deltacodon = "0b" . substr($deltamask, $offset, 3);
+		#no lock or no change
+		next if ($lockcodon eq 0b000 || $deltacodon eq 0b000);
+		#bit compare the masks and replace if they overlap
+		if (($lockcodon & $deltacodon) ne 0b000)
 		{
-			warn "\n ERROR: Your locked sequence of " . ($start+1) . "-" . ($end+1) . " is not within the scope of your nucleotide sequence! It will not be processed by the algorithm.\n";
-			my( $index )= grep { $lockseq[$_] eq $seq } 0..$#lockseq;
-			splice(@lockseq, $index); ## If the locked sequence is not within the scope, it is removed from the array
-			next;
+			substr($newnuc, $offset, 3) = substr($oldnuc, $offset, 3);
 		}
-		my $framestart = $start % 3;
-		my $frameend = $end % 3;
-		if ($framestart == 1)
-		{
-			substr($newnuc, $start, 2) = substr($oldnuc, $start, 2);
-			if (translate(substr($newnuc, $start-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-1, 3), 1, $CODON_TABLE))
-			{
-				substr($newnuc, $start-1, 1) = substr($oldnuc, $start-1, 1);
-			}
-			$start += 2;
-		}
-		elsif ($framestart == 2)
-		{
-			substr($newnuc, $start, 1) = substr($oldnuc, $start, 1);
-			for (my $i = 1; $i < 3; $i++)
-			{
-				if (translate(substr($newnuc, $start-2, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $start-2, 3), 1, $CODON_TABLE))
-				{
-					substr($newnuc, $start-$i, 1) = substr($oldnuc, $start-$i, 1);
-				}
-			}
-			$start += 1;
-		}
-		if ($frameend == 0)
-		{
-			substr($newnuc, $end, 1) = substr($oldnuc, $end, 1);
-			for (my $i = 1; $i < 3; $i++)
-			{
-				if (translate(substr($newnuc, $end, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end, 3), 1, $CODON_TABLE))
-				{
-				    substr($newnuc, $end+$i, 1) = substr($oldnuc, $end+$i, 1);
-				}
-			}
-			$end -= 1;
-		}
-		elsif ($frameend == 1)
-		{
-			substr($newnuc, $end-1, 2) = substr($oldnuc, $end-1, 2);
-			if (translate(substr($newnuc, $end-1, 3), 1, $CODON_TABLE) ne translate(substr($oldnuc, $end-1, 3), 1, $CODON_TABLE))
-			{
-				substr($newnuc, $end+1, 1) = substr($oldnuc, $end+1, 1);
-			}
-			$end -= 2;
-		}
-		my $length = $end - $start + 1;
-		substr($newnuc, $start, $length) = substr($oldnuc, $start, $length);
 	}
-	return ($newnuc, @lockseq); ##Just in case @lockseq was changed
+	return $newnuc;
 
+}
+
+#Take an array of coordinates in start-stop format and return a string where
+#0 indicates it is not in any of the coords and 1 indicates that it is
+sub make_lock_mask
+{
+	my ($lockseqarr, $seqlen) = @_;
+	my $MASK = "0" x $seqlen;
+	foreach my $coords (@{$lockseqarr})
+	{
+		my ($start, $stop) = split(/-/, $coords);
+		my $bitlen = $stop - $start + 1;
+		substr($MASK, $start-1, $bitlen) = "1" x $bitlen;
+	}
+	return $MASK;
+}
+
+#Take two strings and return a string that is 0 where they agree and 1 where they don't
+sub make_delta_mask
+{
+	my ($oldseq, $newseq) = @_;
+	my $MASK = "0" x length($oldseq);
+	for my $x (0.. length($oldseq))
+	{
+		if (substr($newseq, $x, 1) ne substr($oldseq, $x, 1))
+		{
+			substr($MASK, $x, 1) = "1";
+		}
+	}
+	return $MASK;
 }
 
 sub check_lock
@@ -1708,6 +1694,24 @@ sub lock_parser
 	    $lockseq{$seqkey} = \@lockarr;
 	}
 	return %lockseq;
+}
+
+sub valid_lock
+{
+	my ($nucseq, $lockseq) = @_;
+	foreach my $seq (@{ $lockseq })
+	{
+	    	my @coordinates = split(/-/, $seq);
+		my $start = shift(@coordinates) - 1;
+		my $end = shift(@coordinates) - 1;
+		if ($end > length($nucseq))
+		{
+			warn "\n ERROR: Your locked sequence of " . ($start+1) . "-" . ($end+1) . " is not within the scope of your nucleotide sequence! It will not be processed by the algorithm.\n";
+			my( $index )= grep { $$lockseq[$_] eq $seq } 0..@$lockseq;
+			splice(@$lockseq, $index); ## If the locked sequence is not within the scope, it is removed from the array
+			next;
+		}
+	}
 }
 
 1;
