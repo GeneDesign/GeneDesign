@@ -75,8 +75,11 @@ die "\n ERROR: $config{RSCU_FILE} does not exist.\n"
 	if ($config{RSCU_FILE} && ! -e $config{RSCU_FILE});
 die "\n ERROR: $config{TABLE} does not exist.\n"
 	if ($config{TABLE} && ! -e $config{TABLE});
+if ($config{ORGANISM})
+{
 warn "\n WARNING: $_ is not a recognized organism and will be ignored.\n"
-	foreach (grep {! exists($ORGANISMS{$_})} split ("", $config{ORGANISM}) );
+	foreach (grep {! exists($ORGANISMS{$_})} split ("", $config{ORGANISM}));
+}
 
 
 ##Fetch input sequences, RSCU table, organisms
@@ -105,7 +108,7 @@ else
 	%codon_scheme = ();
 }
 	
-my @ORGSDO	  = grep { exists $ORGANISMS{$_} } split( "", $config{ORGANISM} );
+my @ORGSDO	  = $config{ORGANISM}	?	grep { exists $ORGANISMS{$_} } split( "", $config{ORGANISM} ) :	();
 push @ORGSDO, 0	  if ($rscu);
 push @ORGSDO, 8   if ($table);
 $ORGNAME{0}	  = fileparse( $config{RSCU_FILE}, qr/\.[^.]*/) if ($rscu);
@@ -138,7 +141,8 @@ foreach my $org (@ORGSDO)
 	print $fh fasta_writer($OUTPUT);
 	close $fh;
 	close $eh;
-	print $filename . "_gdRT_$org.FASTA has been written.\n";
+	print $name . "_gdRT_$org.FASTA has been written.\n";
+	unlink($filename . "_gdRT/error.txt") if (! -s $filename . "_gdRT/error.txt");
 }
 
 print "\n";

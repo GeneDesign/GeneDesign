@@ -6,7 +6,7 @@ use GeneDesign;
 use GeneDesignML;
 use Perl6::Slurp;
 use Text::Wrap qw($columns &wrap);
-use File::Path qw(make_path);
+use File::Path qw(remove_tree);
 
 my $query = new CGI;
 print $query->header;
@@ -119,10 +119,19 @@ else
 	print $fh_seq fasta_writer( $seqhsh );
 	close $fh_seq;
 	
-	system("../../bin/Reverse_Translate.pl -i ../../documents/gd/tmp/sequence.FASTA -t ../../documents/gd/tmp/codon_table.txt");
+	my $output = system("../../bin/Reverse_Translate.pl -i ../../documents/gd/tmp/sequence.FASTA -t ../../documents/gd/tmp/codon_table.txt 1>&2");
 	open (my $trans_file, "<../../documents/gd/tmp/sequence_gdRT/sequence_gdRT_8.FASTA");
 	my $trans = slurp ( $trans_file );
 	my $newhsh = fasta_parser( $trans );
+	my $err_filename = "../../documents/gd/tmp/sequence_gdRT/error.txt";
+	if (-e $err_filename)
+	{
+	open (my $err_file, "<" . $err_filename);
+	my $err_msg = slurp ( $err_filename );
+	take_exception($err_msg);
+	closer();
+	}
+	
 	
 	if ($fastaswit == 0)
 	{
@@ -166,7 +175,7 @@ print <<EOM;
 			$FASTAoff
 EOM
 		closer();
-	close $fh_ct;
-	close $fh_seq;
 	close $trans_file;
+	remove_tree("../../documents/gd/tmp/", {keep_root => 1} );
+	
 }
