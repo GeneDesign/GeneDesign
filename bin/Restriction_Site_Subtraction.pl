@@ -99,7 +99,8 @@ warn "\n WARNING: $_ is not a recognized organism and will be ignored.\n"
 
 ##Fetch input nucleotide sequences, organisms, RSCU file, iterations, and restriction site file
 
-my $filename  	  	= fileparse( $config{INPUT}, qr/\.[^.]*/);
+my ($name, $path) = fileparse($config{INPUT}, qr/\.[^.]*/);
+my $filename	  = $path . "/" . $name;
 make_path($filename . "_gdRSS");
 
 my $input    	  	= slurp( $config{INPUT} );
@@ -235,10 +236,10 @@ For the sequence $new_key:
 "
     }
             
-    open (my $fh, ">" . $filename . "_gdRSS/" . $filename . "_gdRSS_$org.FASTA") || die "Cannot create output file, $!";
+    open (my $fh, ">" . $filename . "_gdRSS/" . $name . "_gdRSS_$org.FASTA") || die "Cannot create output file, $!";
     print $fh fasta_writer($OUTPUT);
     close $fh;
-    print $filename . "_gdRSS_$org.FASTA has been written.\n"
+    print $name . "_gdRSS_$org.FASTA has been written.\n"
 }
 
 print "\n";

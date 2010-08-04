@@ -119,7 +119,7 @@ else
 	print $fh_seq fasta_writer( $seqhsh );
 	close $fh_seq;
 	
-	my $output = system("../../bin/Reverse_Translate.pl -i ../../documents/gd/tmp/sequence.FASTA -t ../../documents/gd/tmp/codon_table.txt 1>&2");
+	system("../../bin/Reverse_Translate.pl -i ../../documents/gd/tmp/sequence.FASTA -t ../../documents/gd/tmp/codon_table.txt 1>&2");
 	open (my $trans_file, "<../../documents/gd/tmp/sequence_gdRT/sequence_gdRT_8.FASTA");
 	my $trans = slurp ( $trans_file );
 	my $newhsh = fasta_parser( $trans );
@@ -176,6 +176,8 @@ print <<EOM;
 EOM
 		closer();
 	close $trans_file;
-	remove_tree("../../documents/gd/tmp/", {keep_root => 1} );
+	my @removefile = ("../../documents/gd/tmp/codon_table.txt", "../../documents/gd/tmp/sequence.FASTA");
+	unlink @removefile;
+	remove_tree("../../documents/gd/tmp/sequence_gdRT");
 	
 }

@@ -19,7 +19,7 @@ use Text::Wrap qw($columns &wrap);
 			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA random_pattern_remover
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
 			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
-			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser replace_lock check_lock lock_parser
+			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser replace_lock check_lock lock_parser array_writer
 			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath $enzfile
 			);
 			
@@ -1712,6 +1712,17 @@ sub valid_lock
 			next;
 		}
 	}
+}
+
+sub array_writer
+{
+	my @text = @_;
+	my $outstr = "";
+	foreach my $entry (@text)
+	{
+	    $outstr .= $entry . "\n";
+	}
+	return $outstr;
 }
 
 1;

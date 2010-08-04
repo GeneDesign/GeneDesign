@@ -130,7 +130,7 @@ foreach my $org (@ORGSDO)
 		my $new_seq = reverse_translate( $$ORIG_SEQUENCE{$seqkey}, \%codon_scheme );
 		my $new_key = $seqkey . " after the reverse translate algorithm, using $ORGNAME{$org} RSCU values";
 		$$OUTPUT{$new_key} = $new_seq;
-		if (length($$ORIG_SEQUENCE{$seqkey}) < length($new_seq)/3 || $$ORIG_SEQUENCE{$seqkey} ne translate($new_seq, 1, $CODON_TABLE))
+		if (length($$ORIG_SEQUENCE{$seqkey}) < length($new_seq)/3 || $$ORIG_SEQUENCE{$seqkey} ne translate($new_seq, 1, $CODON_TABLE)) ##Checking for errors!
 		{
 			my $errout = "\n" . $$ORIG_SEQUENCE{$seqkey} . "\n" . translate($new_seq, 1, $CODON_TABLE) . "\nCodons:\n";
 			$errout .= " $_, $codon_scheme{$_}\n" foreach (sort keys %codon_scheme);
@@ -142,7 +142,7 @@ foreach my $org (@ORGSDO)
 	close $fh;
 	close $eh;
 	print $name . "_gdRT_$org.FASTA has been written.\n";
-	unlink($filename . "_gdRT/error.txt") if (! -s $filename . "_gdRT/error.txt");
+	unlink($filename . "_gdRT/error.txt") if (! -s $filename . "_gdRT/error.txt"); ##Deleting the error file if nothing is in there
 }
 
 print "\n";
