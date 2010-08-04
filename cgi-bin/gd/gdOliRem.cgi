@@ -32,7 +32,7 @@ print <<EOM;
 					Your nucleotide sequence will be searched for the short sequence you provide and as many iterations as possible will 
 					be removed by changing whole codons without changing the amino acid sequence.<br><em>Please Note:</em><br>
 					&nbsp;&nbsp;&bull;If you select an organism, targeted codons will be replaced with the codon that has the closest RSCU value in that organism.<br>
-					&nbsp;&nbsp;&bull;If you select no optimization, targeted codons will be replaced with a random codon.<br>
+					&nbsp;&nbsp;&bull;If you select no organism, targeted codons will be replaced with a random codon.<br>
 					See the <a href="$linkpath/Guide/shortr.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
@@ -163,8 +163,8 @@ print <<EOM;
 			<br><br><br>
 			$FASTAoff
 EOM
-	#my @removefile = ("../../documents/gd/tmp/output.txt", "../../documents/gd/tmp/sequence.FASTA", "../../documents/gd/tmp/rem_seq.txt");
-	#unlink @removefile;
-	#remove_tree("../../documents/gd/tmp/sequence_gdSSS");
+	my @removefile = ("../../documents/gd/tmp/output.txt", "../../documents/gd/tmp/sequence.FASTA", "../../documents/gd/tmp/rem_seq.txt");
+	unlink @removefile;
+	remove_tree("../../documents/gd/tmp/sequence_gdSSS");
 	closer();
 }

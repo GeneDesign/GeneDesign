@@ -33,7 +33,7 @@ print <<EOM;
 					Your nucleotide sequence will be searched for restriction sites and you will be prompted to choose as many as you want for removal.<br>
 					Sites will be removed without changing the amino acid sequence by changing whole codons.<br><em>Please Note:</em><br>
 					&nbsp;&nbsp;&bull;If you select an organism, targeted codons will be replaced with the codon that has the closest RSCU value in that organism.<br>
-					&nbsp;&nbsp;&bull;If you select no optimization, targeted codons will be replaced with a random codon.<br>
+					&nbsp;&nbsp;&bull;If you select no organism, targeted codons will be replaced with a random codon.<br>
 					See the <a href="$linkpath/Guide/ssr.html" target="blank">manual</a> for more information.
 				</div>
 				<div id="gridgroup0">
