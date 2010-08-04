@@ -91,13 +91,16 @@ warn "\n ERROR: Neither an organism nor an RSCU table were supplied. Your target
     if (! $config{ORGANISM} && ! $config{RSCU_FILE});
 warn "\n ERROR: Number of iterations was not supplied. The default number of 3 will be used.\n"
     if (! $config{ITERATIONS});
+if ($config{ORGANISM})
+{
 warn "\n WARNING: $_ is not a recognized organism and will be ignored.\n"
     foreach (grep {! exists($ORGANISMS{$_})} split ("", $config{ORGANISM}) );
-    
+}   
 
 ##Fetch input nucleotide sequences, organisms, RSCU file, iterations, and short sequences file
 
-my $filename  	  	= fileparse( $config{INPUT}, qr/\.[^.]*/);
+my ($name, $path) = fileparse($config{INPUT}, qr/\.[^.]*/);
+my $filename	  = $path . "/" . $name;
 make_path($filename . "_gdSSS");
 
 my $input    	  	= slurp( $config{INPUT} );
@@ -106,9 +109,8 @@ my $nucseq 	        = fasta_parser( $input );
 my $rscu                = $config{RSCU_FILE}    ?   $config{RSCU_FILE}      : 0;
 my $RSCU_DEFN           = $rscu                 ?   rscu_parser( $rscu )    : {};
 
-my @ORGSDO		= grep { exists $ORGANISMS{$_} } split( "", $config{ORGANISM} );
-
-push @ORGSDO, 0     if ($rscu);
+my @ORGSDO	  = $config{ORGANISM}	?	grep { exists $ORGANISMS{$_} } split( "", $config{ORGANISM} ) :	();
+push @ORGSDO, 0	  if ($rscu);
 $ORGNAME{0}         = fileparse ( $config{RSCU_FILE} , qr/\.[^.]*/)     if ($rscu);
 
 if (! $config{ORGANISM} && ! $config{RSCU_FILE})
@@ -210,7 +212,7 @@ foreach my $org ( @ORGSDO )
             }
 	    if ( $config{LOCK} )
 	    {
-		( $newnuc, @{ $lockseq{$seqkey} } ) = replace_lock($oldnuc, $newnuc, \@{ $lockseq{$seqkey} });
+		$newnuc = replace_lock($oldnuc, $newnuc, $lockseq{$seqkey});
 	    }
 	}
         my $new_key = $seqkey . " after the short sequence subtraction algorithm for $ORGNAME{$org}";
@@ -227,7 +229,7 @@ foreach my $org ( @ORGSDO )
 	    if ( $config{LOCK} && ( scalar ( keys %$newcheckpres ) != 0 ))
 	    {
 		$lock_seq{$remseq} = 0;
-		%lock_seq = check_lock($newcheckpres, $remseq, \@{ $lockseq{$seqkey} }, %lock_seq);
+		%lock_seq = check_lock($newcheckpres, $remseq, $lockseq{$seqkey}, %lock_seq);
 	    }	
             push @semifail_seq, $remseq if ((scalar( keys %$newcheckpres ) != 0) && ((exists( $lock_seq{$remseq} ) && ( $lock_seq{$remseq} < scalar( keys %$oldcheckpres ))) 
 					    || (scalar( keys %$newcheckpres ) < scalar( keys %$oldcheckpres ))) && ( !grep { $_ eq $remseq} @fail_seq ));
@@ -259,10 +261,10 @@ For the sequence $new_key:
 "
     }
             
-    open (my $fh, ">" . $filename . "_gdSSS/" . $filename . "_gdSSS_$org.FASTA") || die "Cannot create output file, $!";
+    open (my $fh, ">" . $filename . "_gdSSS/" . $name . "_gdSSS_$org.FASTA") || die "Cannot create output file, $!";
     print $fh fasta_writer($OUTPUT);
     close $fh;
-    print $filename . "_gdSSS_$org.FASTA has been written.\n"
+    print $name . "_gdSSS_$org.FASTA has been written.\n"
 }
 
 print "\n";

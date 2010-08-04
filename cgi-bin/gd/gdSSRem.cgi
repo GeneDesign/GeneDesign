@@ -27,7 +27,6 @@ if (! $query->param('MODORG'))
 	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	$query->param('nuseq');
 	$nucseq = $nucseq	?	$nucseq	:	"";
 	my $readonly = ! $nucseq ?	" "	:	'readonly = "true"';
-	my $lockseq;
 print <<EOM;
 				<div id="notes">
 					<strong>To use this module you need a nucleotide sequence.  An organism name is optional.</strong><br>
@@ -42,7 +41,7 @@ print <<EOM;
 					<textarea name="nuseq"  rows="6" cols="100" $readonly>$nucseq</textarea><br><br>
 					$orgchoice<br><br>
 					Enter positions to lock: (Optional)<br>
-					<textarea name ="lock"  rows="1" cols="50" $readonly>$lockseq</textarea><br>
+					<input type="text" name="LOCK" cols="20"><br>
 					<div id="gridgroup1" align ="center" style="position:absolute; top:250; ">
 						<input type="submit" name=".submit" value=" Next Step: which sites are present? " />
 					</div>
@@ -55,6 +54,8 @@ elsif ($query->param('MODORG') && ! $query->param('removeme'))
 {
 	my $nucseq = $query->param('PASSNUCSEQUENCE')	?	$query->param('PASSNUCSEQUENCE')	:	cleanup($query->param('nuseq'));
 	my $organism = $query->param('MODORG')		?	$query->param('MODORG')			:	0;
+	my $lockseq = $query->param('LOCK')	? 	$query->param('LOCK')	: 0;
+	my $hiddenlock = hidden_fielder({"LOCK" => $lockseq});
 	my $SITE_STATUS = define_site_status($nucseq, $$RE_DATA{REGEX});
 	my @presents = grep {$$SITE_STATUS{$_} > 0}	sort keys %{$$RE_DATA{CLEAN}};
 	my ($curpos, $i, $xpos, $ypos) = (0, 0, 0, 0);
@@ -99,10 +100,11 @@ EOM
 	}
 print <<EOM;
 					</div>
-					<div style = "position:relative;top:200">
+					<div style = "position:relative;top:220">
 						<input type="hidden" name="MODORG" value="1"/>
 						<input type="submit" name=".submit" value=" Next Step: Remove these sites "/>
 					</div>
+					$hiddenlock
 				</div>
 EOM
 	closer();
@@ -113,7 +115,7 @@ else
 	my ($Error4, $Error0) = (" ", "" );
 	my $org = $query->param('MODORG')	?	$query->param('MODORG')		:	0;
 	my $oldnuc = cleanup($query->param('nucseq'), 0);
-	my $lockseq = $query->param('lock')	?	$query->param('lock')		:	0;
+	my $lockseq = $query->param('LOCK')	?	$query->param('LOCK')		:	0;
 	my $nucseq = {">Your sequence" => $oldnuc};
 	open (my $fh_seq, ">../../documents/gd/tmp/sequence.FASTA") || print "can't create output file, $!";
 	print $fh_seq fasta_writer( $nucseq );
@@ -124,7 +126,7 @@ else
 	print $fh_rem array_writer(@removes);
 	close $fh_rem;
 	my $lock = "";
-	$lock .= $lockseq if ($lockseq);
+	$lock .= "-l $lockseq" if ($lockseq);
 	if ($org == 7)
 	{
 		system("../../bin/Restriction_Site_Subtraction.pl -i ../../documents/gd/tmp/sequence.FASTA -s ../../documents/gd/tmp/rem_seq.txt " . $lock ." 1>../../documents/gd/tmp/output.txt -t 3");
@@ -191,6 +193,6 @@ print <<EOM;
 EOM
 	my @removefile = ("../../documents/gd/tmp/output.txt", "../../documents/gd/tmp/sequence.FASTA", "../../documents/gd/tmp/rem_seq.txt");
 	unlink @removefile;
-	remove_tree("../../documents/gd/tmp/sequence_gdRT");
+	remove_tree("../../documents/gd/tmp/sequence_gdRSS");
 	closer();
 }
