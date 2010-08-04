@@ -190,7 +190,7 @@ foreach my $org (@ORGSDO)
                 }
             }
 	    if ( $config{LOCK} ) {
-		($newnuc, @{ $lockseq{$seqkey} }) = replace_lock($oldnuc, $newnuc, \@{ $lockseq{$seqkey} });
+		$newnuc = replace_lock($oldnuc, $newnuc, \@{ $lockseq{$seqkey} });
 	    }
 	}
         my $new_key = $seqkey . " after the restriction site subtraction algorithm for $ORGNAME{$org}";
@@ -207,7 +207,6 @@ foreach my $org (@ORGSDO)
 	    {
 		$lock_enz{$enz} = 0;
 		%lock_enz = check_lock($newcheckpres, $enz, \@{ $lockseq{$seqkey} }, %lock_enz);
-                print $lock_enz{$enz};
 	    }	
             push @semifail_enz, $enz if ((scalar( keys %$newcheckpres ) != 0) && ((exists( $lock_enz{$enz} ) && ( $lock_enz{$enz} < scalar( keys %$oldcheckpres ))) 
 					    || (scalar( keys %$newcheckpres ) < scalar( keys %$oldcheckpres ))) && ( !grep { $_ eq $enz} @fail_enz ));

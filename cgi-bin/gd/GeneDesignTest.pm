@@ -549,7 +549,7 @@ sub test_replace_lock()
 	my $newnuc = "ATGGACCGATCTTGGAAGCAAAAACTGAATCGC";
 	my @lockseq = ("15-24", "27-29");
 	
-	($newnuc, @lockseq) = replace_lock($oldnuc, $newnuc, $CODON_TABLE, @lockseq);
+	$newnuc = replace_lock($oldnuc, $newnuc, \@lockseq);
 	
 	$flags++ if ($newnuc ne "ATGGACCGATCTTGGAAGCAGAAGCTGAATCGC");
 	

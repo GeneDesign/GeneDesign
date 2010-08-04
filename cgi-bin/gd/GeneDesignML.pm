@@ -188,7 +188,7 @@ sub organism_selecter_none
 		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"4\" onClick=\"organism=4;SWMarkOptimal(form1);\"><i>C. elegans</i>\n";
 		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"5\" onClick=\"organism=5;SWMarkOptimal(form1);\"><i>D. melanogaster</i>\n";
 		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"6\" onClick=\"organism=6;SWMarkOptimal(form1);\"><i>B. subtilis</i>\n";
-		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"0\" onClick=\"organism=7;\"><i>No organism</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"7\" onClick=\"organism=7;\"><i>No organism</i>\n";
 	return $string;
 }
 

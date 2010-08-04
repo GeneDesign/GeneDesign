@@ -1617,9 +1617,9 @@ sub replace_lock
 		my $lockcodon  = "0b" . substr( $lockmask, $offset, 3);
 		my $deltacodon = "0b" . substr($deltamask, $offset, 3);
 		#no lock or no change
-		next if ($lockcodon eq 0b000 || $deltacodon eq 0b000);
+		next if ($lockcodon eq "0b000" || $deltacodon eq "0b000");
 		#bit compare the masks and replace if they overlap
-		if (($lockcodon & $deltacodon) ne 0b000)
+		if (($lockcodon & $deltacodon) ne "0b000")
 		{
 			substr($newnuc, $offset, 3) = substr($oldnuc, $offset, 3);
 		}
@@ -1689,6 +1689,10 @@ sub lock_parser
 	my ($lock, $nucseq) = @_;
 	my %lockseq;
 	my @lockarr = split(/,/, $lock);
+	foreach my $element (@lockarr)
+	{
+	    $element =~ s/^\s+//;
+	}
 	foreach my $seqkey ( keys %$nucseq )
 	{
 	    $lockseq{$seqkey} = \@lockarr;
