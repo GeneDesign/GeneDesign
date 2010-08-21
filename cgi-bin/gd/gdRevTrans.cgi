@@ -4,7 +4,9 @@ use warnings;
 use CGI qw(:standard);
 use GeneDesign;
 use GeneDesignML;
+use Perl6::Slurp;
 use Text::Wrap qw($columns &wrap);
+use File::Path qw(remove_tree);
 
 my $query = new CGI;
 print $query->header;
@@ -76,10 +78,10 @@ else
 	my $table = $query->param('TABLEINPUT');
 	my $org = $query->param('MODORG');
 	my %codon_scheme;
-	
+	my $inputseq = $query->param('AASEQUENCE');
 	if (! $table)
 	{
-		%codon_scheme = map { $_ => $query->param($_) } keys %$REV_CODON_TABLE;
+		%codon_scheme = map { $_ => $query->param($_) } (keys %$REV_CODON_TABLE);
  	}
 	else
 	{
@@ -92,51 +94,66 @@ else
 		}
 		$org = 0;
 	}
+
 	$$hiddenhash{"MODORG"} = $org;
 ##Check content of $aaseq
-	if ($query->param('AASEQUENCE') =~ /\>/)
+	if ($inputseq =~ /\>/)
 	{
-		$fastaswit++;
-		$seqhsh = fasta_parser($query->param('AASEQUENCE'));
+		print $inputseq;
+		$seqhsh = fasta_parser($inputseq);
+		$fastaswit++ if (scalar(keys %$seqhsh) > 1);
 	}
 	else
 	{
-		$seqhsh = {">your reverse translated sequence" => cleanup($query->param('AASEQUENCE'), 2)};
-	}
-	my ($stats, $nucseq) = ("", "");
-	$columns = 81;
-	my $newhsh;
-	foreach my $id (keys %$seqhsh)
-	{
-		if ($fastaswit >= 0)
-		{
-			$nucseq .= $id . " (reverse translated)\n";
-			my $newseq = reverse_translate(cleanup($$seqhsh{$id}, 2), \%codon_scheme);
-			$nucseq .= wrap("","",	$newseq) . "\n";
-			$fastaswit++;
-			$$newhsh{$id . " (reverse translated)"} = $newseq;
-		}
-		else
-		{
-		####-PREERROR CHECKING - did they include everything in the codon table? If not same length, alarm and allow them to go back.
-			$$hiddenhash{"AASEQUENCE"} = $$seqhsh{$id};
-			$nucseq = reverse_translate($$seqhsh{$id}, \%codon_scheme);
-			$$newhsh{$id} = $nucseq;
-			if (length($$seqhsh{$id}) < length($nucseq)/3 || $$seqhsh{$id} ne translate($nucseq, 1, $CODON_TABLE))
-			{
-				my $errout = "<br>" . $$seqhsh{$id} . "<br>" . translate($nucseq, 1, $CODON_TABLE) . "<br>Codons:<br>";
-				$errout .= " $_, $codon_scheme{$_}<br>" foreach (sort keys %codon_scheme);
-				take_exception("I was unable to reverse translate your sequence.  Perhaps you left something out of your codon table?<br>$errout<br><br>");
-				closer();
-			}
-			my $bcou = count($nucseq);
-			my $GC = int(((($$bcou{'G'}+$$bcou{'C'})/$$bcou{'length'})*100)+.5);
-			$stats  = "&nbsp;_Base Count  : $$bcou{'length'} bp ($$bcou{'A'} A, $$bcou{'T'} T, $$bcou{'C'} C, $$bcou{'G'} G)<br>\n";
-			$stats .= tab(5) . "&nbsp;_Composition : $GC% GC<br><br><br><br><br>";
-		}
+		$seqhsh = {">Your reverse translated sequence" => cleanup($inputseq, 2)};
 	}
 	
-	$nextsteps = "" if ($fastaswit > 1);
+	my ($stats, $nucseq) = ("", "");
+	$columns = 81;\
+	
+	open (my $fh_ct, ">../../documents/gd/tmp/codon_table.txt") || die "can't create output file, $!";
+	print $fh_ct fasta_writer( \%codon_scheme );
+	close $fh_ct;
+		
+	open (my $fh_seq, ">../../documents/gd/tmp/sequence.FASTA") || print "can't create output file, $!";
+	print $fh_seq fasta_writer( $seqhsh );
+	close $fh_seq;
+	
+	system("../../bin/Reverse_Translate.pl -i ../../documents/gd/tmp/sequence.FASTA -t ../../documents/gd/tmp/codon_table.txt 1>&2");
+	open (my $trans_file, "<../../documents/gd/tmp/sequence_gdRT/sequence_gdRT_8.FASTA");
+	my $trans = slurp ( $trans_file );
+	my $newhsh = fasta_parser( $trans );
+	my $err_filename = "../../documents/gd/tmp/sequence_gdRT/error.txt";
+	if (-e $err_filename)
+	{
+	open (my $err_file, "<" . $err_filename);
+	my $err_msg = slurp ( $err_filename );
+	take_exception($err_msg);
+	closer();
+	}
+	
+	
+	if ($fastaswit == 0)
+	{
+		$fastaswit++ foreach (keys %$newhsh);
+		foreach my $id (sort keys %$newhsh)
+		{
+			$nucseq .= $id . "\n" . $$newhsh{$id} . "\n";
+		}
+	}
+	elsif ($fastaswit == -1)
+	{
+		foreach my $id (sort keys %$newhsh)
+		{
+			$nucseq = $$newhsh{$id};
+		}
+		my $bcou = count($nucseq);
+		my $GC = int(((($$bcou{'G'}+$$bcou{'C'})/$$bcou{'length'})*100)+.5);
+		$stats  = "&nbsp;_Base Count  : $$bcou{'length'} bp ($$bcou{'A'} A, $$bcou{'T'} T, $$bcou{'C'} C, $$bcou{'G'} G)<br>\n";
+		$stats .= tab(5) . "&nbsp;_Composition : $GC% GC<br><br><br><br><br>";
+	}
+	
+	$nextsteps = "" if ($fastaswit > 0);
 	my $hiddenstring = hidden_fielder($hiddenhash);
 	my $FASTAoff = offer_fasta(fasta_writer($newhsh));
 print <<EOM;
@@ -158,4 +175,9 @@ print <<EOM;
 			$FASTAoff
 EOM
 		closer();
+	close $trans_file;
+	my @removefile = ("../../documents/gd/tmp/codon_table.txt", "../../documents/gd/tmp/sequence.FASTA");
+	unlink @removefile;
+	remove_tree("../../documents/gd/tmp/sequence_gdRT");
+	
 }

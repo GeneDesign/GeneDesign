@@ -6,7 +6,7 @@ require Exporter;
 @EXPORT = qw(break space tab 
 			cssbrowser platform 
 			gdheader closer take_exception take_note
-			hidden_fielder next_stepper next_codjug organism_selecter
+			hidden_fielder next_stepper next_codjug organism_selecter organism_selecter_none
 			annpsite friendly print_enzyme_table enzyme_chooser print_oligos_aligned
 			print_vector_table print_RSCU_table
 			offer_fasta);
@@ -176,6 +176,19 @@ sub organism_selecter
 		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"4\" onClick=\"organism=4;SWMarkOptimal(form1);\"><i>C. elegans</i>\n";
 		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"5\" onClick=\"organism=5;SWMarkOptimal(form1);\"><i>D. melanogaster</i>\n";
 		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"6\" onClick=\"organism=6;SWMarkOptimal(form1);\"><i>B. subtilis</i>\n";
+	return $string;
+}
+
+sub organism_selecter_none
+{
+	my $string = "Select Your Organism: <br>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"1\" onClick=\"organism=1;SWMarkOptimal(form1);\"><i>S. cerevisiae</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"2\" onClick=\"organism=2;SWMarkOptimal(form1);\"><i>E. coli</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"3\" onClick=\"organism=3;SWMarkOptimal(form1);\"><i>H. sapiens</i><br>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"4\" onClick=\"organism=4;SWMarkOptimal(form1);\"><i>C. elegans</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"5\" onClick=\"organism=5;SWMarkOptimal(form1);\"><i>D. melanogaster</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"6\" onClick=\"organism=6;SWMarkOptimal(form1);\"><i>B. subtilis</i>\n";
+		$string .= tab(8) . "<input type=\"radio\" name=\"MODORG\" value=\"7\" onClick=\"organism=7;\"><i>No organism</i>\n";
 	return $string;
 }
 

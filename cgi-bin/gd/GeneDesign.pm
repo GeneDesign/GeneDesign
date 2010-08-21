@@ -16,10 +16,10 @@ use Text::Wrap qw($columns &wrap);
 @EXPORT = qw(define_sites overhang define_site_status siteseeker filter_sites mutexclu first_base report_RE
 			define_aa_names define_aa_defaults  define_codon_table define_reverse_codon_table define_RSCU_values 
 			define_codon_percentages index_codon_percentages
-			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA
+			pattern_remover pattern_adder pattern_aligner pattern_finder compare_sequences change_codons randDNA random_pattern_remover
 			count ntherm compareseqs reverse_translate amb_transcription amb_translation degcodon_to_aas translate regres complement melt cleanup
 			oligocruncher orf_finder define_oligos fasta_parser cons_seq print_alignment
-			codon_count generate_RSCU_values rscu_parser fasta_writer
+			codon_count generate_RSCU_values rscu_parser fasta_writer input_parser replace_lock check_lock lock_parser array_writer
 			%AA_NAMES $IIA $IIA2 $IIA3 $IIP $IIP2 $ambnt %ORGANISMS $treehit $strcodon $docpath $linkpath $enzfile
 			);
 			
@@ -95,8 +95,17 @@ sub count
 	$$BC{'U'} = ($strand =~ s/U//ig || 0);
 	my $split = .5*$$BC{'R'}    + .5*$$BC{'Y'}    + .5*$$BC{'K'}    + .5*$$BC{'M'}    + .5*$$BC{'N'};
 	my $trip  = (2/3)*$$BC{'B'} + (2/3)*$$BC{'V'} + (1/3)*$$BC{'D'} + (1/3)*$$BC{'H'};
-	$$BC{'GCp'} = int(((($$BC{'S'}+$$BC{'G'}+$$BC{'C'}+$split + $trip)/$$BC{'length'})*100)+.5);
-	$$BC{'ATp'} = int(((($$BC{'W'}+$$BC{'A'}+$$BC{'T'}+$split + (.9-$trip))/$$BC{'length'})*100)+.5);
+	if ($trip || $split)
+	{
+		$$BC{'GCp'} = int(((($$BC{'S'}+$$BC{'G'}+$$BC{'C'}+$split + $trip)/$$BC{'length'})*100)+.5);
+		$$BC{'ATp'} = int(((($$BC{'W'}+$$BC{'A'}+$$BC{'T'}+$split + (.9-$trip))/$$BC{'length'})*100)+.5);
+	}
+	elsif (!$trip && !$split)
+	{
+		$$BC{'GCp'} = int(((($$BC{'S'}+$$BC{'G'}+$$BC{'C'})/$$BC{'length'})*100)+.5);
+		$$BC{'ATp'} = int(((($$BC{'W'}+$$BC{'A'}+$$BC{'T'})/$$BC{'length'})*100)+.5);
+	
+	}
 	return $BC;
 }
 
@@ -661,6 +670,7 @@ sub fasta_parser
 	return $seqhsh;
 }
 
+
 #### fasta_writer ####
 #
 #
@@ -823,11 +833,11 @@ sub define_RSCU_values
 		$RSCU_TABLE{"CCT"} = 0.15;	$RSCU_TABLE{"CCC"} = 0.02;	$RSCU_TABLE{"CCA"} = 0.42;	$RSCU_TABLE{"CCG"} = 3.41;
 		$RSCU_TABLE{"ACT"} = 1.87;	$RSCU_TABLE{"ACC"} = 1.91;	$RSCU_TABLE{"ACA"} = 0.10;	$RSCU_TABLE{"ACG"} = 0.12;	
 		$RSCU_TABLE{"GCT"} = 2.02;	$RSCU_TABLE{"GCC"} = 0.18;	$RSCU_TABLE{"GCA"} = 1.09;	$RSCU_TABLE{"GCG"} = 0.71;	
-		$RSCU_TABLE{"TAT"} = 0.38;	$RSCU_TABLE{"TAC"} = 1.63;	$RSCU_TABLE{"TAA"} = 0.00;	$RSCU_TABLE{"TAG"} = 0.00;	
+		$RSCU_TABLE{"TAT"} = 0.38;	$RSCU_TABLE{"TAC"} = 1.63;	$RSCU_TABLE{"TAA"} = 1.00;	$RSCU_TABLE{"TAG"} = 1.00;	
 		$RSCU_TABLE{"CAT"} = 0.45;	$RSCU_TABLE{"CAC"} = 1.55;	$RSCU_TABLE{"CAA"} = 0.12;	$RSCU_TABLE{"CAG"} = 1.88;
 		$RSCU_TABLE{"AAT"} = 0.02;	$RSCU_TABLE{"AAC"} = 1.98;	$RSCU_TABLE{"AAA"} = 1.63;	$RSCU_TABLE{"AAG"} = 0.37;	
 		$RSCU_TABLE{"GAT"} = 0.51;	$RSCU_TABLE{"GAC"} = 1.49;	$RSCU_TABLE{"GAA"} = 1.64;	$RSCU_TABLE{"GAG"} = 0.36;	
-		$RSCU_TABLE{"TGT"} = 0.60;	$RSCU_TABLE{"TGC"} = 1.40;	$RSCU_TABLE{"TGA"} = 0.00;	$RSCU_TABLE{"TGG"} = 1.00;	
+		$RSCU_TABLE{"TGT"} = 0.60;	$RSCU_TABLE{"TGC"} = 1.40;	$RSCU_TABLE{"TGA"} = 1.00;	$RSCU_TABLE{"TGG"} = 1.00;	
 		$RSCU_TABLE{"CGT"} = 4.47;	$RSCU_TABLE{"CGC"} = 1.53;	$RSCU_TABLE{"CGA"} = 0.00;	$RSCU_TABLE{"CGG"} = 0.00;	
 		$RSCU_TABLE{"AGT"} = 0.13;	$RSCU_TABLE{"AGC"} = 0.93;	$RSCU_TABLE{"AGA"} = 0.00;	$RSCU_TABLE{"AGG"} = 0.00;	
 		$RSCU_TABLE{"GGT"} = 2.27;	$RSCU_TABLE{"GGC"} = 1.68;	$RSCU_TABLE{"GGA"} = 0.00;	$RSCU_TABLE{"GGG"} = 0.04;
@@ -842,11 +852,11 @@ sub define_RSCU_values
 		$RSCU_TABLE{"CCT"} = 0.58;	$RSCU_TABLE{"CCC"} = 2.02;	$RSCU_TABLE{"CCA"} = 0.36;	$RSCU_TABLE{"CCG"} = 1.04;
 		$RSCU_TABLE{"ACT"} = 0.36;	$RSCU_TABLE{"ACC"} = 2.37;	$RSCU_TABLE{"ACA"} = 0.36;	$RSCU_TABLE{"ACG"} = 0.92;	
 		$RSCU_TABLE{"GCT"} = 0.45;	$RSCU_TABLE{"GCC"} = 2.38;	$RSCU_TABLE{"GCA"} = 0.36;	$RSCU_TABLE{"GCG"} = 0.82;
-		$RSCU_TABLE{"TAT"} = 0.34;	$RSCU_TABLE{"TAC"} = 1.66;	$RSCU_TABLE{"TAA"} = 0.00;	$RSCU_TABLE{"TAG"} = 0.00;	
+		$RSCU_TABLE{"TAT"} = 0.34;	$RSCU_TABLE{"TAC"} = 1.66;	$RSCU_TABLE{"TAA"} = 1.00;	$RSCU_TABLE{"TAG"} = 1.00;	
 		$RSCU_TABLE{"CAT"} = 0.30;	$RSCU_TABLE{"CAC"} = 1.70;	$RSCU_TABLE{"CAA"} = 0.21;	$RSCU_TABLE{"CAG"} = 1.79;
 		$RSCU_TABLE{"AAT"} = 0.33;	$RSCU_TABLE{"AAC"} = 1.67;	$RSCU_TABLE{"AAA"} = 0.34;	$RSCU_TABLE{"AAG"} = 1.66;	
 		$RSCU_TABLE{"GAT"} = 0.36;	$RSCU_TABLE{"GAC"} = 1.64;	$RSCU_TABLE{"GAA"} = 0.26;	$RSCU_TABLE{"GAG"} = 1.74;
-		$RSCU_TABLE{"TGT"} = 0.42;	$RSCU_TABLE{"TGC"} = 1.58;	$RSCU_TABLE{"TGA"} = 0.00;	$RSCU_TABLE{"TGG"} = 1.00;
+		$RSCU_TABLE{"TGT"} = 0.42;	$RSCU_TABLE{"TGC"} = 1.58;	$RSCU_TABLE{"TGA"} = 1.00;	$RSCU_TABLE{"TGG"} = 1.00;
 		$RSCU_TABLE{"CGT"} = 0.38;	$RSCU_TABLE{"CGC"} = 2.72;	$RSCU_TABLE{"CGA"} = 0.31;	$RSCU_TABLE{"CGG"} = 1.53;	
 		$RSCU_TABLE{"AGT"} = 0.31;	$RSCU_TABLE{"AGC"} = 2.22;	$RSCU_TABLE{"AGA"} = 0.22;	$RSCU_TABLE{"AGG"} = 0.84;	
 		$RSCU_TABLE{"GGT"} = 0.34;	$RSCU_TABLE{"GGC"} = 2.32;	$RSCU_TABLE{"GGA"} = 0.29;	$RSCU_TABLE{"GGG"} = 1.05;
@@ -861,11 +871,11 @@ sub define_RSCU_values
 		$RSCU_TABLE{"CCT"} = 0.52;	$RSCU_TABLE{"CCC"} = 0.23;	$RSCU_TABLE{"CCA"} = 2.75;	$RSCU_TABLE{"CCG"} = 0.51;
 		$RSCU_TABLE{"ACT"} = 1.34;	$RSCU_TABLE{"ACC"} = 1.02;	$RSCU_TABLE{"ACA"} = 1.15;	$RSCU_TABLE{"ACG"} = 0.49;	
 		$RSCU_TABLE{"GCT"} = 1.64;	$RSCU_TABLE{"GCC"} = 1.06;	$RSCU_TABLE{"GCA"} = 0.99;	$RSCU_TABLE{"GCG"} = 0.31;
-		$RSCU_TABLE{"TAT"} = 0.97;	$RSCU_TABLE{"TAC"} = 1.03;	$RSCU_TABLE{"TAA"} = 0.00;	$RSCU_TABLE{"TAG"} = 0.00;	
+		$RSCU_TABLE{"TAT"} = 0.97;	$RSCU_TABLE{"TAC"} = 1.03;	$RSCU_TABLE{"TAA"} = 1.00;	$RSCU_TABLE{"TAG"} = 1.00;	
 		$RSCU_TABLE{"CAT"} = 1.13;	$RSCU_TABLE{"CAC"} = 0.87;	$RSCU_TABLE{"CAA"} = 1.39;	$RSCU_TABLE{"CAG"} = 0.61;
 		$RSCU_TABLE{"AAT"} = 1.10;	$RSCU_TABLE{"AAC"} = 0.90;	$RSCU_TABLE{"AAA"} = 0.84;	$RSCU_TABLE{"AAG"} = 1.16;	
 		$RSCU_TABLE{"GAT"} = 1.36;	$RSCU_TABLE{"GAC"} = 0.64;	$RSCU_TABLE{"GAA"} = 1.15;	$RSCU_TABLE{"GAG"} = 0.85;			
-		$RSCU_TABLE{"TGT"} = 1.14;	$RSCU_TABLE{"TGC"} = 0.86;	$RSCU_TABLE{"TGA"} = 0.00;	$RSCU_TABLE{"TGG"} = 1.00;	
+		$RSCU_TABLE{"TGT"} = 1.14;	$RSCU_TABLE{"TGC"} = 0.86;	$RSCU_TABLE{"TGA"} = 1.00;	$RSCU_TABLE{"TGG"} = 1.00;	
 		$RSCU_TABLE{"CGT"} = 1.84;	$RSCU_TABLE{"CGC"} = 0.73;	$RSCU_TABLE{"CGA"} = 1.07;	$RSCU_TABLE{"CGG"} = 0.31;	
 		$RSCU_TABLE{"AGT"} = 0.76;	$RSCU_TABLE{"AGC"} = 0.52;	$RSCU_TABLE{"AGA"} = 1.79;	$RSCU_TABLE{"AGG"} = 0.26;	
 		$RSCU_TABLE{"GGT"} = 0.70;	$RSCU_TABLE{"GGC"} = 0.28;	$RSCU_TABLE{"GGA"} = 2.85;	$RSCU_TABLE{"GGG"} = 0.16;
@@ -880,11 +890,11 @@ sub define_RSCU_values
 		$RSCU_TABLE{"CCT"} = 0.42;	$RSCU_TABLE{"CCC"} = 2.73;	$RSCU_TABLE{"CCA"} = 0.62;	$RSCU_TABLE{"CCG"} = 0.23;
 		$RSCU_TABLE{"ACT"} = 0.65;	$RSCU_TABLE{"ACC"} = 3.04;	$RSCU_TABLE{"ACA"} = 0.10;	$RSCU_TABLE{"ACG"} = 0.21;	
 		$RSCU_TABLE{"GCT"} = 0.95;	$RSCU_TABLE{"GCC"} = 2.82;	$RSCU_TABLE{"GCA"} = 0.09;	$RSCU_TABLE{"GCG"} = 0.14;
-		$RSCU_TABLE{"TAT"} = 0.23;	$RSCU_TABLE{"TAC"} = 1.77;	$RSCU_TABLE{"TAA"} = 0.00;	$RSCU_TABLE{"TAG"} = 0.00;	
+		$RSCU_TABLE{"TAT"} = 0.23;	$RSCU_TABLE{"TAC"} = 1.77;	$RSCU_TABLE{"TAA"} = 1.00;	$RSCU_TABLE{"TAG"} = .00;	
 		$RSCU_TABLE{"CAT"} = 0.29;	$RSCU_TABLE{"CAC"} = 1.71;	$RSCU_TABLE{"CAA"} = 0.03;	$RSCU_TABLE{"CAG"} = 1.97;
 		$RSCU_TABLE{"AAT"} = 0.13;	$RSCU_TABLE{"AAC"} = 1.87;	$RSCU_TABLE{"AAA"} = 0.06;	$RSCU_TABLE{"AAG"} = 1.94;	
 		$RSCU_TABLE{"GAT"} = 0.90;	$RSCU_TABLE{"GAC"} = 1.10;	$RSCU_TABLE{"GAA"} = 0.19;	$RSCU_TABLE{"GAG"} = 1.81;
-		$RSCU_TABLE{"TGT"} = 0.07;	$RSCU_TABLE{"TGC"} = 1.93;	$RSCU_TABLE{"TGA"} = 0.00;	$RSCU_TABLE{"TGG"} = 1.00;	
+		$RSCU_TABLE{"TGT"} = 0.07;	$RSCU_TABLE{"TGC"} = 1.93;	$RSCU_TABLE{"TGA"} = 1.00;	$RSCU_TABLE{"TGG"} = 1.00;	
 		$RSCU_TABLE{"CGT"} = 2.65;	$RSCU_TABLE{"CGC"} = 3.07;	$RSCU_TABLE{"CGA"} = 0.07;	$RSCU_TABLE{"CGG"} = 0.00;	
 		$RSCU_TABLE{"AGT"} = 0.04;	$RSCU_TABLE{"AGC"} = 1.13;	$RSCU_TABLE{"AGA"} = 0.00;	$RSCU_TABLE{"AGG"} = 0.21;	
 		$RSCU_TABLE{"GGT"} = 1.34;	$RSCU_TABLE{"GGC"} = 1.66;	$RSCU_TABLE{"GGA"} = 0.99;	$RSCU_TABLE{"GGG"} = 0.00;
@@ -899,12 +909,12 @@ sub define_RSCU_values
 		$RSCU_TABLE{"CCT"} = 2.29;	$RSCU_TABLE{"CCC"} = 0.00;	$RSCU_TABLE{"CCA"} = 1.14;	$RSCU_TABLE{"CCG"} = 0.57;
 		$RSCU_TABLE{"ACT"} = 2.21;	$RSCU_TABLE{"ACC"} = 0.00;	$RSCU_TABLE{"ACA"} = 1.38;	$RSCU_TABLE{"ACG"} = 0.41;	
 		$RSCU_TABLE{"GCT"} = 2.94;	$RSCU_TABLE{"GCC"} = 0.08;	$RSCU_TABLE{"GCA"} = 0.60;	$RSCU_TABLE{"GCG"} = 0.38;
-		$RSCU_TABLE{"TAT"} = 0.50;	$RSCU_TABLE{"TAC"} = 1.50;	$RSCU_TABLE{"TAA"} = 0.00;	$RSCU_TABLE{"TAG"} = 0.00;	
+		$RSCU_TABLE{"TAT"} = 0.50;	$RSCU_TABLE{"TAC"} = 1.50;	$RSCU_TABLE{"TAA"} = 1.00;	$RSCU_TABLE{"TAG"} = 1.00;	
 		$RSCU_TABLE{"CAT"} = 2.00;	$RSCU_TABLE{"CAC"} = 0.00;	$RSCU_TABLE{"CAA"} = 1.71;	$RSCU_TABLE{"CAG"} = 0.29;
 		$RSCU_TABLE{"AAT"} = 0.47;	$RSCU_TABLE{"AAC"} = 1.53;	$RSCU_TABLE{"AAA"} = 1.83;	$RSCU_TABLE{"AAG"} = 0.17;	
 		$RSCU_TABLE{"GAT"} = 0.53;	$RSCU_TABLE{"GAC"} = 1.47;	$RSCU_TABLE{"GAA"} = 1.40;	$RSCU_TABLE{"GAG"} = 0.60;
 		$RSCU_TABLE{"TGT"} = 0.00;	$RSCU_TABLE{"TGC"} = 2.00;	$RSCU_TABLE{"TGA"} = 0.00;	$RSCU_TABLE{"TGG"} = 1.00;	
-		$RSCU_TABLE{"CGT"} = 3.11;	$RSCU_TABLE{"CGC"} = 1.78;	$RSCU_TABLE{"CGA"} = 0.00;	$RSCU_TABLE{"CGG"} = 0.00;	
+		$RSCU_TABLE{"CGT"} = 3.11;	$RSCU_TABLE{"CGC"} = 1.78;	$RSCU_TABLE{"CGA"} = 1.00;	$RSCU_TABLE{"CGG"} = 0.00;	
 		$RSCU_TABLE{"AGT"} = 0.45;	$RSCU_TABLE{"AGC"} = 0.60;	$RSCU_TABLE{"AGA"} = 1.11;	$RSCU_TABLE{"AGG"} = 0.00;	
 		$RSCU_TABLE{"GGT"} = 1.38;	$RSCU_TABLE{"GGC"} = 0.97;	$RSCU_TABLE{"GGA"} = 1.66;	$RSCU_TABLE{"GGG"} = 0.00;	
 	}
@@ -1558,6 +1568,162 @@ sub mutexclu
 	return $used_ref;
 }
 
+sub random_pattern_remover {
+	my $RE_DATA = define_sites($enzfile);
+    	my ($critseg, $pattern, $CODON_TABLE) = @_;
+	my $REV_CODON_TABLE = define_reverse_codon_table($CODON_TABLE);
+        my $copy = $critseg;
+        for (my $offset = 0; $offset < (length($critseg)); $offset+=3)	# for each codon position, get array of synonymous codons
+        {
+            my @codonarr = @{$$REV_CODON_TABLE{$$CODON_TABLE{substr($critseg, $offset, 3)}}};
+            for (my $repeat = 0; $repeat < 10; $repeat++)       ##generates random codons to replace the original until the pattern is gone or for 10 iterations
+            {
+                my $random = int(rand(scalar(@codonarr)));
+                
+                substr($copy, $offset, 3) = $codonarr[$random];
+                if (siteseeker($copy, $pattern, $$RE_DATA{REGEX}->{$pattern}) == 0){
+                    return $copy;
+                }
+            }
+        }
+        return $copy;
+}
+
+sub input_parser
+{
+	my ($input) = @_;
+	my %inputhsh = ();
+	my @arr;
+	my @pre = split(">", $input);
+	shift @pre;
+	foreach my $preinput (@pre)
+	{
+		my @pair = split(/[\n]/g, $preinput);
+		my $id = shift @pair;
+		@arr = split(/ /, join(" ", @pair));
+		$inputhsh{">" . $id} = \@arr; 	
+	}
+	return %inputhsh;
+}
+
+sub replace_lock
+{
+	my ($oldnuc, $newnuc, $lockseq) = @_;
+	valid_lock($oldnuc, $lockseq);
+	my $lockmask  = make_lock_mask($lockseq, length($oldnuc));
+	my $deltamask = make_delta_mask($oldnuc, $newnuc);
+	for (my $offset = 0; $offset < length($oldnuc); $offset += 3)
+	{
+		my $lockcodon  = "0b" . substr( $lockmask, $offset, 3);
+		my $deltacodon = "0b" . substr($deltamask, $offset, 3);
+		#no lock or no change
+		next if ($lockcodon eq "0b000" || $deltacodon eq "0b000");
+		#bit compare the masks and replace if they overlap
+		if (($lockcodon & $deltacodon) ne "0b000")
+		{
+			substr($newnuc, $offset, 3) = substr($oldnuc, $offset, 3);
+		}
+	}
+	return $newnuc;
+
+}
+
+#Take an array of coordinates in start-stop format and return a string where
+#0 indicates it is not in any of the coords and 1 indicates that it is
+sub make_lock_mask
+{
+	my ($lockseqarr, $seqlen) = @_;
+	my $MASK = "0" x $seqlen;
+	foreach my $coords (@{$lockseqarr})
+	{
+		my ($start, $stop) = split(/-/, $coords);
+		my $bitlen = $stop - $start + 1;
+		substr($MASK, $start-1, $bitlen) = "1" x $bitlen;
+	}
+	return $MASK;
+}
+
+#Take two strings and return a string that is 0 where they agree and 1 where they don't
+sub make_delta_mask
+{
+	my ($oldseq, $newseq) = @_;
+	my $MASK = "0" x length($oldseq);
+	for my $x (0.. length($oldseq))
+	{
+		if (substr($newseq, $x, 1) ne substr($oldseq, $x, 1))
+		{
+			substr($MASK, $x, 1) = "1";
+		}
+	}
+	return $MASK;
+}
+
+sub check_lock
+{
+	my ($newcheckpres, $shortseq, $lockseq, %lock_seq) = @_;
+	foreach my $seq (@{ $lockseq })
+	{
+	    my @coordinates = split(/-/, $seq);
+	    my $start = shift(@coordinates) - 1;
+	    my $framestart = $start % 3;
+	    my $adj_start = $start - $framestart;
+	    my $end = shift(@coordinates) - 1;
+	    my $adj_end = $end;
+	    $adj_end++ until ( $adj_end % 3 == 2 );
+	    foreach my $pos ( keys %$newcheckpres )
+	    {
+		my $pos_end = $pos + length( $$newcheckpres{$pos} );
+		if (( ($pos >= $start) && ($pos_end <= $end) ) || ( ($start >= $pos) && ($end <= $pos_end) )
+			|| ( ($pos >= $start) && ($pos <= $end) ) || ( ($pos_end >= $start) && ($pos_end <= $end) ))
+		{
+			( $lock_seq{$shortseq} )++;
+			next;
+		}
+	    }
+	}
+	return %lock_seq;
+}
+
+sub lock_parser
+{
+	my ($lock, $nucseq) = @_;
+	my %lockseq;
+	my @lockarr = split(/,/, $lock);
+	foreach my $seqkey ( keys %$nucseq )
+	{
+	    $lockseq{$seqkey} = \@lockarr;
+	}
+	return %lockseq;
+}
+
+sub valid_lock
+{
+	my ($nucseq, $lockseq) = @_;
+	foreach my $seq (@{ $lockseq })
+	{
+	    	my @coordinates = split(/-/, $seq);
+		my $start = shift(@coordinates) - 1;
+		my $end = shift(@coordinates) - 1;
+		if ($end > length($nucseq))
+		{
+			warn "\n ERROR: Your locked sequence of " . ($start+1) . "-" . ($end+1) . " is not within the scope of your nucleotide sequence! It will not be processed by the algorithm.\n";
+			my( $index )= grep { $$lockseq[$_] eq $seq } 0..@$lockseq;
+			splice(@$lockseq, $index); ## If the locked sequence is not within the scope, it is removed from the array
+			next;
+		}
+	}
+}
+
+sub array_writer
+{
+	my @text = @_;
+	my $outstr = "";
+	foreach my $entry (@text)
+	{
+	    $outstr .= $entry . "\n";
+	}
+	return $outstr;
+}
 
 1;
 __END__
