@@ -6,7 +6,9 @@ use Getopt::Long;
 use CPAN '!get';
 use Config;
 use Cwd;
+use LWP::Simple;
 use File::Temp qw(tempdir);
+use File::Copy 'cp';
 
 ##Get Arguments
 my %config = ();
@@ -23,7 +25,7 @@ if ($config{HELP})
 GeneDesign_Install.pl
 	
     This script will connect to the internet and coordinate the installation of
-	GeneDesign and its prerequisites.
+	GeneDesign and its prerequisites.  Owes a lot to gbrowse's netinstall.pl
 
   Optional arguments:
     -h,   --help : display this message
@@ -32,17 +34,17 @@ GeneDesign_Install.pl
 	exit;
 }
 
-print STDERR "You will be asked various questions during this process. ";
-print STDERR "You can always accept the default answer.\n";
-print STDERR "The whole process will take several minutes and will generate lots of messages.\n";
+
+print STDERR "This whole process will take several minutes and will generate lots of messages.\n";
 print STDERR "\nPress return when you are ready to start!\n";
 
 my $h = <>;
-print STDERR "\nInstalling the Perl files GeneDesign needs...\n";
+print STDERR "\nInstalling the perl modules GeneDesign needs...\n";
 
 
 my $perl_path = $Config{perlpath}; 
 my $windows = $Config{osname} =~ /mswin/i;
+my $perl_version = $Config{PERL_VERSION};
 
 if ($windows)
 {
@@ -62,11 +64,16 @@ my $make     = $Config{'make'};
 
 if ($windows) 
 {
+	system("ppm rep add trouchelle.com-$perl_version http://trouchelle.com/ppm$perl_version/");
+	system("ppm rep add trouchelle.com-$perl_version-UNSTABLE http://trouchelle.com/ppm$perl_version/unstable/");
 	system("ppm install Scalar-List-Utils");
 	system("ppm install List-MoreUtils");
 	system("ppm install Text-Tabs+Wrap");
 	system("ppm install Getopt-Long");
 	system("ppm install CGI.pm");
+	system("ppm install Archive-Zip");
+	system("ppm install libwww-perl");
+	system("ppm install Perl6-Slurp");
 }
 else 
 {
@@ -75,9 +82,34 @@ else
 	CPAN::Shell->install('Text::Wrap');
 	CPAN::Shell->install('Getopt::Long');
 	CPAN::Shell->install('CGI');
+	CPAN::Shell->install('Archive::Zip');
+	CPAN::Shell->install('LWP::Simple');
+	CPAN::Shell->install('Perl6::Slurp');
 }
-CPAN::Shell->install('Perl6::Slurp');
+use constant NMAKE => 'http://download.microsoft.com/download/vc15/patch/1.52/w95/en-us/nmake15.exe';
+
+eval "use Archive::Zip ':ERROR_CODES',':CONSTANTS'";
+if ($windows && !-e "$binaries/${make}.exe")
+{
+	print STDERR "Installing make utility...\n";
+	-w $binaries or die "$binaries directory is not writeable. Please re-login as Admin.\n";
+	chdir $tmpdir;
+
+	my $rc = mirror(NMAKE,"nmake.zip");
+	die "Could not download nmake executable from Microsoft web site." unless $rc == RC_OK() or $rc == RC_NOT_MODIFIED();
+
+	my $zip = Archive::Zip->new('nmake.zip') or die "Couldn't open nmake zip file for decompression: $!";
+	$zip->extractTree == AZ_OK() or die "Couldn't unzip file: $!";
+	-e 'NMAKE.EXE' or die "Couldn't extract nmake.exe";
+
+	cp('NMAKE.EXE',"$binaries/${make}.EXE") or die "Couldn't install nmake.exe: $!";
+	cp('NMAKE.ERR',"$binaries/${make}.ERR"); # or die "Couldn't install nmake.err: $!"; # not fatal
+}
+
 CPAN::Shell->install('Class::Struct');
+CPAN::Shell->install('HTML::Tagset');
+
+
 unless ( eval "use File::Path; 1" )
 {
 	if ($windows)
