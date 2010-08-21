@@ -3,22 +3,24 @@ GeneDesign is a group of cgi scripts fronting a nucleotide manipulation library.
 
 To install locally as a webserver, you have two options.
 
-Easy but breaks version control:
+a) Easy but breaks version control:
 	put the gd folder from cgi-bin into your CGI-Executables folder, 
 	and the gd folder from documents into your Documents folder.
 	Then change the values $linkpath and $docpath at the top of 
 	GeneDesign.pm to the appropriate values for your webserver.
-More difficult but maintains version control:
+
+b) More difficult but maintains version control:
 	You must edit the configuration file for your web server. The
 	following instructions assume you are using apache2.
 	let /path/to/your/ represent the absolute path to the 
 	parent directory of your git repository.
-
-	if on ubuntu: sudo nano /etc/apache2/sites-available/default 
-	if on Mac OS X: sudo nano /etc/apache2/httpd.conf
+	the configuration file is at 
+	 Ubuntu: /etc/apache2/sites-available/default 
+	 Mac OS X: /etc/apache2/httpd.conf
+	 Windows: Program Files\Apache Group\Apache2\conf\httpd.conf
  
 	add the following after the main Directory listing
-		<Directory Ò/path/to/your/GeneDesign.git/documents/gdÓ>
+		<Directory "/path/to/your/GeneDesign.git/documents/gd">
 			Options Indexes MultiViews FollowSymLinks
 			AllowOverride All
 			Order allow,deny
@@ -40,8 +42,6 @@ More difficult but maintains version control:
 		Alias /gd /path/to/your/documents/gd
 
 	restart the server
-		if on ubuntu: sudo apache2ctl restart
-		if on Mac OS X: sudo apachectl restart
 
 
 installation prereqs (all available from CPAN): 
