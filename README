@@ -1,10 +1,51 @@
 GeneDesign development branch
 GeneDesign is a group of cgi scripts fronting a nucleotide manipulation library.  It is entirely implemented in perl.
 
-To install locally, put the gd folder from cgi-bin into your CGI-Executables folder, and the gd folder from documents into your Documents folder.
-Then change the values $linkpath and $docpath at the top of GeneDesign.pm to the appropriate values for your webserver.
+To install locally as a webserver, you have two options.
+
+Easy but breaks version control:
+	put the gd folder from cgi-bin into your CGI-Executables folder, 
+	and the gd folder from documents into your Documents folder.
+	Then change the values $linkpath and $docpath at the top of 
+	GeneDesign.pm to the appropriate values for your webserver.
+More difficult but maintains version control:
+	You must edit the configuration file for your web server. The
+	following instructions assume you are using apache2.
+	let /path/to/your/ represent the absolute path to the 
+	parent directory of your git repository.
+
+	if on ubuntu: sudo nano /etc/apache2/sites-available/default 
+	if on Mac OS X: sudo nano /etc/apache2/httpd.conf
+ 
+	add the following after the main Directory listing
+		<Directory Ò/path/to/your/GeneDesign.git/documents/gdÓ>
+			Options Indexes MultiViews FollowSymLinks
+			AllowOverride All
+			Order allow,deny
+			Allow from all
+		</Directory>
+
+	add the following after the main cgi-bin Directory listing
+               <Directory "/path/to/your/GeneDesign.git/cgi-bin/gd"> 
+			AllowOverride None
+			Options ExecCGI
+			Order allow,deny
+			Allow from all
+		</Directory>
+
+	add the following BEFORE the cgi ScriptAlias Listing
+                ScriptAlias /cgi-bin/gd/ "/path/to/your/GeneDesign.git/cgi-bin/gd/"
+
+	add the following in the Alias section
+		Alias /gd /path/to/your/documents/gd
+
+	restart the server
+		if on ubuntu: sudo apache2ctl restart
+		if on Mac OS X: sudo apachectl restart
+
 
 installation prereqs (all available from CPAN): 
+CGI
 GD::Graph 
 Text::Wrap
 Perl6::Slurp
